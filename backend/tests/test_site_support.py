@@ -2,6 +2,7 @@
 
 from app import site_support
 from app.building_models import CheckResult
+from app.building_presets import load_presets
 
 
 def ck(kind, label, need, avail, status="fail"):
@@ -32,8 +33,14 @@ def test_inland_water_never_suggests_a_seawater_preset():
     assert all(p.id != "carlsbad-desalination-plant" for p in water.presets)
 
 
-def test_export_shortfall_suggests_consumers_and_nothing_for_land_or_staff():
+def test_surplus_output_suggests_a_data_centre_and_nothing_for_land_or_staff():
     out = site_support.suggestions([ck("site_grid_export", "Grid connection for output", 200_000, 50_000),
                                     ck("site_land", "Open land", 10, 1), ck("site_workforce", "Local workforce", 10, 1),
                                     ck("site_power", "Grid power available", 10, 100, status="pass")], coastal=False)
     assert [s.resource for s in out] == ["grid_export"]
+    (surplus,) = out
+    assert surplus.building_type == "data_centre" and "surplus" in surplus.title
+    presets = {p.id: p for p in load_presets()}
+    assert surplus.presets and all(presets[p.id].type == "data_centre" for p in surplus.presets)
+    # The generic data centre never uses more than the surplus.
+    assert surplus.generic_stats.power.average_demand_kw <= surplus.shortfall

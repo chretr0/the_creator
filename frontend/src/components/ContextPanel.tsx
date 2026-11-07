@@ -56,12 +56,8 @@ export default function ContextPanel({ toggles, onToggles, status, quakes, fires
         </label>
       ))}
 
-      <h3>Connectivity &amp; hazards</h3>
-      <label className="toggle">
-        <input type="checkbox" checked={toggles.cables} onChange={() => set({ cables: !toggles.cables })} />
-        <span>Submarine cables</span>
-        <Note s={status.cables} />
-      </label>
+      <h3>Hazards</h3>
+      <p className="muted small">Submarine cables are under Infrastructure.</p>
       <label className="toggle">
         <input type="checkbox" checked={toggles.earthquakes} onChange={() => set({ earthquakes: !toggles.earthquakes })} />
         <span>Earthquakes, last 7 days</span>

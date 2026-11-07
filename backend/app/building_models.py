@@ -26,7 +26,33 @@ from app.api_base import ApiModel, ParamValue
 SCHEMA_VERSION = 1
 MODEL_VERSION = "building-model-1"
 
-BuildingType = Literal["data_centre", "solar", "greenhouse", "power_station", "water_plant", "custom"]
+# Keep in sync with building_templates.TEMPLATES, frontend/src/lib/buildings.ts and the
+# project/building_definition type CHECK constraints (db/migrations/V3__more_building_types.sql).
+BuildingType = Literal[
+    # energy
+    "power_station", "solar", "wind_farm", "hydro_plant", "geothermal_plant", "battery_storage", "hydrogen_plant",
+    # water
+    "water_plant", "wastewater_plant",
+    # mining & extraction
+    "mine", "quarry", "oil_gas_field",
+    # industry & manufacturing
+    "factory", "steel_mill", "aluminium_smelter", "cement_plant", "chemical_plant", "oil_refinery",
+    "semiconductor_fab",
+    # agriculture & food
+    "farm", "livestock_farm", "greenhouse", "vertical_farm", "aquaculture", "food_processing",
+    # commercial & digital
+    "data_centre", "office", "retail", "hotel", "research_lab",
+    # housing & public services
+    "housing", "hospital", "school", "university", "stadium",
+    # transport & logistics
+    "airport", "seaport", "warehouse",
+    # waste & recycling
+    "landfill", "recycling_facility", "waste_to_energy",
+    # other
+    "custom",
+]
+BuildingCategory = Literal["energy", "water", "extraction", "industry", "agriculture", "commercial", "community",
+                           "transport", "waste", "other"]
 ProvenanceKind = Literal["user_assumption", "demo_assumption", "cited"]
 CheckStatus = Literal["pass", "fail", "unknown"]
 AssessmentState = Literal["meets_criteria", "fails_criteria", "insufficient_data"]
@@ -357,6 +383,7 @@ class BuildingTemplate(ApiModel):
     type: BuildingType
     label: str
     description: str
+    category: BuildingCategory = "other"
     # Which stat sections the form emphasises; every section stays editable for every type.
     produces_power: bool = False
     produces_water: bool = False

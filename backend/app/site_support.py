@@ -8,8 +8,8 @@ the same hexagons (site_capacity.shared):
 - not enough water        → a water plant within the water reach whose intake is not fresh water
                             (seawater on the coast, treated wastewater inland): all of its output is
                             added to the local supply;
-- no room to export power → consumers in the same or a neighbouring hexagon (they use the output
-                            locally).
+- surplus power           → a data centre in the same or a neighbouring hexagon (it uses the output
+                            locally). Surplus is an opportunity, never a reason a plant fails.
 
 Land, workforce, air quality and dark sky cannot be supplied by another building: move instead.
 
@@ -30,10 +30,11 @@ from app.building_models import (
     SupportSuggestion,
 )
 from app.building_presets import load_presets
+from app.building_templates import POWER_PRODUCERS, WATER_PRODUCERS
 from app.site_capacity import RING_GRID, RING_KM, RING_RUNOFF, fmt_kw, fmt_num
 
-GENERATORS = ("power_station", "solar")
-CONSUMERS = ("data_centre", "greenhouse", "custom")
+# Storage shifts electricity in time; it does not add supply, so it is never suggested as a generator.
+GENERATORS = POWER_PRODUCERS - {"battery_storage"}
 HEADROOM = 1.1  # size the generic building 10 % above the shortfall (below site_capacity.RESERVE_SHARE)
 
 
@@ -94,7 +95,7 @@ def _power_suggestion(short_kw: float, extra_kw: float = 0.0) -> SupportSuggesti
 
 
 def _water_suggestion(short_m3: float, coastal: bool) -> SupportSuggestion:
-    plants = [(p, c) for p in load_presets() if p.type == "water_plant" and (c := _water_out(p))
+    plants = [(p, c) for p in load_presets() if p.type in WATER_PRODUCERS and (c := _water_out(p))
               and (coastal or p.stats.water.source != "seawater")]
     size = math.ceil(short_m3 * HEADROOM / 100) * 100
     ref = next((p for p in load_presets() if p.type == "water_plant"), None)
@@ -125,18 +126,18 @@ def _water_suggestion(short_m3: float, coastal: bool) -> SupportSuggestion:
     )
 
 
-def _export_suggestion(short_kw: float) -> SupportSuggestion:
-    users = [(p, c) for p in load_presets() if p.type in CONSUMERS and (c := _power_in(p))]
-    size = math.ceil(short_kw / 1000) * 1000
+def _export_suggestion(surplus_kw: float) -> SupportSuggestion:
+    centres = [(p, c) for p in load_presets() if p.type == "data_centre" and (c := _power_in(p))]
+    size = max(1000, math.floor(surplus_kw / 1000) * 1000)  # whole MW, never more than the surplus
     return SupportSuggestion(
-        resource="grid_export", shortfall=short_kw, unit="kW", building_type="data_centre",
+        resource="grid_export", shortfall=surplus_kw, unit="kW", building_type="data_centre",
         reach_km=RING_GRID * RING_KM, rings=RING_GRID,
-        title=f"Add {fmt_kw(short_kw)} of electricity users next to it",
-        explanation=(f"The grid can't take {fmt_kw(short_kw)} of its output. Consumers placed in the same or a "
-                     "neighbouring hexagon (a data centre, a water plant, industry) use that power locally, so it "
-                     "needs no export room."),
-        presets=_pick(users, short_kw, "kW"),
-        generic_name=f"Supporting data centre ({fmt_kw(size)})",
+        title=f"Use the {fmt_kw(surplus_kw)} surplus: add a data centre next to it",
+        explanation=(f"The grid here can't take {fmt_kw(surplus_kw)} of its output. A data centre in the same or a "
+                     f"neighbouring hexagon (within ~{RING_KM:.0f} km) uses that electricity directly, so it needs no "
+                     "export room."),
+        presets=_pick(centres, surplus_kw, "kW"),
+        generic_name=f"Data centre using the surplus ({fmt_kw(size)})",
         generic_stats=BuildingStats.model_validate({
             "operatingHoursPerDay": 24, "power": {"averageDemandKw": size, "peakDemandKw": size}}),
     )

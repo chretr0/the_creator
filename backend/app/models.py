@@ -6,9 +6,9 @@ from uuid import UUID
 from pydantic import AfterValidator, Field
 
 from app.api_base import ApiModel, ParamValue
-from app.building_models import DefinitionSnapshot, SiteAssumptions
+from app.building_models import BuildingType, DefinitionSnapshot, SiteAssumptions
 
-ProjectType = Literal["data_centre", "solar", "greenhouse", "power_station", "water_plant", "custom"]
+ProjectType = BuildingType  # one list of types for projects and definitions
 
 __all__ = ["ApiModel", "ParamValue"]  # re-exported for existing imports
 

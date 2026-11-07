@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { formatKw } from "../lib/infrastructure";
-import { DATASET_LABEL, METRIC, runQuery, type Dataset, type Query, type QueryRecord } from "../lib/query";
+import { DATASET_LABEL, isFacilityDataset, METRIC, runQuery, type Dataset, type Query, type QueryRecord } from "../lib/query";
 
 type Props = {
   records: QueryRecord[];
@@ -49,7 +49,7 @@ export default function SearchPanel({ records, available, query, onQuery, near, 
   const metric = METRIC[query.dataset];
   const sorts: Query["sort"][] = ["metric", "company", "nearest", "newest", "name"].filter((s) => {
     if (s === "metric") return !!metric;
-    if (s === "company") return query.dataset === "datacenters" || query.dataset === "dams";
+    if (s === "company") return isFacilityDataset(query.dataset);
     if (s === "newest") return query.dataset === "earthquakes" || query.dataset === "fires";
     return true;
   }) as Query["sort"][];
@@ -121,7 +121,7 @@ export default function SearchPanel({ records, available, query, onQuery, near, 
       </div></details>
       <h3>
         {result.total.toLocaleString()} result{result.total === 1 ? "" : "s"}
-        {metric && result.metric.sum !== null && result.total > 0 && <> · {formatMetric(query.dataset, result.metric.sum)} total</>}
+        {metric && metric.unit !== "kV" && result.metric.sum !== null && result.total > 0 && <> · {formatMetric(query.dataset, result.metric.sum)} total</>}
       </h3>
       <ul className="list results">
         {result.items.slice(currentPage * 5, currentPage * 5 + 5).map((r) => (

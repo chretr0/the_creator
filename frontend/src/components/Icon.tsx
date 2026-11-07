@@ -19,9 +19,48 @@ const paths = {
   building: <><path d="M4 21V5h10v16M14 11h6v10M2 21h20M7 9h4M7 13h4M7 17h4M17 15h.01M17 18h.01" /></>,
   bolt: <path d="m13 2-9 12h7l-1 8 10-13h-8l1-7Z" />,
   chevron: <path d="m8 10 4 4 4-4" />,
+  // ---- building types (24×24, stroke only) ----
+  wind: <><path d="M12 11v10M9 21h6M12 7.5V2.5M10.7 9.8 6.4 12.6M13.3 9.8l4.3 2.8" /><circle cx="12" cy="9" r="1.5" /></>,
+  dam: <path d="M9 4h3l5 16H9V4ZM2 9h4M2 13c1 0 1.5.8 3.5.8M2 17c1 0 1.5.8 3.5.8M18 17c1 0 1.5.8 2 .8M18 20.5h4" />,
+  flame: <path d="M12 22a7 7 0 0 0 7-7c0-3.5-2.5-6-4-9-1 2-2 3-3.5 3.5C11.5 7 11 4.5 9 2c0 4-4 7-4 13a7 7 0 0 0 7 7Zm0 0a2.5 2.5 0 0 1-2.5-2.5c0-1.8 1.5-2.8 2.5-4.5 1 1.7 2.5 2.7 2.5 4.5A2.5 2.5 0 0 1 12 22Z" />,
+  battery: <><rect x="2" y="7" width="18" height="10" rx="2" /><path d="M22 11v2M11.5 9.5 9.5 12h3l-2 2.5" /></>,
+  molecule: <><circle cx="6.5" cy="12" r="4" /><circle cx="17.5" cy="12" r="4" /><path d="M10.5 10.8h3M10.5 13.2h3" /></>,
+  filter: <><path d="M3 4h18l-7 8v6l-4 3v-9L3 4Z" /></>,
+  pickaxe: <path d="M11 4Q19 4 20 13M4 20 16.5 7.5" />,
+  derrick: <path d="M8 21 12 3l4 18M9.6 14h4.8M10.6 9h2.8M9.6 14l4-5M5 21h14" />,
+  factory: <path d="M3 21V11l5 3v-3l5 3v-3l5 3V4h3v17H3ZM7 17h2M12 17h2M2 21h20" />,
+  ingot: <path d="M3 19h8l-1.5-5h-5L3 19ZM13 19h8l-1.5-5h-5L13 19ZM8 11h8l-1.5-5h-5L8 11Z" />,
+  crucible: <path d="M5 9h12l-1.4 8.2a2 2 0 0 1-2 1.8H8.4a2 2 0 0 1-2-1.8L5 9ZM17 11h3.5M5 9 3 6.5M3 11v2M3 16v1" />,
+  silo: <path d="M4 21V7a3 3 0 0 1 6 0v14M14 21V11a3 3 0 0 1 6 0v10M10 9l4 3M2 21h20M4 11h6M14 15h6" />,
+  flask: <path d="M9 3h6M10 3v6L4.5 19a1.5 1.5 0 0 0 1.3 2h12.4a1.5 1.5 0 0 0 1.3-2L14 9V3M7 15h10" />,
+  refinery: <path d="M6 21V6h4v15M6 10h4M6 14h4M8 6V3M13 21v-7a4 2 0 0 1 8 0v7M13 17h8M2 21h20" />,
+  chip: <><rect x="6" y="6" width="12" height="12" rx="1.5" /><rect x="9.5" y="9.5" width="5" height="5" /><path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4" /></>,
+  wheat: <path d="M12 22V8M12 8c-1.2-1-1.2-3.8 0-6 1.2 2.2 1.2 5 0 6ZM12 13c-2.5 0-4-1.5-4-4 2.5 0 4 1.5 4 4Zm0 0c2.5 0 4-1.5 4-4-2.5 0-4 1.5-4 4ZM12 18c-2.5 0-4-1.5-4-4 2.5 0 4 1.5 4 4Zm0 0c2.5 0 4-1.5 4-4-2.5 0-4 1.5-4 4Z" />,
+  barn: <path d="M3 21V10l9-6 9 6v11H3ZM9 21v-7h6v7M9 14l6 7M15 14l-6 7M10 9h4" />,
+  sprout: <path d="M12 21v-9M12 12C12 8 9 6 5 6c0 4 3 6 7 6ZM12 15c0-3 2.5-5 6-5 0 3-2.5 5-6 5ZM6 21h12" />,
+  rack: <><rect x="4" y="3" width="16" height="18" rx="1" /><path d="M4 9h16M4 15h16M8.5 9V7.5M12 9V7.5M15.5 9V7.5M8.5 15v-1.5M12 15v-1.5M15.5 15v-1.5M8.5 21v-1.5M12 21v-1.5M15.5 21v-1.5" /></>,
+  fish: <path d="M2 12c3.5-5 10-5.5 15 0-5 5.5-11.5 5-15 0ZM17 12l5-4v8l-5-4ZM7 11h.01" />,
+  utensils: <path d="M6 3v6a2 2 0 0 0 4 0V3M8 3v18M17 21V3c-2 1.5-3 4-3 7v3h3" />,
+  server: <><rect x="3" y="4" width="18" height="7" rx="1.5" /><rect x="3" y="13" width="18" height="7" rx="1.5" /><path d="M7 7.5h.01M7 16.5h.01M11 7.5h6M11 16.5h6" /></>,
+  office: <path d="M6 21V3h12v18M3 21h18M9.5 7h1M13.5 7h1M9.5 11h1M13.5 11h1M9.5 15h1M13.5 15h1M11 21v-3h2v3" />,
+  cart: <><path d="M3 4h2.5l2.2 11h10.6l2.2-8H7" /><circle cx="9" cy="19.5" r="1.5" /><circle cx="17" cy="19.5" r="1.5" /></>,
+  bed: <><path d="M3 19V6M3 15h18v4M21 15v-3a3 3 0 0 0-3-3h-8v6" /><circle cx="6.5" cy="11.5" r="1.5" /></>,
+  house: <path d="M3 11 12 4l9 7M5 9.5V21h14V9.5M10 21v-6h4v6" />,
+  cross: <path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6V3Z" />,
+  cap: <path d="m2 9 10-5 10 5-10 5L2 9ZM6 11v5c0 1.5 3 3 6 3s6-1.5 6-3v-5M22 9v6" />,
+  columns: <path d="M3 21h18M4 18h16M12 3 3 8h18l-9-5ZM6 8v10M10 8v10M14 8v10M18 8v10" />,
+  stadium: <><ellipse cx="12" cy="10" rx="9" ry="4" /><ellipse cx="12" cy="10" rx="4" ry="1.6" /><path d="M3 10v5c0 2.2 4 4 9 4s9-1.8 9-4v-5M4.5 8V3M19.5 8V3M3 3h3M18 3h3" /></>,
+  plane: <path d="M12 2.5c.8 0 1.5.7 1.5 1.5v5l8 5v2l-8-2.5v5l2 1.5v1.5L12 20.5l-3.5 1V20l2-1.5v-5l-8 2.5v-2l8-5V4c0-.8.7-1.5 1.5-1.5Z" />,
+  anchor: <><circle cx="12" cy="5" r="2" /><path d="M12 7v14M8 11h8M4 13a8 8 0 0 0 16 0M2 15l2-2 2 2M18 15l2-2 2 2" /></>,
+  warehouse: <path d="M2 21h20M4 21V9l8-5 8 5v12M8 21v-9h8v9M8 15h8M8 18h8" />,
+  trash: <path d="M4 6h16M9 6V4h6v2M6 6l1 15h10l1-15M10 10v7M14 10v7" />,
+  recycle: <path d="M20 11a8 8 0 0 0-14.6-4.5M4 13a8 8 0 0 0 14.6 4.5M5 2.5v4h4M19 21.5v-4h-4" />,
 } as const;
 
 export type IconName = keyof typeof paths;
+
+/** Every icon name, for checks that a configured icon exists. */
+export const ICON_NAMES = Object.keys(paths) as IconName[];
 
 /** Small, consistent line icons; labels stay on the actual controls. */
 export default function Icon({ name, size = 20, style }: { name: IconName; size?: number; style?: CSSProperties }) {

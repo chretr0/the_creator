@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { CriterionKind } from "../lib/buildings";
 import type { CellLayer } from "../lib/datalayers";
-import { CRITERION_KINDS, CRITERION_LABEL, fmtDays, newCriterion, SITE_KINDS, type CriterionDraft, type Errors } from "../lib/buildingForm";
+import { CRITERION_KINDS, CRITERION_LABEL, fmtDays, newCriterion, type CriterionDraft, type Errors } from "../lib/buildingForm";
 import { Field } from "./FormBits";
 
 type Props = {
@@ -25,17 +25,8 @@ export default function CriteriaEditor({ drafts, onChange, errors, catalogue, cu
 
   return (
     <div>
-      <p className="muted small">
-        Usage, costs and emissions are compared over the scenario's evaluation period: <strong>{fmtDays(periodDays)}</strong>. Change it
-        in Scenarios → Resources.
-      </p>
-      {drafts.length === 0 && (
-        <p className="muted small">
-          No extra limits. The building's specs are still checked automatically against the site.
-        </p>
-      )}
       {drafts.length > 0 && <label className="field">
-        <span>Edit requirement</span>
+        <span>Edit limit</span>
         <select value={activeId} onChange={(e) => setEditing(e.target.value)}>
           {drafts.map((d, i) => <option key={d.id} value={d.id}>
             {i + 1}. {CRITERION_LABEL[d.kind]}{d.kind === "layer" && d.layerId ? ` · ${catalogue.find((l) => l.id === d.layerId)?.name ?? d.layerId}` : ""}
@@ -46,7 +37,7 @@ export default function CriteriaEditor({ drafts, onChange, errors, catalogue, cu
       {drafts.map((d) => (
         <div className="list-row" key={d.id} hidden={d.id !== activeId}>
           <div className="row align-center">
-            <strong className="grow">{CRITERION_LABEL[d.kind]}</strong>
+            <strong className="grow" title={HELP[d.kind]}>{CRITERION_LABEL[d.kind]}</strong>
             <label className="toggle compact" title="A failing required check makes the location fail. Optional checks are shown but don't decide the state.">
               <input type="checkbox" checked={d.required} onChange={(e) => update(d.id, { required: e.target.checked })} />
               <span>Required</span>
@@ -55,19 +46,12 @@ export default function CriteriaEditor({ drafts, onChange, errors, catalogue, cu
               Remove
             </button>
           </div>
-          <p className="muted small">{HELP[d.kind]}</p>
-          {SITE_KINDS.includes(d.kind) && (
-            <p className="muted small">
-              Scenario budgets in Scenarios → Resources and saved site allocations can supply this extra limit.
-              Where neither is declared, this additional check is unknown. Automatic site capacity is assessed separately.
-            </p>
-          )}
           <CriterionFields d={d} errors={errors} catalogue={catalogue} currency={currency} period={fmtDays(periodDays)} update={(p) => update(d.id, p)} />
         </div>
       ))}
       <div className="row align-end">
         <label className="field">
-          <span>Add a requirement</span>
+          <span>Add a limit</span>
           <select value={adding} onChange={(e) => setAdding(e.target.value as CriterionKind)}>
             {CRITERION_KINDS.map((k) => (
               <option key={k.kind} value={k.kind}>
@@ -99,8 +83,8 @@ function CriterionFields({
   update: (p: Partial<CriterionDraft>) => void;
 }) {
   const e = (k: string) => errors[`${d.id}.${k}`];
-  const amount = (unit: string, help?: string) => (
-    <Field label="Maximum" unit={unit} value={d.amount} onChange={(v) => update({ amount: v })} error={e("amount")} help={help} />
+  const amount = (unit: string) => (
+    <Field label="Maximum" unit={unit} value={d.amount} onChange={(v) => update({ amount: v })} error={e("amount")} />
   );
 
   switch (d.kind) {
@@ -127,7 +111,7 @@ function CriterionFields({
               ))}
             </select>
             {e("layer") && <small className="field-error">{e("layer")}</small>}
-            {catalogue.length === 0 && <small className="muted">Layer catalogue not loaded.</small>}
+            {catalogue.length === 0 && <small className="muted">Unavailable</small>}
           </label>
           {layer && layer.slices.length > 1 && (
             <label className="field">
@@ -176,7 +160,6 @@ function CriterionFields({
               <Field label="Max" unit={slice?.units || undefined} value={d.max} onChange={(v) => update({ max: v })} error={e("max")} placeholder="No maximum" />
             </div>
           )}
-          {layer && <p className="muted small">Cells with no data for this layer are reported as unknown.</p>}
         </>
       );
     }

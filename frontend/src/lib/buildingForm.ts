@@ -961,7 +961,29 @@ export const PERIOD_LABEL: Record<Period, string> = { hour: "hour", day: "day", 
 
 export const STATE_ORDER: AssessmentState[] = ["meets_criteria", "insufficient_data", "fails_criteria"];
 
-export const BUILDING_TYPES_ORDER: BuildingType[] = ["power_station", "water_plant", "data_centre", "solar", "greenhouse", "custom"];
+/** Every building type in picker order: the backend template order, grouped by category. */
+export const BUILDING_TYPES_ORDER: BuildingType[] = [
+  // energy
+  "power_station", "solar", "wind_farm", "hydro_plant", "geothermal_plant", "battery_storage", "hydrogen_plant",
+  // water
+  "water_plant", "wastewater_plant",
+  // mining & extraction
+  "mine", "quarry", "oil_gas_field",
+  // industry & manufacturing
+  "factory", "steel_mill", "aluminium_smelter", "cement_plant", "chemical_plant", "oil_refinery", "semiconductor_fab",
+  // agriculture & food
+  "farm", "livestock_farm", "greenhouse", "vertical_farm", "aquaculture", "food_processing",
+  // commercial & digital
+  "data_centre", "office", "retail", "hotel", "research_lab",
+  // housing & public services
+  "housing", "hospital", "school", "university", "stadium",
+  // transport & logistics
+  "airport", "seaport", "warehouse",
+  // waste & recycling
+  "landfill", "recycling_facility", "waste_to_energy",
+  // other
+  "custom",
+];
 
 export const coordLabel = (lat: number, lon: number) =>
   `${Math.abs(lat).toFixed(5)}° ${lat >= 0 ? "N" : "S"}, ${Math.abs(lon).toFixed(5)}° ${lon >= 0 ? "E" : "W"}`;

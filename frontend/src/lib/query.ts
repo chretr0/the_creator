@@ -4,13 +4,18 @@
  * A ranking describes the chosen criteria only; it is not a siting recommendation.
  */
 import type { Earthquake, Fire, LandingPoint, PowerFeature } from "./context";
-import type { Facility } from "./infrastructure";
+import { facilityMetric, facilityTitle, LAYER_META, type Facility, type InfraLayerId } from "./infrastructure";
 
-export type Dataset = "datacenters" | "dams" | "earthquakes" | "fires" | "landing_points" | "power";
+export type Dataset = InfraLayerId | "earthquakes" | "fires" | "landing_points" | "power";
 
 export const DATASET_LABEL: Record<Dataset, string> = {
   datacenters: "Datacenters",
+  power_plants: "Power plants",
   dams: "Dams & hydro",
+  substations: "Substations (Arizona, UK)",
+  transmission_lines: "High-voltage lines (Arizona, UK)",
+  airports: "Airports",
+  ports: "Seaports",
   earthquakes: "Earthquakes",
   fires: "Fire detections",
   landing_points: "Cable landing points",
@@ -20,7 +25,12 @@ export const DATASET_LABEL: Record<Dataset, string> = {
 /** What the numeric column means for each dataset; null where there is none. */
 export const METRIC: Record<Dataset, { label: string; unit: string } | null> = {
   datacenters: { label: "Tagged power rating", unit: "kW" },
+  power_plants: { label: "Nameplate capacity", unit: "kW" },
   dams: { label: "Nameplate capacity", unit: "kW" },
+  substations: { label: "Highest voltage", unit: "kV" },
+  transmission_lines: { label: "Voltage", unit: "kV" },
+  airports: null,
+  ports: null,
   earthquakes: { label: "Magnitude", unit: "" },
   fires: { label: "Fire radiative power", unit: "MW" },
   landing_points: null,
@@ -70,7 +80,7 @@ export function haversineKm(a: { lat: number; lon: number }, b: { lat: number; l
   return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
 }
 
-const firstKw = (ratings: { kw: number | null }[]) => ratings.find((r) => r.kw !== null)?.kw ?? null;
+export const isFacilityDataset = (d: Dataset): d is InfraLayerId => d in LAYER_META;
 
 export function fromFacilities(fs: Facility[]): QueryRecord[] {
   return fs.map((f) => {
@@ -78,14 +88,14 @@ export function fromFacilities(fs: Facility[]): QueryRecord[] {
     return {
       key: f.id,
       dataset: p.layer,
-      title: p.nameEn || p.name || p.operator || (p.layer === "dams" ? "Unnamed dam" : "Unnamed datacenter"),
+      title: facilityTitle(p),
       lon: p.lon,
       lat: p.lat,
       country: p.country ?? null,
       admin1: p.admin1 ?? null,
       operator: p.operator,
       owner: p.owner,
-      metric: firstKw(p.powerRatings),
+      metric: facilityMetric(p),
       time: null,
       companyCount: p.companyFacilityCount,
       ref: f,

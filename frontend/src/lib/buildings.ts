@@ -3,7 +3,72 @@
  * Change both together. `null`/absent numbers mean unknown, never zero.
  */
 
-export type BuildingType = "data_centre" | "solar" | "greenhouse" | "power_station" | "water_plant" | "custom";
+export type BuildingType =
+  // energy
+  | "power_station"
+  | "solar"
+  | "wind_farm"
+  | "hydro_plant"
+  | "geothermal_plant"
+  | "battery_storage"
+  | "hydrogen_plant"
+  // water
+  | "water_plant"
+  | "wastewater_plant"
+  // mining & extraction
+  | "mine"
+  | "quarry"
+  | "oil_gas_field"
+  // industry & manufacturing
+  | "factory"
+  | "steel_mill"
+  | "aluminium_smelter"
+  | "cement_plant"
+  | "chemical_plant"
+  | "oil_refinery"
+  | "semiconductor_fab"
+  // agriculture & food
+  | "farm"
+  | "livestock_farm"
+  | "greenhouse"
+  | "vertical_farm"
+  | "aquaculture"
+  | "food_processing"
+  // commercial & digital
+  | "data_centre"
+  | "office"
+  | "retail"
+  | "hotel"
+  | "research_lab"
+  // housing & public services
+  | "housing"
+  | "hospital"
+  | "school"
+  | "university"
+  | "stadium"
+  // transport & logistics
+  | "airport"
+  | "seaport"
+  | "warehouse"
+  // waste & recycling
+  | "landfill"
+  | "recycling_facility"
+  | "waste_to_energy"
+  // anything else
+  | "custom";
+
+/** Grouping used to organise the type picker (backend `BuildingCategory`). */
+export type BuildingCategory =
+  | "energy"
+  | "water"
+  | "extraction"
+  | "industry"
+  | "agriculture"
+  | "commercial"
+  | "community"
+  | "transport"
+  | "waste"
+  | "other";
 export type ProvenanceKind = "user_assumption" | "demo_assumption" | "cited";
 export type CheckStatus = "pass" | "fail" | "unknown";
 export type AssessmentState = "meets_criteria" | "fails_criteria" | "insufficient_data";
@@ -179,6 +244,7 @@ export type BuildingTemplate = {
   id: string;
   version: number;
   type: BuildingType;
+  category: BuildingCategory;
   label: string;
   description: string;
   producesPower: boolean;

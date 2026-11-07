@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, type ReactNode } from "react";
+import { useId, type ReactNode } from "react";
 import { STATE_COLOUR, STATE_LABEL, type AssessmentState, type CheckStatus, type Provenance } from "../lib/buildings";
 import { STATUS_LABEL } from "../lib/buildingForm";
 
@@ -55,10 +55,12 @@ export function Select<T extends string>(props: {
   options: { value: T; label: string }[];
   onChange: (v: T) => void;
   help?: string;
+  /** Longer explanation, shown on hover. */
+  title?: string;
 }) {
   const id = useId();
   return (
-    <div className="field">
+    <div className="field" title={props.title}>
       <label htmlFor={id}>{props.label}</label>
       <select id={id} aria-label={props.label} aria-describedby={props.help ? `${id}-note` : undefined} value={props.value} onChange={(e) => props.onChange(e.target.value as T)}>
         {props.options.map((o) => (
@@ -77,28 +79,24 @@ export function Select<T extends string>(props: {
 }
 
 /**
- * Collapsible form section. `invalid` is the number of invalid fields inside: the summary then says
- * so, and the section opens so the highlighted fields are visible.
+ * Titled form block (always visible). `invalid` is the number of invalid fields inside; the header
+ * then says so. `group` and `open` are accepted for compatibility and ignored.
  */
 export function Section(props: { title: string; group?: string; meta?: ReactNode; open?: boolean; emphasis?: boolean; invalid?: number; children: ReactNode }) {
-  const ref = useRef<HTMLDetailsElement>(null);
   const invalid = props.invalid ?? 0;
-  useEffect(() => {
-    if (invalid > 0 && ref.current) ref.current.open = true;
-  }, [invalid]);
   return (
-    <details ref={ref} name={props.group} className={`section${props.emphasis ? " emphasis" : ""}`} open={props.open || invalid > 0}>
-      <summary>
-        <span className="section-title">{props.title}</span>
+    <section className={`section${props.emphasis ? " emphasis" : ""}`}>
+      <header className="section-head">
+        <h4 className="section-title">{props.title}</h4>
         {invalid > 0 && (
           <span className="section-error">
             Fix {invalid} field{invalid === 1 ? "" : "s"}
           </span>
         )}
         {props.meta && <span className="section-meta">{props.meta}</span>}
-      </summary>
+      </header>
       <div className="section-body">{props.children}</div>
-    </details>
+    </section>
   );
 }
 

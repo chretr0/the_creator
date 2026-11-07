@@ -4,10 +4,12 @@ name ends in `_test`:
     NEWWORLDS_DATABASE_URL=postgresql://newworlds:newworlds@localhost:5433/newworlds_test uv run pytest
 """
 
+import typing
 import time
 
 import pytest
 
+from app.building_models import BuildingType
 from app.config import settings
 
 pytestmark = pytest.mark.skipif(
@@ -43,8 +45,10 @@ def _place(client, sid, **kw):
 def test_templates(client):
     ts = client.get("/api/building-templates").json()
     ids = [t["id"] for t in ts]
-    assert ids == ["power_station", "water_plant", "data_centre", "solar", "greenhouse", "custom"]
+    assert ids == list(typing.get_args(BuildingType))
+    assert {"power_station", "water_plant", "data_centre", "solar", "greenhouse", "custom", "mine", "office"} <= set(ids)
     by = {t["id"]: t for t in ts}
+    assert by["mine"]["category"] == "extraction" and by["wind_farm"]["producesPower"]
     assert by["power_station"]["producesPower"] and by["water_plant"]["producesWater"]
     assert [p["key"] for p in by["solar"]["parameters"]] == ["capacityKwp", "landAreaM2", "performanceRatio"]
     assert "pue" in [p["key"] for p in by["data_centre"]["parameters"]]

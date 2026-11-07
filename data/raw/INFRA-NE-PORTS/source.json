@@ -1,0 +1,9 @@
+{
+  "id": "INFRA-NE-PORTS",
+  "url": "https://naciscdn.org/naturalearth/10m/cultural/ne_10m_ports.zip",
+  "file": "ne_10m_ports.zip",
+  "sha256": "1824cccd897a6c2ad546abbaf1f3545d51cff4bddfbda40244a1ad1ab1e4371d",
+  "licence": "Public domain",
+  "retrievedAt": "2026-11-07",
+  "region": "global"
+}

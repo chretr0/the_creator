@@ -12,8 +12,9 @@ Land           0 (1)  Open land in the cell: cell area × share of WorldCover sh
 Water          1–2    Renewable fresh water = max(largest HydroRIVERS mean discharge crossing
                       rings 0–1, local runoff max(0, P − E) from ERA5-Land over rings 0–2),
                       × the share Aqueduct baseline water stress leaves unallocated.
-                      Coastal sites additionally offer seawater to power stations and water
-                      plants (cooling / desalination intake).
+                      Coastal sites additionally offer seawater to SEAWATER_TYPES (thermal
+                      power, water plants, heavy industry, hydrogen, aquaculture: cooling,
+                      desalination or marine intake).
 Grid power     1      Indicative connectable capacity from the highest-voltage OSM line or
                       substation in rings 0–1; a settled area implies at least a local
                       distribution network.
@@ -89,7 +90,10 @@ SLOPE_FULL, SLOPE_NONE = 5.0, 15.0
 # what is left below it, smaller for basins that are already stressed.
 WATER_HEADROOM = {0.0: 0.30, 1.0: 0.20, 2.0: 0.10, 3.0: 0.02, 4.0: 0.005, -1.0: 0.05}
 WATER_STRESS_NAMES = {v: label for v, label, _ in layers.AQUEDUCT_BWS}
-SEAWATER_TYPES = {"power_station", "water_plant"}
+# Types whose water intake can be seawater on a coast (once-through/tower cooling, desalination
+# pre-treatment, marine pens). Any other type needs fresh water or treated wastewater.
+SEAWATER_TYPES = {"power_station", "geothermal_plant", "waste_to_energy", "hydrogen_plant", "water_plant",
+                  "steel_mill", "chemical_plant", "oil_refinery", "aquaculture"}
 
 # Indicative capacity a new connection can take at a given voltage (kW). Order-of-magnitude planning
 # values, not a network study. A substation gathers several circuits, so it can take more than a
@@ -583,7 +587,7 @@ class SiteCheck:
     label: str
     status: np.ndarray
     build: object  # Callable[[int], CheckResult]
-    required: bool = True  # False for advisory checks (raw materials)
+    required: bool = True  # False for advisory checks (raw materials, surplus output)
 
 
 @dataclass
@@ -774,9 +778,11 @@ def site_checks(btype: str, demand: Demand, sd: SiteData, sh: Shared,
         avail = np.maximum(0.0, sd.grid_kw * p_mult + sh.power_used - sh.export_used)
         # A plant can hold part of its output back as operating reserve instead of exporting it.
         status = np.where(np.isnan(avail), UNKNOWN, np.where(avail >= out * (1 - RESERVE_SHARE), PASS, FAIL)).astype(np.int8)
+        # Output the grid can't take is surplus to use locally, not a reason the plant can't be built.
         checks.append(SiteCheck("site_grid_export", "Grid connection for output", status,
                                 _grid_builder("site_grid_export", "Grid connection for output", out,
-                                              "rated (else average) output", avail, status, sd, sh, p_mult, "export")))
+                                              "rated (else average) output", avail, status, sd, sh, p_mult, "export"),
+                                required=False))
 
     # ---- workforce ----
     need = demand.staff
@@ -906,20 +912,22 @@ def _grid_builder(kind, label, need, basis, avail, status, sd: SiteData, sh: Sha
                     "plant can hold back as operating reserve.")
         elif st == "pass":
             expl = f"Needs to {verb} {fmt_kw(need)} ({basis}); about {fmt_kw(a)} is available ({grid}{m})."
+        elif mode == "export":
+            expl = (f"Produces {fmt_kw(need)} ({basis}); the grid here can take about {fmt_kw(a)} ({grid}{m}). "
+                    f"The other {fmt_kw(need - a)} is surplus: a data centre or other large consumer in this or a "
+                    "neighbouring hexagon can use it locally.")
         else:
-            fix = ("Place consumers nearby to use the output locally, or a new high-voltage line would be needed."
-                   if mode == "export" else
-                   "Place a power station in this or a neighbouring hexagon to add its output, or a new "
-                   "high-voltage line would be needed.")
-            expl = (f"Needs to {verb} {fmt_kw(need)} ({basis}) but only about {fmt_kw(a)} is available "
-                    f"({grid}{m}); short by {fmt_kw(need - a)}. {fix}")
+            expl = (f"Needs to draw {fmt_kw(need)} ({basis}) but only about {fmt_kw(a)} is available "
+                    f"({grid}{m}); short by {fmt_kw(need - a)}. Place a power station in this or a neighbouring "
+                    "hexagon to add its output, or a new high-voltage line would be needed.")
         notes = [x for x in sh.notes[i] if ("grid export" in x) or ("power" in x)]
         local = "" if mode != "export" or not sh.power_used[i] else (
             f" Nearby buildings in this scenario use {fmt_kw(sh.power_used[i])} of it locally, which needs no export room.")
         boost = "" if mode == "export" or not sh.power_added[i] else (
             f" Includes {fmt_kw(sh.power_added[i])} from power stations placed nearby in this scenario.")
         return _ck(kind, label, st, actual=need, required_value=a, unit="kW", source=src,
-                   explanation=expl + local + boost + _used_text(notes, []) + " Indicative only, not a connection offer.")
+                   explanation=expl + local + boost + _used_text(notes, []) + " Indicative only, not a connection offer.",
+                   ).model_copy(update={"required": mode != "export"})
     return build
 
 
@@ -978,7 +986,7 @@ def capacity_at(sd: SiteData, sh: Shared, i: int, stress: StressControls, demand
                                  if not np.isnan(sd.stress_cat[i]) else None),
                 SiteResourcePart(label="Unallocated share", value=v(sd.headroom[i] * 100), unit="%"),
             ] + ([SiteResourcePart(label="Seawater", text="coastal site" + (
-                " (usable by this building type)" if btype in SEAWATER_TYPES else " (only power stations and water plants)"))]
+                " (usable by this building type)" if btype in SEAWATER_TYPES else " (only cooling, desalination and marine intakes: thermal power, water plants, heavy industry, hydrogen and aquaculture)"))]
                  if sd.coastal[i] else []),
         ),
         SiteResource(

@@ -30,3 +30,8 @@ export function presetPlace(preset: Pick<BuildingPreset, "referenceSite">): stri
 
 export const sourceCount = (n: number) => `${n} source${n === 1 ? "" : "s"}`;
 
+
+/** Presets of the selected building type first; the rest keep their file order. */
+export function splitPresetsByType<T extends Pick<BuildingPreset, "type">>(presets: T[], type: BuildingType) {
+  return { matching: presets.filter((p) => p.type === type), others: presets.filter((p) => p.type !== type) };
+}

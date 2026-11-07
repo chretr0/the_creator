@@ -1,4 +1,4 @@
-"""Prepared infrastructure layers (OSM datacenters and dams) with provenance.
+"""Prepared infrastructure layers (datacenters, power plants, dams, grid, airports, ports) with provenance.
 
 Files are produced by scripts/prepare_infrastructure.py and served from disk, so the layer keeps
 working without any upstream service.
@@ -30,11 +30,15 @@ def _manifest() -> dict:
 
 @router.get("")
 def manifest():
-    """Provenance, licence, limitations and coverage counts for the infrastructure layers."""
-    return _manifest()
+    """Provenance (per source), licence, limitations and coverage counts for the infrastructure layers.
+    Each layer says whether its file is present, since the larger ones are rebuilt locally."""
+    m = _manifest()
+    for layer in m["layers"]:
+        layer["available"] = (_dir() / layer["file"]).exists()
+    return m
 
 
-@lru_cache(maxsize=4)
+@lru_cache(maxsize=12)
 def _tagged_file(path: Path, _mtime: float) -> bytes:
     """Layer GeoJSON with country/admin-1 tags added from the boundary packs (when prepared).
     Keyed on mtime so re-running the prepare script takes effect without a restart."""
@@ -51,6 +55,8 @@ def _tagged(layer_id: str) -> bytes:
     if entry is None:
         raise HTTPException(404, f"Unknown infrastructure layer: {layer_id}")
     path = _dir() / entry["file"]
+    if not path.exists():
+        raise HTTPException(503, f"{layer_id} not prepared. Run scripts/prepare_infrastructure.py.")
     return _tagged_file(path, path.stat().st_mtime)
 
 

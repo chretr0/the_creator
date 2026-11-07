@@ -12,7 +12,7 @@ import {
   type StatsDraft,
 } from "../lib/buildingForm";
 import type { CellLayer } from "../lib/datalayers";
-import { PROJECT_TYPES, typeColour, typeLabel } from "../lib/projectTypes";
+import { BUILDING_CATEGORIES, PROJECT_TYPES, typeColour, typeLabel } from "../lib/projectTypes";
 import { useBuildingTemplates } from "../lib/useBuildingTemplates";
 import BuildingForm from "./BuildingForm";
 import { AssessmentView, ResultView } from "./AssessmentView";
@@ -173,11 +173,11 @@ export default function ProjectEditor({ project, moving, onSave, onMove, onDelet
       </div>
       <p className="subtitle small">
         {label}
-        {project.sourceDefinitionId && " · from a saved definition (this building keeps its own copy)"}
+        {project.sourceDefinitionId && <span title="This building keeps its own copy of the saved definition."> · from a saved definition</span>}
       </p>
       <PanelTabs label="Placed building sections" value={view} onChange={setView} options={[
         { value: "overview", label: "Overview" }, { value: "statistics", label: "Statistics", count: Object.keys(parsed.errors).length },
-        { value: "site", label: "Extra limits", count: Object.keys(crit.errors).length }, { value: "results", label: "Results" },
+        { value: "site", label: "Limits", count: Object.keys(crit.errors).length }, { value: "results", label: "Results" },
       ]} />
       <div hidden={view !== "overview"}>
       {snap.description && <p className="small description">{snap.description}</p>}
@@ -188,11 +188,18 @@ export default function ProjectEditor({ project, moving, onSave, onMove, onDelet
       <label className="field">
         <span>Type</span>
         <select value={draft.type} onChange={(e) => setDraft(withType(draft, e.target.value as ProjectType))}>
-          {PROJECT_TYPES.map((t) => (
-            <option key={t.type} value={t.type}>
-              {t.label}
-            </option>
-          ))}
+          {BUILDING_CATEGORIES.map((c) => {
+            const types = PROJECT_TYPES.filter((t) => t.category === c.category);
+            return types.length === 0 ? null : (
+              <optgroup key={c.category} label={c.label}>
+                {types.map((t) => (
+                  <option key={t.type} value={t.type}>
+                    {t.label}
+                  </option>
+                ))}
+              </optgroup>
+            );
+          })}
         </select>
       </label>
       <div className="row">
@@ -223,7 +230,6 @@ export default function ProjectEditor({ project, moving, onSave, onMove, onDelet
       </div>
       <div hidden={view !== "statistics"}>
       <h3>Statistics</h3>
-      <p className="muted small">Blank means unknown. Changes apply to this building only.</p>
       <label className="field">
         <span>Description</span>
         <textarea rows={2} value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
@@ -232,11 +238,7 @@ export default function ProjectEditor({ project, moving, onSave, onMove, onDelet
 
       </div>
       <div hidden={view !== "site"}>
-      <Section title="Your own extra limits" meta={crit.criteria.length ? `${crit.criteria.length} set` : "optional"} invalid={Object.keys(crit.errors).length}>
-        <p className="muted small">
-          Land, water, power and workforce are checked automatically against what this hexagon and its neighbours
-          provide. Add limits here only for extra preferences (e.g. water stress, slope or a budget).
-        </p>
+      <Section title="Limits" invalid={Object.keys(crit.errors).length}>
         <CriteriaEditor
           drafts={draft.criteria}
           onChange={(criteria) => setDraft({ ...draft, criteria })}

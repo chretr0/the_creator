@@ -37,11 +37,11 @@ function Check({ c }: { c: CheckResult }) {
   // Layer checks: the explanation states the cell value (class label, not code) and the rule.
   const comparison = checkComparison(c);
   return (
-    <li className={`check check-${c.status}`}>
+    <li className={`check check-${c.status}`} title={c.source ? `Source: ${c.source}` : undefined}>
       <div className="check-head">
         <StatusBadge status={c.status} />
         <strong>{c.label}</strong>
-        {!c.required && <span className="muted small">({c.kind === "site_material" ? "advisory — can be shipped" : "optional"})</span>}
+        {!c.required && <span className="muted small">({c.kind === "site_material" ? "advisory" : "optional"})</span>}
       </div>
       {(comparison || c.period) && (
         <div className="small num">
@@ -50,7 +50,6 @@ function Check({ c }: { c: CheckResult }) {
         </div>
       )}
       {c.explanation && <div className="small">{c.explanation}</div>}
-      {c.source && <div className="small muted">Source: {c.source}</div>}
     </li>
   );
 }
@@ -72,7 +71,7 @@ export function AssessmentView({
   const checks = [...assessment.checks].sort((a, b) => ORDER[a.status] - ORDER[b.status]);
   const list =
     checks.length === 0 ? (
-      <p className="muted small">No checks were evaluated. Enter the building's footprint, water, power, staff, emissions, light or materials to check this site.</p>
+      <p className="muted small" title="Enter the building's footprint, water, power, staff, emissions, light or materials to check this site.">No checks yet.</p>
     ) : (
       <ul className="checks">
         {checks.map((c) => (
@@ -87,10 +86,10 @@ export function AssessmentView({
       {(assessment.suggestions?.length ?? 0) > 0 && <SupportView suggestions={assessment.suggestions!} onSupport={onSupport} />}
       {site ? (
         <>
-          <Section title="What the site provides" meta={`${site.resources.length} resources`}>
+          <Section title="Site" meta={`${site.resources.length} resources`}>
             <SiteCapacityView site={site} />
           </Section>
-          <Section title="Why — each check explained" meta={`${checks.length} check${checks.length === 1 ? "" : "s"}`}>
+          <Section title="Checks" meta={`${checks.length} check${checks.length === 1 ? "" : "s"}`}>
             {list}
           </Section>
         </>
@@ -105,7 +104,7 @@ export function AssessmentView({
 function SupportView({ suggestions, onSupport }: { suggestions: SupportSuggestion[]; onSupport?: (s: SupportSuggestion, presetId: string | null) => void }) {
   return (
     <div className="support">
-      <h4>Fix it by building alongside</h4>
+      <h4>Build alongside</h4>
       {suggestions.map((s) => (
         <div key={s.resource} className="support-item">
           <strong>{s.title}</strong>
@@ -123,11 +122,10 @@ function SupportView({ suggestions, onSupport }: { suggestions: SupportSuggestio
               </button>
             </div>
           ) : (
-            s.presets.length > 0 && <p className="muted small">Examples: {s.presets.map((p) => p.name).join(", ")}.</p>
+            s.presets.length > 0 && <p className="muted small">{s.presets.map((p) => p.name).join(", ")}</p>
           )}
         </div>
       ))}
-      {onSupport && <p className="muted small">Each button places this building first, then previews the supporting one in a neighbouring hexagon.</p>}
     </div>
   );
 }
@@ -143,7 +141,7 @@ export function ResultView({ result, producesPower, producesWater }: { result: B
   const rows: [string, Quantity | undefined, string?, string?][] = [
     ["Footprint", result.footprint],
     ["Operating hours", result.operatingHours, period],
-    ["Electricity use", result.electricityDemand, period],
+    ["Electricity use", result.electricityDemand, period, result.demandBasis === "derived" ? "Derived from IT power × load × PUE" : "Entered directly"],
     ["Peak demand", result.peakDemand, "capacity"],
   ];
   if (producesPower || shown(result.electricityOutput)) {
@@ -155,7 +153,7 @@ export function ResultView({ result, producesPower, producesWater }: { result: B
     rows.push(["Water output", result.waterOutput, period]);
     rows.push(["Water net", result.waterNet, period]);
   }
-  rows.push(["Upward light (declared)", result.light, "proxy, not sky brightness", LIGHT_PROXY_NOTE]);
+  rows.push(["Upward light (declared)", result.light, "proxy", LIGHT_PROXY_NOTE]);
   rows.push(["Lit hours", result.lightHours, period]);
   rows.push(["Worker capacity", result.workerCapacity]);
   rows.push(["Staff required", result.staffingRequired]);
@@ -166,9 +164,6 @@ export function ResultView({ result, producesPower, producesWater }: { result: B
         { value: "usage", label: "Usage & output" }, { value: "costs", label: "Costs" },
       ]} />
       <div hidden={view !== "usage"}>
-      <p className="muted small">
-        Demand basis: {result.demandBasis === "derived" ? "derived from IT power × load × PUE" : "entered directly"}.
-      </p>
       <table className="mini">
         <tbody>
           {rows.map(([label, q, note, title]) => (
@@ -216,7 +211,7 @@ export function ResultView({ result, producesPower, producesWater }: { result: B
 
       </div>
       <div hidden={view !== "costs"}>
-      <h4>Costs {cur && <span className="muted">({cur}, never converted)</span>}</h4>
+      <h4>Costs {cur && <span className="muted" title="Never converted between currencies">({cur})</span>}</h4>
       <table className="mini">
         <tbody>
           <tr>
@@ -225,7 +220,7 @@ export function ResultView({ result, producesPower, producesWater }: { result: B
           </tr>
           <tr>
             <th scope="row">
-              Operating, {c.operatingCostKind === "total" ? "all-inclusive total" : "fixed part"}
+              Operating, {c.operatingCostKind === "total" ? "total" : "fixed"}
               <small className="muted block">{period}</small>
             </th>
             <td><QuantityText q={c.operatingFixed} /></td>
@@ -258,7 +253,7 @@ export function ResultView({ result, producesPower, producesWater }: { result: B
           </tr>
         </tbody>
       </table>
-      {c.missing.length > 0 && <p className="small warn">Not included (unknown): {c.missing.join(", ")}</p>}
+      {c.missing.length > 0 && <p className="small warn">Unknown: {c.missing.join(", ")}</p>}
       </div>
     </div>
   );
@@ -303,20 +298,18 @@ export function LocationPrices({
               {o.status === "applied" && <span className="tag prov-cited">Location default in use</span>}
               {o.status === "entered" && <span className="tag">Your price</span>}
             </div>
-            <p className="small">{o.message}</p>
-            {p?.basis && <small className="muted block">Source: {p.source} · basis: {p.basis}</small>}
+            <p className="small" title={p?.basis ? `Source: ${p.source} · basis: ${p.basis}` : undefined}>{o.message}</p>
             {canApply && (
               <div className="actions tight">
                 <button onClick={() => onApply(o)}>
-                  {o.status === "applied_elsewhere" ? "Use this location's price" : "Use location price"} ({label},{" "}
-                  {p!.source})
+                  {o.status === "applied_elsewhere" ? "Use this location's price" : "Use location price"} ({label})
                 </button>
               </div>
             )}
             {(o.status === "applied" || o.status === "applied_elsewhere") && (
               <div className="actions tight">
                 <button className="ghost" onClick={() => onRemove(o.resource)}>
-                  Remove location price (back to unknown)
+                  Remove location price
                 </button>
               </div>
             )}
@@ -350,7 +343,7 @@ const STATUS_TEXT: Record<string, Record<string, string>> = {
   materials: { pass: "All local", advisory: "Some shipped in", unknown: "Uncertain locally", none: "No mapped materials" },
 };
 
-function resourceStatus(r: SiteResource): { cls: string; text: string } {
+export function resourceStatus(r: SiteResource): { cls: string; text: string } {
   if (r.status) {
     const text = STATUS_TEXT[r.key]?.[r.status] ?? r.status;
     return { cls: r.status === "advisory" ? "advisory" : r.status, text };
@@ -361,8 +354,8 @@ function resourceStatus(r: SiteResource): { cls: string; text: string } {
   return r.available >= r.needed ? { cls: "pass", text: "Enough" } : { cls: "fail", text: "Not enough" };
 }
 
-/** Air, dark-sky and raw-material resources: the server decides the state; show its key figures. */
-function ResourceSummary({ r }: { r: SiteResource }) {
+/** Air, dark-sky and raw-material resources: the server decides the state; their key figures in one line. */
+export function resourceSummaryText(r: SiteResource): string {
   const part = (label: string) => r.parts.find((p) => p.label === label);
   const val = (label: string) => {
     const p = part(label);
@@ -374,18 +367,22 @@ function ResourceSummary({ r }: { r: SiteResource }) {
   else if (r.key === "materials")
     text = r.needed ? `Local source for ${r.available ?? 0} of ${r.needed} materials` : "None of its materials are mapped raw materials";
   else text = fmtEstimate(r.available, r.unit);
-  return <div className="site-res-nums num small">{text}</div>;
+  return text;
+}
+
+function ResourceSummary({ r }: { r: SiteResource }) {
+  return <div className="site-res-nums num small">{resourceSummaryText(r)}</div>;
 }
 
 /** What the cell and its neighbouring cells provide, next to what the building needs. Read-only. */
 export function SiteCapacityView({ site }: { site: SiteCapacity }) {
   return (
-    <div className="site-capacity">
+    <div className="site-capacity" title={site.note || undefined}>
       {site.resources.map((r) => {
         const st = resourceStatus(r);
         const ratio = r.needed && r.available ? Math.min(1, r.needed / r.available) : r.needed && r.available === 0 ? 1 : 0;
         return (
-          <div key={r.key} className={`site-res res-${st.cls}`}>
+          <div key={r.key} className={`site-res res-${st.cls}`} title={r.note ?? undefined}>
             <div className="site-res-head">
               <strong>
                 {r.label}
@@ -412,21 +409,18 @@ export function SiteCapacityView({ site }: { site: SiteCapacity }) {
                 <span style={{ width: `${Math.max(2, ratio * 100)}%` }} />
               </div>
             )}
-            <details className="site-res-parts">
-              <summary className="small muted">How it's estimated · {r.reach}</summary>
-              <ul className="small">
+            {r.parts.length > 0 && (
+              <ul className="site-res-parts small muted" title={`Within ${r.reach}`}>
                 {r.parts.map((p) => (
                   <li key={p.label}>
                     {p.label}: <span className="num">{p.text ?? fmtEstimate(p.value, p.unit)}</span>
                   </li>
                 ))}
               </ul>
-            </details>
-            {r.note && r.status && <p className="muted small">{r.note}</p>}
+            )}
           </div>
         );
       })}
-      <p className="muted small">{site.note}</p>
     </div>
   );
 }

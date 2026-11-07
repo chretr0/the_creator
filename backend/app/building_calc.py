@@ -32,7 +32,7 @@ from app.building_models import (
     Quantity,
     StressControls,
 )
-from app.building_templates import NUMERIC_PARAMS, SELECT_PARAMS
+from app.building_templates import NUMERIC_PARAMS, POWER_PRODUCERS, SELECT_PARAMS, WATER_PRODUCERS
 
 KWH, KW, M3, KG, HOURS = "kWh", "kW", "m³", "kg", "h"
 STC_IRRADIANCE_KW_PER_M2 = 1.0  # standard test conditions: kWp is defined at 1 kW/m²
@@ -266,8 +266,8 @@ def _power_output(btype, stats: BuildingStats, params, hours, period_days, locat
         if missing:
             return q(None, KWH, basis, missing), True
         return q(kwp * location.solar_ghi / STC_IRRADIANCE_KW_PER_M2 * pr * period_days, KWH, basis), True
-    if btype == "power_station":
-        return q(None, KWH, "power station output", ["average output (kW), or rated output and capacity factor"]), True
+    if btype in POWER_PRODUCERS:
+        return q(None, KWH, "electricity output", ["average output (kW), or rated output and capacity factor"]), True
     return q(None, KWH, "no electricity output declared"), False
 
 
@@ -277,8 +277,8 @@ def _water_output(btype, stats: BuildingStats, hours):
         missing = [] if hours is not None else ["operating hours per day"]
         basis = "declared usable output rate × operating hours" + (f" ({w.basis})" if w.basis else "")
         return q(None if missing else w.output_m3_per_hour * hours, M3, basis, missing), True
-    if btype == "water_plant":
-        return q(None, M3, "water plant output", ["usable water output (m³/hour)"]), True
+    if btype in WATER_PRODUCERS:
+        return q(None, M3, "water output", ["usable water output (m³/hour)"]), True
     return q(None, M3, "no water output declared"), False
 
 

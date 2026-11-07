@@ -24,6 +24,8 @@ data/prepared/*_h3r6.parquet
 # scripts/prepare_imagery.py); the small layers and every manifest stay committed.
 data/prepared/features/mrds.parquet
 data/prepared/features/hydrorivers.geojson
+data/prepared/infrastructure/power_plants.geojson
+data/prepared/infrastructure/transmission_lines.geojson
 data/prepared/imagery/*.png
 
 # Live-source response cache (rebuilt automatically)

@@ -1,5 +1,5 @@
 import type { Project, Scenario, ScenarioSummary } from "../lib/api";
-import { PROJECT_TYPE_BY_ID } from "../lib/projectTypes";
+import { typeColour, typeLabel } from "../lib/projectTypes";
 
 type Props = {
   scenarios: ScenarioSummary[];
@@ -68,9 +68,9 @@ export default function ScenarioPanel(props: Props) {
                 className={`link ${p.id === props.selectedProjectId ? "selected" : ""}`}
                 onClick={() => props.onSelectProject(p)}
               >
-                <span className="dot" style={{ background: `rgb(${PROJECT_TYPE_BY_ID[p.type].colour})` }} />
-                <span className="result-title">{p.name || PROJECT_TYPE_BY_ID[p.type].label}</span>
-                <span className="muted small right">{PROJECT_TYPE_BY_ID[p.type].label}</span>
+                <span className="dot" style={{ background: `rgb(${typeColour(p.type).join(",")})` }} />
+                <span className="result-title">{p.name || typeLabel(p.type)}</span>
+                <span className="muted small right">{typeLabel(p.type)}</span>
               </button>
             </li>
           ))}

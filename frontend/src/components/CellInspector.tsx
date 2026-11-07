@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { cellArea, cellToBoundary, cellToChildrenSize, getResolution, UNITS } from "h3-js";
 import { SIMULATION_RESOLUTION } from "../lib/h3grid";
 import type { Project } from "../lib/api";
-import { PROJECT_TYPE_BY_ID } from "../lib/projectTypes";
+import { typeColour, typeLabel } from "../lib/projectTypes";
 import {
   loadWeather,
   locateRegion,
@@ -113,8 +113,8 @@ export default function CellInspector(props: Props) {
             {projectsInCell.map((p) => (
               <li key={p.id}>
                 <button className="link" onClick={() => onSelectProject(p.id)}>
-                  <span className="dot" style={{ background: `rgb(${PROJECT_TYPE_BY_ID[p.type].colour})` }} />
-                  {p.name || PROJECT_TYPE_BY_ID[p.type].label}
+                  <span className="dot" style={{ background: `rgb(${typeColour(p.type).join(",")})` }} />
+                  {p.name || typeLabel(p.type)}
                 </button>
               </li>
             ))}

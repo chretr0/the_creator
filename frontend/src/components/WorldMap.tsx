@@ -8,7 +8,7 @@ import type { Project } from "../lib/api";
 import { normaliseLongitude, viewportCells, type ViewportCells } from "../lib/h3grid";
 import { typeColour, typeLabel } from "../lib/projectTypes";
 import { PRESET_DRAG_TYPE, STATE_COLOUR, STATE_LABEL, type CellState } from "../lib/buildings";
-import { facilityTitle, formatKw, type Facility } from "../lib/infrastructure";
+import { facilityMetric, facilityTitle, formatKv, formatKw, LAYER_META, type Facility } from "../lib/infrastructure";
 import { applyBasemapTheme } from "../lib/mapTheme";
 import type { Theme } from "../lib/theme";
 
@@ -44,13 +44,20 @@ function pickLabels(map: maplibregl.Map, facilities: Facility[], selectedId: str
     pitch: map.getPitch(),
     bearing: map.getBearing(),
   });
+  // Power plants are dense (thousands of small solar and landfill-gas sites), so only bigger ones
+  // are labelled until zoomed in.
+  const zoom = map.getZoom();
+  const minPlantMw = zoom >= 11 ? 0 : zoom >= 9 ? 20 : 200;
   const best = new Map<string, { f: Facility; score: number }>();
   for (const f of facilities) {
-    const { lon, lat, name, operator, companyFacilityCount } = f.properties;
-    if (!name && !operator && f.id !== selectedId) continue;
+    const { lon, lat, name, operator, companyFacilityCount, layer, capacityMw } = f.properties;
+    if (f.id !== selectedId) {
+      if ((!name && !operator) || LAYER_META[layer].line) continue;
+      if (layer === "power_plants" && (capacityMw ?? 0) < minPlantMw) continue;
+    }
     const [x, y] = viewport.project([lon, lat, z]);
     if (!(x >= -20 && y >= -20 && x <= w + 20 && y <= h + 20)) continue;
-    const score = f.id === selectedId ? Infinity : (name ? 1e6 : 0) + (companyFacilityCount ?? 0);
+    const score = f.id === selectedId ? Infinity : (name ? 1e6 : 0) + (companyFacilityCount ?? 0) + (capacityMw ?? 0);
     const key = `${Math.floor(x / LABEL_CELL_PX[0])}:${Math.floor(y / LABEL_CELL_PX[1])}`;
     const cur = best.get(key);
     if (!cur || score > cur.score) best.set(key, { f, score });
@@ -341,7 +348,10 @@ export default function WorldMap(props: Props) {
     const overlay = overlayRef.current;
     if (!overlay) return;
     const { projects, selectedProjectId, selectedCell, facilities, facilityColour, selectedFacilityId, tilted } = props;
+    // Polygons (OSM footprints) and lines (the high-voltage grid) draw as shapes; everything except
+    // lines also gets a dot, so small sites stay visible at world zoom.
     const footprints = facilities.filter((f) => f.geometry.type !== "Point");
+    const points = facilities.filter((f) => !LAYER_META[f.properties.layer].line);
     const tip = tilted ? stemM : 0;
     const colourTrigger = [facilities, facilityColour];
     const dark = props.theme === "dark";
@@ -416,15 +426,21 @@ export default function WorldMap(props: Props) {
         extruded: tilted,
         getElevation: (f) => f.properties.heightM ?? 0,
         getFillColor: (f) => [...facilityColour(f as Facility), f.id === selectedFacilityId ? 160 : 70],
-        getLineColor: (f) => [...facilityColour(f as Facility), 255],
+        getLineColor: (f) => [...facilityColour(f as Facility), f.geometry.type === "LineString" ? 210 : 255],
         lineWidthUnits: "pixels",
-        getLineWidth: 1.5,
+        getLineWidth: (f) =>
+          f.geometry.type === "LineString" ? (f.id === selectedFacilityId ? 5 : 1 + Math.min(2, (f.properties.voltageKv?.[0] ?? 0) / 200)) : 1.5,
+        lineCapRounded: true,
         pickable: true,
-        updateTriggers: { getFillColor: [colourTrigger, selectedFacilityId], getLineColor: colourTrigger },
+        updateTriggers: {
+          getFillColor: [colourTrigger, selectedFacilityId],
+          getLineColor: colourTrigger,
+          getLineWidth: selectedFacilityId,
+        },
       }),
       new LineLayer<Facility>({
         id: "infra-stems",
-        data: tilted ? facilities : [],
+        data: tilted ? points : [],
         getSourcePosition: (f) => [f.properties.lon, f.properties.lat, 0],
         getTargetPosition: (f) => [f.properties.lon, f.properties.lat, tip],
         getColor: (f) => [...facilityColour(f), 150],
@@ -434,11 +450,19 @@ export default function WorldMap(props: Props) {
       }),
       new ScatterplotLayer<Facility>({
         id: "infra-points",
-        data: facilities,
+        data: points,
         getPosition: (f) => [f.properties.lon, f.properties.lat, tip],
         getFillColor: (f) => [...facilityColour(f), 255],
         getLineColor: (f) => (f.id === selectedFacilityId ? [255, 255, 255, 255] : [0, 0, 0, 255]),
-        getRadius: (f) => (f.id === selectedFacilityId ? 8 : 4),
+        // Plants scale with nameplate capacity (display only); every other site is a fixed dot.
+        getRadius: (f) =>
+          f.id === selectedFacilityId
+            ? 8
+            : f.properties.layer === "power_plants"
+              ? Math.min(9, 2 + Math.sqrt(f.properties.capacityMw ?? 0) / 6)
+              : f.properties.layer === "airports"
+                ? 3
+                : 4,
         radiusUnits: "pixels",
         radiusMinPixels: 3,
         stroked: true,
@@ -537,9 +561,11 @@ export default function WorldMap(props: Props) {
         if (layer.id === "infra-points" || layer.id === "infra-footprints") {
           const p = (object as Facility).properties;
           const company = p.operator ?? p.owner;
-          const rating = p.powerRatings.find((r) => r.kw !== null);
-          const lines = [facilityTitle(p), [p.layer === "datacenters" ? "Datacenter" : "Dam", company].filter(Boolean).join(" · ")];
-          if (rating?.kw != null) lines.push(formatKw(rating.kw));
+          const metric = facilityMetric(p);
+          const lines = [facilityTitle(p), [p.kind ?? LAYER_META[p.layer].singular, company].filter(Boolean).join(" · ")];
+          if (metric !== null) {
+            lines.push(p.layer === "substations" || p.layer === "transmission_lines" ? formatKv(p.voltageKv ?? []) : formatKw(metric));
+          }
           return { text: lines.join("\n") };
         }
         const context = propsRef.current.contextTooltip(layer.id, object);

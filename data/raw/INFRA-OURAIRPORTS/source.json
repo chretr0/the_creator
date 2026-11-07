@@ -1,0 +1,9 @@
+{
+  "id": "INFRA-OURAIRPORTS",
+  "url": "https://davidmegginson.github.io/ourairports-data/airports.csv",
+  "file": "airports.csv",
+  "sha256": "8ed1da427be3cab1ae5f6fbbb4464a0a74c6bd2570ff9a73089539b7ccfef7f2",
+  "licence": "Public domain",
+  "retrievedAt": "2026-11-07",
+  "region": "global"
+}

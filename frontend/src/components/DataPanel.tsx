@@ -22,7 +22,7 @@ type Props = {
 };
 
 const css = (c: RGB) => `rgb(${c.join(",")})`;
-const REGION_LABEL: Record<string, string> = { arizona: "Arizona", uk: "UK", global: "Global" };
+export const REGION_LABEL: Record<string, string> = { arizona: "Arizona", uk: "UK", global: "Global" };
 
 export default function DataPanel({ data, onFitBBox }: Props) {
   return (
@@ -308,7 +308,7 @@ export function RecordsPanel({ data }: { data: DataLayersState }) {
   );
 }
 
-function GeometrySwatch({ meta }: { meta: FeatureLayerMeta }) {
+export function GeometrySwatch({ meta }: { meta: FeatureLayerMeta }) {
   if (meta.geometry === "line") return <span className="line-swatch" />;
   if (meta.geometry === "polygon")
     return <span className="swatch" style={{ background: meta.valueField ? css(SEQUENTIAL_ORANGE[3]) : "transparent", borderColor: "rgb(99,102,241)" }} />;

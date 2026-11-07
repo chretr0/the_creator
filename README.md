@@ -17,14 +17,26 @@ for product intent and [CLAUDE-World-Mapping.md](./CLAUDE-World-Mapping.md) for 
   Everything persists in Postgres and reloads exactly.
 - Parameter fields list names and units only. No "typical" coefficients are filled in; blank means unknown.
 
-- **Infrastructure layer** (ported from the bundled data in
-  [gods-eye-view](https://github.com/bilawalsidhu/gods-eye-view)): 4,351 OSM datacenters and 703
-  dams. They are drawn as footprints and dots, with stems in the 3D view and screen-grid labels.
-  Datacenters are coloured by operator and can be filtered by company. Clicking one shows its
-  operator and owner (separate OSM tags, Wikidata IDs), any tagged power-capacity rating, and
-  provenance. Consumption is shown as *not reported*, because the source has none. "Model as
-  data-centre project" places it in the scenario with blank assumptions. The 3D toggle tilts
-  the map so OpenFreeMap's building extrusions show (zoom ≥ 14).
+- **Infrastructure section** (Explore → Infrastructure), grouped as Energy & grid, Digital, Transport
+  and Resources & industry. Each layer loads the first time it is switched on or searched:
+  - *Datacenters* (4,351) and *dams* (703): OSM, from the bundled data in
+    [gods-eye-view](https://github.com/bilawalsidhu/gods-eye-view). Drawn as footprints and dots,
+    with stems in the 3D view and screen-grid labels. Datacenters are coloured by operator and can be
+    filtered by company. "Model as data-centre project" places one in the scenario with blank assumptions.
+  - *Power plants* (34,936): WRI Global Power Plant Database v1.3 (CC BY 4.0), coloured by fuel and
+    sized by nameplate MW. Shows owner, commissioning year and the latest annual generation, flagged
+    when it is WRI's model estimate. The database stopped updating in 2021.
+  - *Substations* (3,186) and *high-voltage lines* (27,716 segments, ~59,000 km): OSM features at
+    66 kV or more, for the prepared regions (Arizona, UK) only, coloured by voltage. Elsewhere use
+    "Load OSM power here" on a location.
+  - *Airports* (5,282 large and medium, OurAirports, public domain) and *seaports* (1,081, Natural
+    Earth, public domain).
+  - *Submarine cables and landing points*, and toggles for the mineral sites, UK offshore wellbores
+    and TRI industrial facilities from Mapped records.
+
+  Clicking a site shows operator and owner (kept separate, never back-filled), capacity or voltage,
+  and links to the source record. Consumption is shown as *not reported*, because no source has it.
+  The 3D toggle tilts the map so OpenFreeMap's building extrusions show (zoom ≥ 14).
 
 - **Context layers** (also adapted from gods-eye-view), in the sidebar's Layers and Search tabs:
   - *Boundaries:* Natural Earth countries and states/provinces, and US Census counties. All are
@@ -72,8 +84,12 @@ for product intent and [CLAUDE-World-Mapping.md](./CLAUDE-World-Mapping.md) for 
 
 - **Building system** ([CLAUDE.Building-System.md](./CLAUDE.Building-System.md)), in the sidebar's *Build* tab
   (or *+ Add building*):
-  1. *Define*: pick Power station, Water plant, Data centre, Solar, Greenhouse or Custom, add a name and a
-     description, and fill in whatever statistics you know: footprint, hours, power use/output, water use/output,
+  1. *Define*: pick one of 42 building types in ten categories (energy: power station, solar, wind, hydro,
+     geothermal, battery storage, hydrogen; water and wastewater plants; mines, quarries, oil & gas fields;
+     factories, steel, aluminium, cement, chemicals, refineries, semiconductor fabs; crop and livestock farms,
+     greenhouses, vertical farms, aquaculture, food processing; data centres, offices, retail, hotels, labs;
+     housing, hospitals, schools, universities, stadiums; airports, seaports, warehouses; landfill, recycling,
+     waste-to-energy; or Custom), add a name and a description, and fill in whatever statistics you know: footprint, hours, power use/output, water use/output,
      raw materials, air emissions, light, workers and costs. Blank means unknown, never zero; no typical values are
      filled in. Definitions can be saved and reused.
   2. *Requirements*: map-layer limits (any registered H3 layer), site area, power/energy/water supply, budgets,
@@ -97,11 +113,15 @@ Not built yet: connections between buildings and the cross-scenario comparison v
 ### Refreshing infrastructure data
 
 ```bash
-cd backend && uv run python ../scripts/prepare_infrastructure.py ../../gods-eye-view
+uv run --no-project --with h3 --with pyshp python -I scripts/prepare_infrastructure.py --gev ../gods-eye-view
 ```
 
-This writes `data/prepared/infrastructure/` (ODbL 1.0, © OpenStreetMap contributors), served by
-`GET /api/infrastructure` (provenance) and `GET /api/infrastructure/{datacenters|dams}`.
+This writes `data/prepared/infrastructure/` with one provenance record per source in `source.json`,
+served by `GET /api/infrastructure` and `GET /api/infrastructure/{layer}`. Leave out `--gev` to keep
+the existing datacenter and dam files; add `--fetch` to re-download the power plant, airport and port
+sources. The grid layers are read from the Overpass tiles in `data/raw/GRID-OSM/` (fetch them with
+`scripts/prepare_power_grid.py --fetch`). `power_plants.geojson` and `transmission_lines.geojson`
+are gitignored (18 MB and 14 MB); the app marks them "Not prepared" until this script has run.
 
 ```bash
 cd backend && uv run python ../scripts/prepare_reference.py ../../gods-eye-view
@@ -210,7 +230,7 @@ The backend API tests need the Docker database running.
 | `GET/POST /api/scenarios` | List / create scenarios |
 | `GET/PATCH/DELETE /api/scenarios/{id}` | Load (with projects) / rename / delete; PATCH `assumptions` merges top-level keys (`periodDays`, `budgets`, `stress` validated) |
 | `POST /api/scenarios/{id}/branch` | Branch a scenario |
-| `GET /api/infrastructure[/{layer}]` | Datacenters / dams (region-tagged) + provenance |
+| `GET /api/infrastructure[/{layer}]` | Datacenters, power plants, dams, substations, HV lines, airports, ports (region-tagged) + per-source provenance |
 | `GET /api/boundaries[/{layer}]`, `GET /api/cables[/{layer}]` | Boundary and cable packs + provenance |
 | `GET /api/regions/locate`, `GET /api/regions/search-index` | Point → country/admin-1/county; local place index |
 | `GET /api/hazards/earthquakes`, `GET /api/hazards/fires?west&south&east&north` | USGS / FIRMS (cached) |
@@ -223,7 +243,7 @@ The backend API tests need the Docker database running.
 | `GET /api/cells/{h3Id}/features` | Containing polygons, crossing rivers, and nearest records for one res-6 cell |
 | `POST /api/scenarios/{id}/projects` | Place a project (server computes the res-6 `h3Id`); optional `definition` snapshot, `sourceDefinitionId`, `site` |
 | `PATCH/DELETE /api/projects/{id}` | Edit / move / remove a project |
-| `GET /api/building-templates` | Predefined building types (power station, water plant, data centre, solar, greenhouse, custom): fields, units, help; no numeric defaults |
+| `GET /api/building-templates` | Predefined building types (42, each with a `category`): fields, units, help; no numeric defaults |
 | `GET /api/building-presets` | Real example buildings: stats and parameters with cited provenance, sources, notes and reference site (read-only) |
 | `GET/POST /api/building-definitions`, `GET/PATCH/DELETE /api/building-definitions/{id}` | Saved building definitions; edits/deletes never change placed snapshots |
 | `POST /api/building-assessments` | Read-only calculation + pass/fail/unknown checks for a draft at an exact `location`, or over `bounds`/`region` res-6 cells (limit 30,000, else 422) |

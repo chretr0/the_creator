@@ -94,7 +94,9 @@ def test_producer_checks_export_not_draw():
     plant = stats(footprintM2=1_000_000, operatingHoursPerDay=24, power={"ratedOutputKw": 500_000, "averageDemandKw": 0})
     checks, _ = run("power_station", plant, fake_site())
     assert "site_power" not in checks
-    assert checks["site_grid_export"].status == "fail"  # 132 kV ≈ 100 MW < 500 MW
+    surplus = checks["site_grid_export"]
+    assert surplus.status == "fail"  # 132 kV ≈ 100 MW < 500 MW
+    assert not surplus.required and "surplus" in surplus.explanation  # surplus output never fails the plant
     checks, _ = run("power_station", plant, fake_site(grid_kv=400.0, grid_kw=1_000_000.0))
     assert checks["site_grid_export"].status == "pass"
 

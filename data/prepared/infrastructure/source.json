@@ -1,33 +1,118 @@
 {
-  "id": "INFRA-OSM-GEV",
-  "provider": "OpenStreetMap contributors (via the gods-eye-view bundled snapshot)",
-  "product": "OSM telecom=data_center and dam features",
-  "upstream": {
-    "repository": "https://github.com/bilawalsidhu/gods-eye-view",
-    "commit": "8b8ccc9a81379e8b40d4be67610570ee5b159512",
-    "paths": [
-      "src/data/local_data/datacenters/",
-      "src/data/local_data/dams/"
-    ],
-    "notes": [
-      "Original OSM extraction date and query were not recorded by the upstream snapshot.",
-      "Dams were extracted by upstream from OpenInfraMap/PostGIS layers (waterway=dam, man_made=dam, building=dam).",
-      "Upstream removed contact tags (email, phone, fax) before release."
-    ]
-  },
-  "licence": "ODbL-1.0",
-  "attribution": "© OpenStreetMap contributors (ODbL). Dams also credit Open Infrastructure Map.",
-  "evidenceType": "reported_record",
-  "spatialSupport": "OSM building footprint polygon or point; representative point = outer-ring vertex average",
-  "retrievedAt": "2026-11-07",
-  "observationPeriod": null,
-  "limitations": [
-    "Coverage is whatever OSM volunteers mapped; absence of a facility is not evidence it does not exist.",
-    "operator and owner are free-text OSM tags and may be stale, abbreviated or a brand rather than the legal entity.",
-    "Power values are tagged capacity ratings (kW), not measured consumption or generation.",
-    "No electricity or water consumption is reported by this source."
-  ],
+  "id": "INFRA",
+  "product": "Prepared infrastructure layers",
   "simulationResolution": 6,
+  "sources": {
+    "INFRA-OSM-GEV": {
+      "id": "INFRA-OSM-GEV",
+      "provider": "OpenStreetMap contributors (via the gods-eye-view bundled snapshot)",
+      "product": "OSM telecom=data_center and dam features",
+      "upstream": {
+        "repository": "https://github.com/bilawalsidhu/gods-eye-view",
+        "commit": "8b8ccc9a81379e8b40d4be67610570ee5b159512",
+        "paths": [
+          "src/data/local_data/datacenters/",
+          "src/data/local_data/dams/"
+        ],
+        "notes": [
+          "Original OSM extraction date and query were not recorded by the upstream snapshot.",
+          "Dams were extracted by upstream from OpenInfraMap/PostGIS layers (waterway=dam, man_made=dam, building=dam).",
+          "Upstream removed contact tags (email, phone, fax) before release."
+        ]
+      },
+      "licence": "ODbL-1.0",
+      "attribution": "© OpenStreetMap contributors (ODbL). Dams also credit Open Infrastructure Map.",
+      "evidenceType": "reported_record",
+      "spatialSupport": "OSM building footprint polygon or point; representative point = outer-ring vertex average",
+      "retrievedAt": "2026-11-07",
+      "observationPeriod": null,
+      "limitations": [
+        "Coverage is whatever OSM volunteers mapped; absence of a facility is not evidence it does not exist.",
+        "operator and owner are free-text OSM tags and may be stale, abbreviated or a brand rather than the legal entity.",
+        "Power values are tagged capacity ratings (kW), not measured consumption or generation.",
+        "No electricity or water consumption is reported by this source."
+      ]
+    },
+    "INFRA-GPPD": {
+      "id": "INFRA-GPPD",
+      "name": "Global Power Plant Database",
+      "provider": "World Resources Institute (WRI) and partners",
+      "product": "Global Power Plant Database v1.3.0",
+      "licence": "CC BY 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "attribution": "Global Energy Observatory, Google, KTH Royal Institute of Technology, Enipedia, World Resources Institute. Global Power Plant Database v1.3.0 (2021). Published on Resource Watch and Google Earth Engine.",
+      "evidenceType": "reported_record",
+      "spatialSupport": "Plant location point as reported",
+      "retrievedAt": "2026-11-07",
+      "observationPeriod": "Capacity as of ~2019-2020; generation 2013-2019",
+      "url": "https://datasets.wri.org/dataset/globalpowerplantdatabase",
+      "limitations": [
+        "Last updated June 2021 and no longer maintained: newer plants are missing and some listed plants may have closed.",
+        "Covers ~35,000 plants; small distributed generation (rooftop solar, small diesel) is largely absent.",
+        "Capacity is nameplate (MW), not available or dispatched output.",
+        "Generation figures are annual totals; 'estimated' values come from WRI's model, not metered data.",
+        "Owner is as reported by the source database and may be out of date."
+      ]
+    },
+    "INFRA-OURAIRPORTS": {
+      "id": "INFRA-OURAIRPORTS",
+      "name": "OurAirports",
+      "provider": "OurAirports (David Megginson and contributors)",
+      "product": "OurAirports airports.csv, large and medium airports only",
+      "licence": "Public domain",
+      "licenceUrl": "https://ourairports.com/data/",
+      "attribution": "Airports: OurAirports (public domain)",
+      "evidenceType": "reported_record",
+      "spatialSupport": "Airport reference point",
+      "retrievedAt": "2026-11-07",
+      "observationPeriod": null,
+      "url": "https://ourairports.com/data/",
+      "limitations": [
+        "Community-maintained; size class (large/medium) is OurAirports' own classification, not traffic data.",
+        "Small airfields, heliports, seaplane bases and closed airports are left out.",
+        "No passenger, cargo or runway capacity figures are included."
+      ]
+    },
+    "INFRA-NE-PORTS": {
+      "id": "INFRA-NE-PORTS",
+      "name": "Natural Earth ports",
+      "provider": "Natural Earth",
+      "product": "Natural Earth 1:10m cultural vectors, ports (v5)",
+      "licence": "Public domain",
+      "licenceUrl": "https://www.naturalearthdata.com/about/terms-of-use/",
+      "attribution": "Made with Natural Earth. Free vector and raster map data @ naturalearthdata.com.",
+      "evidenceType": "reference_map",
+      "spatialSupport": "Port point at cartographic scale (may be offset from the actual terminals)",
+      "retrievedAt": "2026-11-07",
+      "observationPeriod": null,
+      "url": "https://www.naturalearthdata.com/downloads/10m-cultural-vectors/ports/",
+      "limitations": [
+        "A cartographic selection of ~1,000 notable ports, not a complete register of harbours or terminals.",
+        "'Major port' means a higher Natural Earth display rank, not measured throughput.",
+        "No cargo, berth, draught or operator information."
+      ]
+    },
+    "INFRA-GRID-OSM": {
+      "id": "INFRA-GRID-OSM",
+      "name": "OSM high-voltage grid (prepared regions)",
+      "provider": "OpenStreetMap contributors via Overpass API",
+      "product": "OSM power=line/cable and power=substation features at or above 66 kV",
+      "licence": "ODbL-1.0",
+      "licenceUrl": "https://opendatacommons.org/licenses/odbl/1-0/",
+      "attribution": "© OpenStreetMap contributors",
+      "evidenceType": "reported_record",
+      "spatialSupport": "OSM way geometry (simplified ~30 m for display) or substation centre",
+      "retrievedAt": "2026-11-07",
+      "observationPeriod": null,
+      "url": "https://wiki.openstreetmap.org/wiki/Power_networks",
+      "limitations": [
+        "Prepared for the project regions only (arizona, uk); elsewhere use 'Load OSM power here' on a location.",
+        "Only features tagged with a voltage of 66 kV or more; distribution lines and untagged substations are left out.",
+        "Volunteer-mapped: routes and voltages may be incomplete or out of date.",
+        "Lines show mapped routes, not thermal capacity, spare capacity or connection headroom."
+      ]
+    }
+  },
   "layers": [
     {
       "id": "datacenters",
@@ -39,6 +124,40 @@
         "withPowerRating": 17,
         "withParsedPowerRatingKw": 16,
         "withConsumption": 0
+      },
+      "source": "INFRA-OSM-GEV",
+      "scope": "global"
+    },
+    {
+      "id": "power_plants",
+      "file": "power_plants.geojson",
+      "source": "INFRA-GPPD",
+      "stats": {
+        "features": 34936,
+        "withOperator": 0,
+        "withOwner": 20868,
+        "withPowerRating": 34936,
+        "withParsedPowerRatingKw": 34936,
+        "withConsumption": 0,
+        "withGeneration": 33424
+      },
+      "scope": "global",
+      "kinds": {
+        "Solar": 10665,
+        "Hydro": 7156,
+        "Wind": 5344,
+        "Gas": 3998,
+        "Coal": 2330,
+        "Oil": 2320,
+        "Biomass": 1430,
+        "Waste": 1068,
+        "Nuclear": 195,
+        "Geothermal": 189,
+        "Storage": 135,
+        "Other": 43,
+        "Cogeneration": 41,
+        "Petcoke": 12,
+        "Wave and Tidal": 10
       }
     },
     {
@@ -51,7 +170,80 @@
         "withPowerRating": 368,
         "withParsedPowerRatingKw": 311,
         "withConsumption": 0
+      },
+      "source": "INFRA-OSM-GEV",
+      "scope": "global"
+    },
+    {
+      "id": "substations",
+      "file": "substations.geojson",
+      "source": "INFRA-GRID-OSM",
+      "stats": {
+        "features": 3186,
+        "withOperator": 1830,
+        "withOwner": 252,
+        "withPowerRating": 0,
+        "withParsedPowerRatingKw": 0,
+        "withConsumption": 0
+      },
+      "scope": "regions",
+      "regions": [
+        "arizona",
+        "uk"
+      ],
+      "minVoltageKv": 66.0
+    },
+    {
+      "id": "transmission_lines",
+      "file": "transmission_lines.geojson",
+      "source": "INFRA-GRID-OSM",
+      "stats": {
+        "features": 27716,
+        "withOperator": 8207,
+        "withOwner": 211,
+        "withPowerRating": 0,
+        "withParsedPowerRatingKw": 0,
+        "withConsumption": 0,
+        "lengthKm": 59151
+      },
+      "scope": "regions",
+      "regions": [
+        "arizona",
+        "uk"
+      ],
+      "minVoltageKv": 66.0
+    },
+    {
+      "id": "airports",
+      "file": "airports.geojson",
+      "source": "INFRA-OURAIRPORTS",
+      "stats": {
+        "features": 5282,
+        "withOperator": 0,
+        "withOwner": 0,
+        "withPowerRating": 0,
+        "withParsedPowerRatingKw": 0,
+        "withConsumption": 0
+      },
+      "scope": "global",
+      "kinds": {
+        "Medium airport": 4107,
+        "Large airport": 1175
       }
+    },
+    {
+      "id": "ports",
+      "file": "ports.geojson",
+      "source": "INFRA-NE-PORTS",
+      "stats": {
+        "features": 1081,
+        "withOperator": 0,
+        "withOwner": 0,
+        "withPowerRating": 0,
+        "withParsedPowerRatingKw": 0,
+        "withConsumption": 0
+      },
+      "scope": "global"
     }
   ]
 }

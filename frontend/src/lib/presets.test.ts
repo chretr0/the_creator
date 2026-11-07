@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { BuildingPreset } from "./buildings";
 import { editEmission, editMaterial, editOperating, editValue, parseStats, statsToDraft } from "./buildingForm";
-import { presetPlace, presetToForm, sourceCount } from "./presets";
+import { presetPlace, presetToForm, sourceCount, splitPresetsByType } from "./presets";
 
 const cited = (note: string) => ({ kind: "cited" as const, note });
 
@@ -142,5 +142,14 @@ describe("labels", () => {
     expect(presetPlace(PRESET)).toBe("Example Plant, United Kingdom");
     expect(sourceCount(1)).toBe("1 source");
     expect(sourceCount(3)).toBe("3 sources");
+  });
+});
+
+describe("splitPresetsByType", () => {
+  it("puts the selected type's presets first and keeps the rest in order", () => {
+    const ps = [{ type: "mine" }, { type: "office" }, { type: "mine" }, { type: "farm" }] as const;
+    const { matching, others } = splitPresetsByType([...ps], "mine");
+    expect(matching).toEqual([ps[0], ps[2]]);
+    expect(others).toEqual([ps[1], ps[3]]);
   });
 });

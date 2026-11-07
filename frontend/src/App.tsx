@@ -12,6 +12,7 @@ import {
   fromFires,
   fromLanding,
   fromPower,
+  isFacilityDataset,
   type Dataset,
   type Query,
   type QueryRecord,
@@ -35,8 +36,11 @@ import { useDataLayers } from "./lib/useDataLayers";
 import { mergeAssumptions } from "./lib/buildingForm";
 import {
   COLOURED_COMPANIES,
+  INFRA_LAYER_IDS,
   LAYER_META,
-  loadInfrastructure,
+  layerColour,
+  loadInfraLayer,
+  loadInfraManifest,
   rankCompanies,
   ratedItLoadKw,
   facilityTitle,
@@ -52,17 +56,17 @@ import { cellContains, displayCell, normaliseLongitude, simulationCell } from ".
 type ExploreSection = "library" | "environment" | "infrastructure" | "records" | "context" | "imagery" | "sources";
 const EXPLORE_SECTIONS = [
   { value: "environment", label: "Environment", icon: "sun", detail: "Climate, water, land & more" },
-  { value: "infrastructure", label: "Infrastructure", icon: "building", detail: "Datacentres, dams & operators" },
+  { value: "infrastructure", label: "Infrastructure", icon: "building", detail: "Energy, grid, datacentres & transport" },
   { value: "records", label: "Mapped records", icon: "pin", detail: "Features, filters & datasets" },
-  { value: "context", label: "Context & hazards", icon: "globe", detail: "Boundaries, cables, fires & quakes" },
+  { value: "context", label: "Context & hazards", icon: "globe", detail: "Boundaries, fires & quakes" },
   { value: "imagery", label: "Satellite imagery", icon: "layers", detail: "Products, dates & prepared scenes" },
   { value: "sources", label: "Sources & licences", icon: "info", detail: "Provenance & data limitations" },
 ] as const;
 
 type Tab = "layers" | "search" | "build" | "projects";
 
-/** "pick" = choosing an exact location for a building preview (Build tab). */
-type Mode = { kind: "inspect" } | { kind: "pick" } | { kind: "move"; projectId: string };
+/** "move" = choosing a new location for an existing project. */
+type Mode = { kind: "inspect" } | { kind: "move"; projectId: string };
 
 const LAST_SCENARIO_KEY = "newworlds:lastScenario";
 const HEX_OUTLINES_KEY = "newworlds:hexOutlines";
@@ -121,9 +125,18 @@ export default function App() {
   const [focus, setFocus] = useState<MapFocus | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [manifest, setManifest] = useState<InfraManifest | null>(null);
-  const [allFacilities, setAllFacilities] = useState<Facility[]>([]);
+  const [infraData, setInfraData] = useState<Partial<Record<InfraLayerId, Facility[]>>>({});
+  const [infraStatus, setInfraStatus] = useState<Partial<Record<InfraLayerId, { loading: boolean; error: string | null }>>>({});
   const [infraError, setInfraError] = useState<string | null>(null);
-  const [visibleLayers, setVisibleLayers] = useState<Record<InfraLayerId, boolean>>({ datacenters: true, dams: true });
+  const [visibleLayers, setVisibleLayers] = useState<Record<InfraLayerId, boolean>>({
+    datacenters: true,
+    power_plants: false,
+    dams: true,
+    substations: false,
+    transmission_lines: false,
+    airports: false,
+    ports: false,
+  });
   const [companyFilter, setCompanyFilter] = useState<string | null>(null);
   const [selectedFacilityId, setSelectedFacilityId] = useState<string | null>(null);
   const [tilted, setTilted] = useState(false);
@@ -137,7 +150,7 @@ export default function App() {
   }, [showHexOutlines]);
   const [view, setView] = useState<MapView | null>(null);
   const [sideTab, setSideTab] = useState<Tab>("layers");
-  const [buildStage, setBuildStage] = useState<BuildStage>("define");
+  const [buildStage, setBuildStage] = useState<BuildStage>("building");
   const [buildMapVisible, setBuildMapVisible] = useState(false);
   const [exploreSection, setExploreSection] = useState<ExploreSection>("library");
   const [scenarioSection, setScenarioSection] = useState<"overview" | "resources" | "stress">("overview");
@@ -148,12 +161,12 @@ export default function App() {
     sideBodyRef.current?.scrollTo({ top: 0 });
   }, [sideTab, exploreSection, scenarioSection]);
   const [stressHost, setStressHost] = useState<HTMLDivElement | null>(null);
+  const [buildSiteHost, setBuildSiteHost] = useState<HTMLElement | null>(null);
 
   function navigate(tab: Tab) {
     setSideTab(tab);
     setInspectorOpen(false);
     setBuildMapVisible(false);
-    setMode((current) => current.kind === "pick" ? { kind: "inspect" } : current);
     sideBodyRef.current?.scrollTo({ top: 0 });
   }
 
@@ -166,17 +179,13 @@ export default function App() {
     setInspectorOpen(false);
     setMode({ kind: "inspect" });
   }, []);
+  // Placing never changes the wizard step: the user defines and places at the same time.
   const updateBuildTarget = useCallback((target: BuildTarget | null) => {
     setBuildTarget(target);
-    if (target) {
-      setBuildMapVisible(false);
-      setInspectorOpen(false);
-      setBuildStage("place");
-    } else {
-      setBuildStage((current) => current === "place" ? "site" : current);
-    }
+    if (target) setInspectorOpen(false);
   }, []);
   const [assessmentCells, setAssessmentCells] = useState<CellState[] | null>(null);
+  const [buildMapStatus, setBuildMapStatus] = useState<{ note: string | null; loading: boolean }>({ note: null, loading: false });
   const ctx = useContextData(view, { country: query.country, admin1: query.admin1 });
   const data = useDataLayers(view, grid.cells);
 
@@ -223,23 +232,45 @@ export default function App() {
 
   useEffect(() => {
     const ctrl = new AbortController();
-    loadInfrastructure(ctrl.signal)
-      .then(({ manifest, facilities }) => {
-        setManifest(manifest);
-        setAllFacilities(facilities);
-      })
+    loadInfraManifest(ctrl.signal)
+      .then(setManifest)
       .catch((e) => {
         if (!ctrl.signal.aborted) setInfraError(e instanceof Error ? e.message : String(e));
       });
     return () => ctrl.abort();
   }, []);
 
+  // Each layer is fetched the first time it is shown on the map or searched (some are tens of MB).
+  const infraRequested = useRef(new Set<InfraLayerId>());
+  const ensureInfraLayer = useCallback(
+    (id: InfraLayerId) => {
+      const entry = manifest?.layers.find((l) => l.id === id);
+      if (!entry || entry.available === false || infraRequested.current.has(id)) return;
+      infraRequested.current.add(id);
+      setInfraStatus((st) => ({ ...st, [id]: { loading: true, error: null } }));
+      loadInfraLayer(id)
+        .then((features) => {
+          setInfraData((d) => ({ ...d, [id]: features }));
+          setInfraStatus((st) => ({ ...st, [id]: { loading: false, error: null } }));
+        })
+        .catch((e) => {
+          infraRequested.current.delete(id);
+          setInfraStatus((st) => ({ ...st, [id]: { loading: false, error: e instanceof Error ? e.message : String(e) } }));
+        });
+    },
+    [manifest],
+  );
+  useEffect(() => {
+    for (const id of INFRA_LAYER_IDS) if (visibleLayers[id]) ensureInfraLayer(id);
+  }, [visibleLayers, ensureInfraLayer]);
+  const allFacilities = useMemo(() => INFRA_LAYER_IDS.flatMap((id) => infraData[id] ?? []), [infraData]);
+
   const companies = useMemo(() => rankCompanies(allFacilities), [allFacilities]);
   const facilityColour = useMemo(() => {
     const top = new Map(companies.slice(0, COLOURED_COMPANIES).map((c) => [c.key, c.colour]));
     return (f: Facility): [number, number, number] => {
       const p = f.properties;
-      if (p.layer === "dams") return LAYER_META.dams.colour;
+      if (p.layer !== "datacenters") return layerColour(p);
       if (!p.operator) return UNKNOWN_OWNER;
       return (p.companyKey && top.get(p.companyKey)) || LAYER_META.datacenters.colour;
     };
@@ -255,15 +286,17 @@ export default function App() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement | null;
+      if (e.defaultPrevented || (el && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return;
       if (e.key === "Escape") {
         setBuildMapVisible(false);
         setMode({ kind: "inspect" });
-        setBuildTarget(null);
+        if (sideTab === "build") updateBuildTarget(null);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  }, [sideTab, updateBuildTarget]);
 
   const projects = scenario?.projects ?? [];
   const selectedProject = projects.find((p) => p.id === selectedProjectId) ?? null;
@@ -295,10 +328,14 @@ export default function App() {
     const pickedObject = picked?.object;
     setError(null);
     const longitude = normaliseLongitude(rawLongitude);
-    if (mode.kind === "pick") {
-      if (scenario) updateBuildTarget({ latitude, longitude, scenarioId: scenario.id, nonce: Date.now() });
-      setMode({ kind: "inspect" });
-      setSideTab("build");
+    // In the Build tab every map click places the building (moving a project still wins).
+    if (sideTab === "build" && mode.kind !== "move") {
+      if (!scenario) {
+        setError("Select a scenario first");
+        return;
+      }
+      updateBuildTarget({ latitude, longitude, scenarioId: scenario.id, nonce: Date.now() });
+      setInspectorOpen(false);
       return;
     }
     setInspectorOpen(true);
@@ -438,7 +475,7 @@ export default function App() {
     },
   };
 
-  const crosshair = mode.kind !== "inspect";
+  const crosshair = mode.kind === "move" || sideTab === "build";
 
   // Records for search & rank: everything currently loaded (independent of the map's company filter).
   const searchRecords = useMemo<QueryRecord[]>(
@@ -451,9 +488,18 @@ export default function App() {
     ],
     [allFacilities, ctx.quakes, ctx.fires, ctx.cables, ctx.power],
   );
+  useEffect(() => {
+    if (sideTab === "search" && isFacilityDataset(query.dataset)) ensureInfraLayer(query.dataset);
+  }, [sideTab, query.dataset, ensureInfraLayer]);
+  const infraAvailable = (id: InfraLayerId) => manifest?.layers.some((l) => l.id === id && l.available !== false) ?? false;
   const datasetAvailable: Record<Dataset, boolean> = {
-    datacenters: allFacilities.length > 0,
-    dams: allFacilities.length > 0,
+    datacenters: infraAvailable("datacenters"),
+    power_plants: infraAvailable("power_plants"),
+    dams: infraAvailable("dams"),
+    substations: infraAvailable("substations"),
+    transmission_lines: infraAvailable("transmission_lines"),
+    airports: infraAvailable("airports"),
+    ports: infraAvailable("ports"),
     earthquakes: !!ctx.quakes,
     fires: !!ctx.fires?.records.length,
     landing_points: !!ctx.cables,
@@ -471,7 +517,7 @@ export default function App() {
     setSelectedProjectId(null);
     data.setPicked(null);
     setInspectorOpen(true);
-    if (r.dataset === "datacenters" || r.dataset === "dams") {
+    if (isFacilityDataset(r.dataset)) {
       const f = r.ref as Facility;
       setSelectedFacilityId(f.id);
       ctx.setSelection(null);
@@ -559,11 +605,6 @@ export default function App() {
     setPresetRequest({ id: presetId, nonce });
     updateBuildTarget({ latitude, longitude, scenarioId: scenario.id, nonce });
   };
-  const setPicking = useCallback((on: boolean) => {
-    if (on) setInspectorOpen(false);
-    setBuildMapVisible(on);
-    setMode(on ? { kind: "pick" } : { kind: "inspect" });
-  }, []);
   const previewMarker = useMemo(
     () => (buildTarget ? { latitude: buildTarget.latitude, longitude: buildTarget.longitude } : null),
     [buildTarget],
@@ -595,7 +636,14 @@ export default function App() {
   };
 
   const workspace = sideTab === "build" ? "build" : sideTab === "projects" ? "scenarios" : "explore";
-  const dock = inspectorOpen && hasDetail ? "details" : sideTab === "projects" && scenario && scenarioSection !== "overview" ? "stress" : null;
+  const dock =
+    inspectorOpen && hasDetail
+      ? "details"
+      : sideTab === "build"
+        ? "site"
+        : sideTab === "projects" && scenario && scenarioSection !== "overview"
+          ? "stress"
+          : null;
 
   return (
     <div className={`app${workspace === "build" ? " building-active" : ""}`}>
@@ -699,20 +747,19 @@ export default function App() {
             </button>
           </div>
 
-          {crosshair && (
+          {mode.kind === "move" ? (
             <div className="hint" role="status">
-              {mode.kind === "pick" ? "Click the exact location to preview the building" : "Click the new location"}
+              Click the new location
               <button onClick={() => { setMode({ kind: "inspect" }); setBuildMapVisible(false); }}>Cancel</button>
             </div>
-          )}
+          ) : sideTab === "build" && (buildMapStatus.note || !buildTarget) ? (
+            <div className="hint" role="status">{buildMapStatus.note ?? "Click the map to place your building"}</div>
+          ) : null}
 
           {assessmentCells && assessmentCells.length > 0 && (
             <div className="map-legend small" aria-label="Assessment legend">
-              <strong>Screening by cell</strong>
+              <strong>Where it fits{buildMapStatus.loading && <span className="muted"> · updating…</span>}</strong>
               <StateLegend />
-              <button className="link inline" onClick={() => setAssessmentCells(null)}>
-                Hide
-              </button>
             </div>
           )}
         </main>
@@ -720,8 +767,8 @@ export default function App() {
         <aside className="sidebar">
           <div className="workspace-heading">
             <div className="eyebrow">{sideTab === "build" ? "PLAN & PLACE" : sideTab === "projects" ? "MODEL & COMPARE" : "THE WORLD, IN CONTEXT"}</div>
-            <h1>{sideTab === "build" ? ({ define: "Define your building", site: "Find a site", place: "Review & place" }[buildStage]) : sideTab === "projects" ? "Your scenarios" : "Explore the world"}</h1>
-            <p>{sideTab === "build" ? "From an idea to the right location." : sideTab === "projects" ? "Understand the impact of change." : "Discover the data behind a place."}</p>
+            <h1>{sideTab === "build" ? ({ building: "Choose a building", resources: "Resources", impact: "Impact & costs" }[buildStage]) : sideTab === "projects" ? "Your scenarios" : "Explore the world"}</h1>
+            {sideTab !== "build" && <p>{sideTab === "projects" ? "Understand the impact of change." : "Discover the data behind a place."}</p>}
           </div>
           {(sideTab === "layers" || sideTab === "search") && (
             <nav className="explore-tabs" aria-label="Explore views">
@@ -764,12 +811,20 @@ export default function App() {
                 <LayerPanel
                   manifest={manifest}
                   loadError={infraError}
+                  status={infraStatus}
                   visible={visibleLayers}
                   onToggle={(id) => setVisibleLayers((v) => ({ ...v, [id]: !v[id] }))}
                   companies={companies}
                   companyFilter={companyFilter}
                   onCompanyFilter={setCompanyFilter}
                   shownCount={facilities.length}
+                  cables={{
+                    on: ctx.toggles.cables,
+                    onToggle: () => ctx.setToggles({ ...ctx.toggles, cables: !ctx.toggles.cables }),
+                    status: ctx.status.cables,
+                  }}
+                  data={data}
+                  onOpenRecords={() => setExploreSection("records")}
                 />
 
               </div>
@@ -820,13 +875,13 @@ export default function App() {
                 catalogue={data.catalogue}
                 target={buildTarget}
                 onTarget={updateBuildTarget}
-                picking={mode.kind === "pick"}
-                onPick={setPicking}
                 onCells={setAssessmentCells}
                 onBuilt={onBuilt}
                 onFocus={focusOn}
-                onFitBounds={(bbox) => fitBBox(bbox, 7)}
+                active={sideTab === "build"}
+                onMapStatus={setBuildMapStatus}
                 presetRequest={presetRequest}
+                siteHost={buildSiteHost}
               />
             </div>
 
@@ -850,9 +905,9 @@ export default function App() {
             )}
           </div>
         </aside>
-        <aside className="inspector" hidden={!dock} aria-label={dock === "details" ? "Selected location details" : "Scenario results"}>
+        <aside className="inspector" hidden={!dock} aria-label={dock === "details" ? "Selected location details" : dock === "site" ? "Site check" : "Scenario results"}>
           <div className="inspector-heading">
-            <div><span className="eyebrow">{dock === "details" ? "LOCATION INSIGHTS" : "SCENARIO ANALYSIS"}</span><h2>{dock === "details" ? "At this location" : "Impact overview"}</h2></div>
+            <div><span className="eyebrow">{dock === "details" ? "LOCATION INSIGHTS" : dock === "site" ? "SITE CHECK" : "SCENARIO ANALYSIS"}</span><h2>{dock === "details" || dock === "site" ? "At this location" : "Impact overview"}</h2></div>
             {dock === "details" && <button className="icon-button" aria-label="Close location details" onClick={() => setInspectorOpen(false)}><Icon name="close" size={18} /></button>}
           </div>
           <div className="inspector-body">
@@ -960,6 +1015,7 @@ export default function App() {
             )}
             </div>
             <div ref={setStressHost} hidden={dock !== "stress"} />
+            <div ref={setBuildSiteHost} className="site-host" hidden={dock !== "site"} />
           </div>
         </aside>
       </div>

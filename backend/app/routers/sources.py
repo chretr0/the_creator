@@ -38,12 +38,32 @@ LIVE_SOURCES = [
      "url": "https://overpass-api.de/", "layers": ["power"]},
 ]
 
-PREPARED = [("infrastructure", ["datacenters", "dams"]), ("boundaries", ["boundaries"]), ("cables", ["cables"])]
+PREPARED = [("boundaries", ["boundaries"]), ("cables", ["cables"])]
+
+
+def _infrastructure_sources() -> list[dict]:
+    """One credit per infrastructure source, listing the map layers it feeds."""
+    path = Path(settings.prepared_data_dir) / "infrastructure" / "source.json"
+    if not path.exists():
+        return []
+    m = json.loads(path.read_text())
+    out = []
+    for sid, s in m.get("sources", {}).items():
+        ids = [layer["id"] for layer in m["layers"] if layer.get("source") == sid]
+        if not ids:
+            continue
+        out.append({
+            "id": sid, "name": s.get("product") or s.get("name"), "provider": s.get("provider"), "licence": s["licence"],
+            "attribution": s["attribution"], "evidenceType": s["evidenceType"], "retrievedAt": s.get("retrievedAt"),
+            "layers": ids, "limitations": s.get("limitations", []), "commercialUse": s.get("commercialUse", True),
+            "url": s.get("url") or s.get("licenceUrl"),
+        })
+    return out
 
 
 @router.get("/sources")
 def sources():
-    out = []
+    out = _infrastructure_sources()
     for group, layers in PREPARED:
         path = Path(settings.prepared_data_dir) / group / "source.json"
         if not path.exists():

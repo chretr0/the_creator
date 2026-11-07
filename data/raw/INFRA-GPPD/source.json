@@ -1,0 +1,9 @@
+{
+  "id": "INFRA-GPPD",
+  "url": "https://wri-dataportal-prod.s3.amazonaws.com/manual/global_power_plant_database_v_1_3.zip",
+  "file": "global_power_plant_database_v_1_3.zip",
+  "sha256": "59f3e57312a85eec3c281608e5f3c8f993d8fdad5dde179430dca42f2ac6ce99",
+  "licence": "CC BY 4.0",
+  "retrievedAt": "2026-11-07",
+  "region": "global"
+}

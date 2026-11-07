@@ -29,6 +29,7 @@ import {
   type SearchEntry,
   type SourceCredit,
 } from "./context";
+import { FUEL_COLOURS } from "./infrastructure";
 
 export type ContextToggles = {
   boundaries: Record<BoundaryLayerId, boolean>;
@@ -56,16 +57,6 @@ export const CONTEXT_LAYER_IDS = {
   powerPoints: "ctx-power-points",
 } as const;
 
-const PLANT_COLOURS: Record<string, [number, number, number]> = {
-  solar: [234, 179, 8],
-  wind: [20, 184, 166],
-  hydro: [37, 99, 235],
-  gas: [100, 116, 139],
-  coal: [41, 37, 36],
-  nuclear: [168, 85, 247],
-  oil: [120, 53, 15],
-  biomass: [101, 163, 13],
-};
 
 export function quakeColour(depthKm: number | null): [number, number, number] {
   if (depthKm === null) return [148, 163, 184];
@@ -329,7 +320,7 @@ export function useContextData(view: MapView | null, regionHighlight: { country?
           data: power.features.filter((f) => f.geometry.type === "Point"),
           getPosition: (f) => f.geometry.coordinates as [number, number],
           getFillColor: (f) =>
-            f.properties.kind === "plant" ? [...(PLANT_COLOURS[f.properties.plantSource ?? ""] ?? [217, 119, 6]), 255] : [71, 85, 105, 230],
+            f.properties.kind === "plant" ? [...(FUEL_COLOURS[f.properties.plantSource ?? ""] ?? [217, 119, 6]), 255] : [71, 85, 105, 230],
           getLineColor: [255, 255, 255, 255],
           getRadius: (f) => (f.properties.kind === "plant" ? 7 : 4),
           radiusUnits: "pixels",

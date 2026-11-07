@@ -27,7 +27,7 @@ import {
   type BudgetDraft,
   type StressDraft,
 } from "../lib/buildingForm";
-import { typeLabel } from "../lib/projectTypes";
+import { isPowerProducer, isWaterProducer, typeLabel } from "../lib/projectTypes";
 import { checkQuantity, outputRelevant, shortfall, supplyPairs } from "../lib/stressCompare";
 import { QuantityText } from "./AssessmentView";
 import { Field, Section, StateBadge } from "./FormBits";
@@ -54,8 +54,8 @@ const CONTROLS: Control[] = [
 /** Plants that could contribute supply to a budget of this kind (nothing is connected automatically). */
 function canSupply(p: Project, kind: BudgetKind): boolean {
   const s = p.definition?.stats;
-  if (kind === "water_m3_per_day") return p.type === "water_plant" || s?.water?.outputM3PerHour != null;
-  return p.type === "power_station" || p.type === "solar" || s?.power?.averageOutputKw != null || s?.power?.ratedOutputKw != null;
+  if (kind === "water_m3_per_day") return isWaterProducer(p.type) || s?.water?.outputM3PerHour != null;
+  return isPowerProducer(p.type) || s?.power?.averageOutputKw != null || s?.power?.ratedOutputKw != null;
 }
 
 const DEBOUNCE_MS = 450;

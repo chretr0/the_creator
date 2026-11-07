@@ -1,45 +1,40 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { cellToLatLng, gridDisk } from "h3-js";
 import Icon from "./Icon";
-import { PanelTabs } from "./PanelNavigation";
 import { api, ApiError, type Project, type Scenario } from "../lib/api";
-import {
-  PRESET_DRAG_TYPE,
-  type AreaAssessment,
-  type BuildingDefinition,
-  type BuildingPreset,
-  type BuildingType,
-  type CellState,
-  type DefinitionSnapshot,
-  type LocationAssessment,
-  type SupportSuggestion,
+import type {
+  AreaAssessment,
+  BuildingDefinition,
+  BuildingPreset,
+  BuildingType,
+  CellState,
+  DefinitionSnapshot,
+  LocationAssessment,
+  SupportSuggestion,
 } from "../lib/buildings";
 import type { CellLayer } from "../lib/datalayers";
 import {
   applyLocationPrice,
-  coordLabel,
   countErrors,
   criterionToDraft,
-  fmtDays,
   mergeAssumptions,
-  missingInputs,
   parseCriteria,
   parseStats,
   removeLocationPrice,
-  siteNeeds,
   statsToDraft,
   type CriterionDraft,
   type StatsDraft,
 } from "../lib/buildingForm";
-import { typeColour } from "../lib/projectTypes";
+import { groupTemplates, typeColour, typeIcon } from "../lib/projectTypes";
 import { useBuildingTemplates } from "../lib/useBuildingTemplates";
 import { useBuildingPresets } from "../lib/useBuildingPresets";
-import { presetPlace, presetToForm, sourceCount } from "../lib/presets";
+import { presetPlace, presetToForm, splitPresetsByType } from "../lib/presets";
 import type { MapView } from "./WorldMap";
 import BuildingForm from "./BuildingForm";
 import CriteriaEditor from "./CriteriaEditor";
-import { AssessmentView, LocationPrices, ResultView } from "./AssessmentView";
-import { Field, Section, StateBadge, StateLegend } from "./FormBits";
+import SitePanel from "./SitePanel";
+import { Field, Section } from "./FormBits";
 
 /** An exact location being previewed, bound to the scenario it was chosen in. */
 export type BuildTarget = { latitude: number; longitude: number; scenarioId: string; nonce: number };
@@ -47,7 +42,13 @@ export type BuildTarget = { latitude: number; longitude: number; scenarioId: str
 /** Ask the panel to load a real example into the form (e.g. after it was dropped on the map). */
 export type PresetRequest = { id: string; nonce: number };
 
-export type BuildStage = "define" | "site" | "place";
+export type BuildStage = "building" | "resources" | "impact";
+
+export const BUILD_STAGES: { id: BuildStage; label: string }[] = [
+  { id: "building", label: "Building" },
+  { id: "resources", label: "Resources" },
+  { id: "impact", label: "Impact & costs" },
+];
 
 type Props = {
   stage: BuildStage;
@@ -55,29 +56,36 @@ type Props = {
   scenario: Scenario | null;
   view: MapView | null;
   catalogue: CellLayer[];
+  /** Set on any map click while the Build tab is open. */
   target: BuildTarget | null;
   onTarget: (t: BuildTarget | null) => void;
-  picking: boolean;
-  onPick: (on: boolean) => void;
   onCells: (cells: CellState[] | null) => void;
   /** `stay`: keep the Build tab open (a supporting building is previewed next). */
   onBuilt: (p: Project, opts?: { stay?: boolean }) => void;
   onFocus: (latitude: number, longitude: number) => void;
-  /** Fit the map to [west, south, east, north] when a prepared region is searched. */
-  onFitBounds?: (bbox: [number, number, number, number]) => void;
+  /** The Build tab is open: screen the visible map and show the result. */
+  active: boolean;
+  /** What the map overlay should say about the live screening. */
+  onMapStatus?: (status: { note: string | null; loading: boolean }) => void;
   /** Load this example into the form; a new nonce loads it again. */
   presetRequest?: PresetRequest | null;
+  /** Right-hand inspector element to portal the live SitePanel into (null until mounted). */
+  siteHost: HTMLElement | null;
 };
 
-type Area = "view" | "arizona" | "uk";
-const AREA_LABEL: Record<Area, string> = { view: "Current map view", arizona: "Arizona (prepared region)", uk: "UK (prepared region)" };
-/** [west, south, east, north] of each prepared region, for fitting the map. */
-const REGION_BBOX: Record<Exclude<Area, "view">, [number, number, number, number]> = {
-  arizona: [-113.5, 31.3, -109.0, 34.5],
-  uk: [-8.7, 49.8, 1.9, 60.9],
-};
-const CANDIDATE_LIMIT = 50;
+/** The server's cap on one area screening (resolution-6 cells, ~36 km² each). */
+const MAX_AREA_CELLS = 30_000;
+const CELL_KM2 = 36.13;
+
+/** Rough number of resolution-6 cells inside a lon/lat box. */
+function estimateCells(b: { west: number; south: number; east: number; north: number }) {
+  const rad = Math.PI / 180;
+  const km2 = 6371 ** 2 * (b.east - b.west) * rad * Math.abs(Math.sin(b.north * rad) - Math.sin(b.south * rad));
+  return km2 / CELL_KM2;
+}
+
 const SCHEMA_VERSION = 1;
+const RESOURCE_FIELDS = ["footprintM2", "operatingHoursPerDay", "power.", "water.", "materials.", "params."];
 
 const pristine = (d: StatsDraft) =>
   Object.values(d.values).every((v) => v.trim() === "") &&
@@ -86,20 +94,21 @@ const pristine = (d: StatsDraft) =>
   Object.values(d.params).every((v) => v.trim() === "");
 
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
+const fieldCount = (n: number) => `${n} field${n === 1 ? "" : "s"}`;
 
 export default function BuildPanel(props: Props) {
-  const { stage, onStage, scenario, view, catalogue, target, onTarget, picking, onPick, onCells, onBuilt, onFocus, onFitBounds, presetRequest } = props;
+  const { stage, onStage, scenario, view, catalogue, target, onTarget, onCells, onBuilt, onFocus, presetRequest, siteHost, active, onMapStatus } = props;
   const { templates, templateFor, error: templatesError } = useBuildingTemplates();
   const { presets, loaded: presetsLoaded, error: presetsError } = useBuildingPresets();
+  const ids = useId();
 
-  const [definePage, setDefinePage] = useState<"building" | "resources" | "impact">("building");
-  const [sitePage, setSitePage] = useState<"requirements" | "search">("requirements");
-  const [previewPage, setPreviewPage] = useState<"assessment" | "usage">("assessment");
+  // ---- wizard ----
+  const stageIndex = Math.max(0, BUILD_STAGES.findIndex((s) => s.id === stage));
+  /** Furthest step reached; later steps stay locked until reached with Next. */
+  const [reached, setReached] = useState(stageIndex);
+  useEffect(() => setReached((r) => Math.max(r, stageIndex)), [stageIndex]);
   const contentRef = useRef<HTMLDivElement>(null);
-  useEffect(() => { contentRef.current?.scrollTo({ top: 0 }); }, [stage, definePage, sitePage, previewPage]);
-  useEffect(() => {
-    if (stage === "place" && !target) onStage("site");
-  }, [stage, target, onStage]);
+  useEffect(() => { contentRef.current?.scrollTo({ top: 0 }); }, [stage]);
 
   // ---- definition draft ----
   const [type, setType] = useState<BuildingType>("power_station");
@@ -112,6 +121,8 @@ export default function BuildPanel(props: Props) {
   /** The real example the form was loaded from (shown with its sources until cleared). */
   const [basedOn, setBasedOn] = useState<BuildingPreset | null>(null);
   const template = templateFor(type, templateId);
+  const typeGroups = useMemo(() => groupTemplates(templates, "", template.id), [templates, template.id]);
+  const examples = useMemo(() => splitPresetsByType(presets, type).matching, [presets, type]);
 
   // The form as last loaded (empty, a preset or a saved definition). Anything else is the user's own
   // edits, which loading a preset must not discard without asking.
@@ -141,11 +152,9 @@ export default function BuildPanel(props: Props) {
   const crit = useMemo(() => parseCriteria(criteria), [criteria]);
   const formErrors = { ...parsed.errors, ...crit.errors };
   const errorCount = Object.keys(formErrors).length;
-  const missing = useMemo(
-    () => missingInputs(parsed.stats, parsed.parameters, template, crit.criteria),
-    [parsed, template, crit.criteria],
-  );
-  const needs = useMemo(() => siteNeeds(parsed.stats, parsed.parameters, type), [parsed, type]);
+  const resourceErrors = countErrors(parsed.errors, RESOURCE_FIELDS);
+  const stepErrors = [0, resourceErrors, Object.keys(parsed.errors).length - resourceErrors + Object.keys(crit.errors).length];
+  const firstErrorStep = stepErrors.findIndex((n) => n > 0);
   const currency = parsed.stats.costs?.currency || "currency";
   const periodDays = useMemo(() => mergeAssumptions(scenario?.assumptions).periodDays, [scenario?.assumptions]);
 
@@ -182,16 +191,18 @@ export default function BuildPanel(props: Props) {
     };
   }
 
-  function chooseTemplate(t: (typeof templates)[number]) {
+  function chooseTemplate(id: string) {
+    const t = templates.find((x) => x.id === id);
+    if (!t) return;
     setType(t.type);
     setTemplateId(t.id);
     // An untouched form starts from the template's documented defaults; entered values are kept.
     if (pristine(stats)) setStats(statsToDraft(t.defaults ?? {}, {}));
   }
 
-  /** Load a real example; requirements (step 2) are kept. Presets are not templates: the type's template is used. */
+  /** Load a real example; limits are kept. Presets are not templates: the type's template is used. */
   function loadPreset(p: BuildingPreset, force = false): boolean {
-    if (!force && hasEdits && !confirm(`Replace your current building with “${p.name}”? Your edits to the form will be lost (requirements are kept).`)) {
+    if (!force && hasEdits && !confirm(`Replace your current building with “${p.name}”? Your edits to the form will be lost (limits are kept).`)) {
       return false;
     }
     const form = presetToForm(p);
@@ -208,10 +219,22 @@ export default function BuildPanel(props: Props) {
     return true;
   }
 
-  // A preset dropped on the map: load it once per request, then bring the preview into view.
+  const startFrom = basedOn && examples.some((p) => p.id === basedOn.id) ? `p:${basedOn.id}` : definitionId ? `d:${definitionId}` : "";
+  function chooseStart(value: string) {
+    if (!value) {
+      setBasedOn(null);
+      setDefinitionId(null);
+      return;
+    }
+    const id = value.slice(2);
+    if (value.startsWith("d:")) return loadDefinition(id);
+    const p = examples.find((x) => x.id === id);
+    if (p) loadPreset(p);
+  }
+
+  // A preset dropped on the map: load it once per request.
   const handledPreset = useRef<number | null>(null);
   const [presetNote, setPresetNote] = useState<string | null>(null);
-  const [scrollToPreview, setScrollToPreview] = useState(0);
   useEffect(() => {
     if (!presetRequest || handledPreset.current === presetRequest.nonce) return;
     const p = presets.find((x) => x.id === presetRequest.id);
@@ -221,21 +244,10 @@ export default function BuildPanel(props: Props) {
       onTarget(null); // don't preview a different building than the one dropped
       return setPresetNote("That example couldn't be loaded, so nothing is previewed.");
     }
-    if (!loadPreset(p)) {
-      onTarget(null); // kept the user's draft: don't preview it at the drop point unasked
-      return;
-    }
-    setScrollToPreview(presetRequest.nonce);
+    if (!loadPreset(p)) onTarget(null); // kept the user's draft: don't preview it at the drop point unasked
     // loadPreset only sets state.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [presetRequest, presets, presetsLoaded, presetsError]);
-  const previewRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (scrollToPreview) previewRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, [scrollToPreview]);
-  useEffect(() => {
-    if (target) previewRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, [target?.nonce]);
 
   function loadDefinition(id: string) {
     const d = definitions.find((x) => x.id === id);
@@ -265,8 +277,8 @@ export default function BuildPanel(props: Props) {
     setCriteria([]);
     setSaveNote(null);
     onTarget(null);
-    onStage("define");
-    setDefinePage("building");
+    setReached(0);
+    onStage("building");
   }
 
   async function saveDefinition(asNew: boolean) {
@@ -288,7 +300,7 @@ export default function BuildPanel(props: Props) {
       const saved = definitionId && !asNew ? await api.updateDefinition(definitionId, input) : await api.createDefinition(input);
       setDefinitionId(saved.id);
       setLoadedState(formState); // saved, so nothing is lost by loading something else
-      setSaveNote({ ok: true, text: `Saved “${saved.name}”. Future placements use it; buildings already placed keep their own copy.` });
+      setSaveNote({ ok: true, text: `Saved “${saved.name}”.` });
       refreshDefinitions();
     } catch (e) {
       setSaveNote({ ok: false, text: message(e) });
@@ -303,88 +315,87 @@ export default function BuildPanel(props: Props) {
     try {
       await api.deleteDefinition(d.id);
       setDefinitionId(null);
-      setSaveNote({ ok: true, text: "Saved definition deleted. The form still holds its values." });
+      setSaveNote({ ok: true, text: "Saved definition deleted." });
       refreshDefinitions();
     } catch (e) {
       setSaveNote({ ok: false, text: message(e) });
     }
   }
 
-  // ---- step 3: find locations ----
-  const [area, setArea] = useState<Area>("view");
-  const [areaResult, setAreaResult] = useState<{ key: string; area: AreaAssessment; periodDays: number } | null>(null);
+  // ---- live screening of the visible map, refreshed as the definition or view changes ----
+  const [areaResult, setAreaResult] = useState<{ key: string; area: AreaAssessment } | null>(null);
   const [areaLoading, setAreaLoading] = useState(false);
-  const [areaError, setAreaError] = useState<string | null>(null);
-  const areaCtrl = useRef<AbortController | null>(null);
-  const areaFresh = !!areaResult && areaResult.key === inputKey;
+  const [areaNote, setAreaNote] = useState<string | null>(null);
+  const b = view?.bounds;
+  const areaBounds = useMemo(() => {
+    if (!b) return null;
+    const r = (x: number) => Math.round(x * 100) / 100;
+    const bounds = { west: r(Math.max(-180, b.west)), east: r(Math.min(180, b.east)), south: r(Math.max(-85, b.south)), north: r(Math.min(85, b.north)) };
+    return bounds.west < bounds.east && bounds.south < bounds.north ? bounds : null;
+  }, [b?.west, b?.east, b?.south, b?.north]);
+  const boundsKey = JSON.stringify(areaBounds);
 
   useEffect(() => {
-    onCells(areaFresh ? areaResult!.area.cells : null);
-  }, [areaFresh, areaResult, onCells]);
+    onCells(active && areaResult ? areaResult.area.cells : null);
+  }, [active, areaResult, onCells]);
+
+  useEffect(() => {
+    if (!active || !scenarioId) return;
+    if (errorCount) return setAreaNote("Fix the highlighted fields to update the map");
+    if (!areaBounds) return setAreaNote(view ? "Pan so the view doesn't cross the date line" : null);
+    if (estimateCells(areaBounds) > MAX_AREA_CELLS) return setAreaNote("Zoom in to see where it fits");
+    setAreaNote(null);
+    const ctrl = new AbortController();
+    const key = inputKey;
+    const timer = setTimeout(async () => {
+      setAreaLoading(true);
+      try {
+        const r = await api.assess({ ...baseRequest, bounds: areaBounds, limit: 1 }, ctrl.signal);
+        if (!ctrl.signal.aborted && r.area) setAreaResult({ key, area: r.area });
+      } catch (e) {
+        if (ctrl.signal.aborted) return;
+        const tooBig = e instanceof ApiError && e.status === 422 && /narrow|too many|smaller|zoom/i.test(e.message);
+        setAreaNote(tooBig ? "Zoom in to see where it fits" : "Couldn't update the map");
+      } finally {
+        if (!ctrl.signal.aborted) setAreaLoading(false);
+      }
+    }, 450);
+    return () => {
+      clearTimeout(timer);
+      ctrl.abort();
+      setAreaLoading(false);
+    };
+    // inputKey and boundsKey capture every input of the request.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active, scenarioId, errorCount, inputKey, boundsKey]);
+
+  useEffect(() => {
+    onMapStatus?.({ note: active ? areaNote : null, loading: active && areaLoading });
+  }, [active, areaNote, areaLoading, onMapStatus]);
 
   // A different scenario invalidates everything that was assessed against the previous one.
   useEffect(() => {
-    areaCtrl.current?.abort();
     setAreaResult(null);
-    setAreaError(null);
-    setAreaLoading(false);
     setBuildError(null);
   }, [scenarioId]);
 
-  async function findLocations() {
-    if (errorCount) return setAreaError("Fix the highlighted fields first.");
-    const req = { ...baseRequest, limit: CANDIDATE_LIMIT } as Parameters<typeof api.assess>[0];
-    if (area === "view") {
-      if (!view) return setAreaError("The map view isn't ready yet.");
-      const b = view.bounds;
-      const bounds = {
-        west: Math.max(-180, b.west),
-        east: Math.min(180, b.east),
-        south: Math.max(-90, b.south),
-        north: Math.min(90, b.north),
-      };
-      if (bounds.west >= bounds.east) return setAreaError("Pan the map so the view doesn't cross the date line.");
-      req.bounds = bounds;
-    } else {
-      req.region = area;
-      onFitBounds?.(REGION_BBOX[area]);
-    }
-    areaCtrl.current?.abort();
-    const ctrl = new AbortController();
-    areaCtrl.current = ctrl;
-    const key = inputKey;
-    setAreaLoading(true);
-    setAreaError(null);
-    try {
-      const r = await api.assess(req, ctrl.signal);
-      if (ctrl.signal.aborted) return;
-      if (!r.area) throw new Error("The server returned no area result.");
-      setAreaResult({ key, area: r.area, periodDays: r.periodDays });
-    } catch (e) {
-      if (ctrl.signal.aborted) return;
-      if (e instanceof ApiError && e.status === 422 && /narrow|too many|smaller|zoom/i.test(e.message)) {
-        setAreaError(`This area has too many cells to assess at once. Zoom in, or choose Arizona or UK. (${e.message})`);
-      } else {
-        setAreaError(message(e));
-      }
-    } finally {
-      if (!ctrl.signal.aborted) setAreaLoading(false);
-    }
-  }
-
-  // ---- step 4: exact-location preview ----
-  const [loc, setLoc] = useState<{ key: string; value: LocationAssessment; periodDays: number } | null>(null);
+  // ---- live exact-location assessment ----
+  const [loc, setLoc] = useState<{ key: string; site: string; value: LocationAssessment; periodDays: number } | null>(null);
   const [locLoading, setLocLoading] = useState(false);
   /** The error belongs to one request revision; an edit makes it stale. */
   const [locErr, setLocErr] = useState<{ key: string; message: string } | null>(null);
   const [building, setBuilding] = useState(false);
   const buildingRef = useRef(false);
   const [buildError, setBuildError] = useState<string | null>(null);
+  const [supportNote, setSupportNote] = useState<string | null>(null);
 
   const targetOk = !!target && !!scenario && target.scenarioId === scenario.id;
-  const locKey = target ? JSON.stringify([inputKey, target.latitude, target.longitude]) : "";
+  const locKey = target ? JSON.stringify([inputKey, target.latitude, target.longitude, target.nonce]) : "";
+  const siteKey = target ? `${target.latitude},${target.longitude}` : "";
   const locFresh = !!loc && loc.key === locKey;
   const locError = locErr && locErr.key === locKey ? locErr.message : null;
+  /** The latest result for this spot stays visible (marked as updating) while an edit is re-assessed. */
+  const shownLoc = loc && (locFresh || loc.site === siteKey) ? loc : null;
 
   useEffect(() => {
     setBuildError(null);
@@ -410,7 +421,7 @@ export default function BuildPanel(props: Props) {
         );
         if (ctrl.signal.aborted) return;
         if (!r.location) throw new Error("The server returned no location result.");
-        setLoc({ key, value: r.location, periodDays: r.periodDays });
+        setLoc({ key, site: `${target.latitude},${target.longitude}`, value: r.location, periodDays: r.periodDays });
       } catch (e) {
         if (!ctrl.signal.aborted) setLocErr({ key, message: message(e) });
       } finally {
@@ -491,433 +502,225 @@ export default function BuildPanel(props: Props) {
     const [lat, lon] = cellToLatLng(next);
     onTarget({ latitude: lat, longitude: lon, scenarioId: main.scenarioId, nonce: Date.now() });
     onFocus(lat, lon);
-    setPreviewPage("assessment");
     setSupportNote(
       `“${main.name}” is placed. Now previewing ${preset ? `“${preset.name}”` : `a ${s.genericName.toLowerCase()}`} in the neighbouring hexagon — place it (or pick another spot within ~${Math.round(s.reachKm)} km) to cover the shortfall.`,
     );
-    setScrollToPreview(Date.now());
   }
-  const [supportNote, setSupportNote] = useState<string | null>(null);
 
-  const pickCandidate = (lat: number, lon: number) => {
-    if (!scenario) return;
-    onPick(false);
-    onTarget({ latitude: lat, longitude: lon, scenarioId: scenario.id, nonce: Date.now() });
-    onFocus(lat, lon);
-  };
 
   const colour = `rgb(${typeColour(type).join(",")})`;
   const canBuild = targetOk && !building && !errorCount && (locFresh || !!locError);
+  const blocked = firstErrorStep >= 0
+    ? `Fix ${fieldCount(stepErrors[firstErrorStep])} in ${BUILD_STAGES[firstErrorStep].label}`
+    : null;
 
-  const preview = target && targetOk ? (
-    <div className="preview" ref={previewRef}>
-      <div className="panel-head">
-        <h2>
-          <span className="dot" style={{ background: colour }} /> {name.trim() || template.label}
-        </h2>
-        <button className="ghost" onClick={() => onTarget(null)} aria-label="Cancel preview">
-          ✕
-        </button>
-      </div>
-      <p className="subtitle small">
-        {template.label} · <span className="mono">{coordLabel(target.latitude, target.longitude)}</span>
-        {locFresh && <span className="mono"> · {loc!.value.h3Id}</span>}
-      </p>
-
-      {locLoading && !locFresh && <p className="muted small">Assessing this location…</p>}
-      {locError && <p className="warn small">Assessment unavailable: {locError}</p>}
-      {errorCount > 0 && <p className="warn small">Fix the highlighted fields to assess this location.</p>}
-      {supportNote && <p className="note small">{supportNote}</p>}
-
-      <PanelTabs label="Placement details" value={previewPage} onChange={setPreviewPage} options={[
-        { value: "assessment", label: "Assessment" }, { value: "usage", label: "Usage & costs" },
-      ]} />
-      {locFresh && (
-        <>
-          <div hidden={previewPage !== "assessment"}>
-          <h4>Can it be built here?</h4>
-          <AssessmentView assessment={loc!.value.assessment} site={loc!.value.site} onSupport={canBuild ? placeWithSupport : undefined} />
-          {(loc!.value.utilityPrices?.length ?? 0) > 0 && (
-            <>
-              <h4>Utility prices at this location</h4>
-              <LocationPrices
-                offers={loc!.value.utilityPrices!}
-                onApply={(o) => setStats(applyLocationPrice(stats, o))}
-                onRemove={(r) => setStats(removeLocationPrice(stats, r))}
-              />
-            </>
-          )}
-          </div>
-          <div hidden={previewPage !== "usage"}>
-          <Section title="Calculated usage and costs" meta={`over ${fmtDays(loc!.periodDays)}`} open>
-            <ResultView result={loc!.value.result} producesPower={template.producesPower} producesWater={template.producesWater} />
-          </Section>
-          </div>
-        </>
-      )}
-
-      {buildError && <p className="warn small">Not placed: {buildError}</p>}
-    </div>
-  ) : null;
-
-  const statsErrorCount = Object.keys(parsed.errors).length;
-  const resourceErrors = countErrors(parsed.errors, ["footprintM2", "operatingHoursPerDay", "power.", "water.", "materials.", "params."]);
-  const stageIndex = ["define", "site", "place"].indexOf(stage);
+  /** Steps ahead stay locked while a step on the way has invalid fields. */
+  const canGoTo = (i: number) =>
+    i <= reached && stepErrors.slice(stageIndex, Math.max(stageIndex, i)).every((n) => n === 0);
+  const next = BUILD_STAGES[stageIndex + 1];
 
   return (
     <div className="build-workflow">
       <div className="workflow-header">
         <nav className="build-steps" aria-label="Building workflow">
-          {([ ["define", "Define"], ["site", "Find a site"], ["place", "Place"] ] as const).map(([id, label], i) => (
-            <button key={id} aria-current={stage === id ? "step" : undefined}
-              disabled={(id === "site" && statsErrorCount > 0) || (id === "place" && (!targetOk || errorCount > 0))}
-              onClick={() => onStage(id)}>
-              <span>{i + 1}</span>{label}{i < 2 && <Icon name="chevron" size={14} />}
+          {BUILD_STAGES.map((s, i) => (
+            <button
+              key={s.id}
+              type="button"
+              aria-current={i === stageIndex ? "step" : undefined}
+              className={i < reached && i !== stageIndex ? "done" : undefined}
+              disabled={i !== stageIndex && !canGoTo(i)}
+              onClick={() => onStage(s.id)}
+            >
+              <span>{i + 1}</span>
+              {s.label}
             </button>
           ))}
         </nav>
-        <div className="stage-caption">Step {stageIndex + 1} of 3 <span>{stage === "define" ? "Define what you want to build" : stage === "site" ? "Choose where it should go" : "Review before placing"}</span></div>
       </div>
+
       <div className="workflow-content" ref={contentRef}>
-      <div hidden={stage !== "define"}>
-        <PanelTabs label="Building definition sections" value={definePage} onChange={setDefinePage} options={[
-          { value: "building", label: "Building" }, { value: "resources", label: "Resources", count: resourceErrors },
-          { value: "impact", label: "Impact & costs", count: statsErrorCount - resourceErrors },
-        ]} />
-        {templatesError && <p className="note small">Templates couldn't be loaded ({templatesError}); using built-in field lists.</p>}
-      {/* ---------------- 1. Define ---------------- */}
-      <section className="panel" id="build-define">
-        <div hidden={definePage !== "building"}>
-        <h3 className="step">Choose a building type</h3>
-        <div className="template-grid" role="radiogroup" aria-label="Building type">
-          {templates.map((t) => {
-            const on = t.id === template.id;
-            return (
-              <button key={t.id} role="radio" aria-checked={on} className={on ? "selected" : ""} onClick={() => chooseTemplate(t)}>
-                <Icon name={t.type === "water_plant" ? "water" : t.type === "power_station" ? "bolt" : t.type === "solar" ? "sun" : "building"} />
-                {t.label}
-              </button>
-            );
-          })}
-        </div>
-        <details className="readiness-note"><summary>About this building type</summary><p className="muted small">{template.description}</p></details>
-        <details className="section example-section"><summary><Icon name="globe" size={17} /><span className="section-title">Start from a real-world example</span></summary><div className="section-body">
-          <PresetPalette presets={presets.filter((preset) => preset.type === type)} loaded={presetsLoaded} error={presetsError} selectedId={basedOn?.id ?? null} onLoad={loadPreset} />
-        </div></details>
         {presetNote && <p className="warn small">{presetNote}</p>}
 
-        {definitions.length > 0 && (
-          <div className="row align-end">
-            <label className="field">
-              <span>Or load a saved definition</span>
-              <select value={definitionId ?? ""} onChange={(e) => loadDefinition(e.target.value)}>
-                <option value="">—</option>
-                {definitions.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            {definitionId && (
-              <button className="ghost danger" onClick={deleteDefinition}>
-                Delete saved
-              </button>
+        {stage === "building" && (
+          <div className="wizard-step">
+            {templatesError && (
+              <p className="note small" title={templatesError}>
+                Building types couldn't be loaded; using built-in fields.
+              </p>
             )}
+            <Section title="Building">
+              <div className="field">
+                <label htmlFor={`${ids}-type`}>Building type</label>
+                <div className="type-picker">
+                  <Icon name={typeIcon(type)} />
+                  <select id={`${ids}-type`} value={template.id} title={template.description} onChange={(e) => chooseTemplate(e.target.value)}>
+                    {typeGroups.map((g) => (
+                      <optgroup key={g.category} label={g.label}>
+                        {g.templates.map((t) => (
+                          <option key={t.id} value={t.id}>
+                            {t.label}
+                          </option>
+                        ))}
+                      </optgroup>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {(examples.length > 0 || definitions.length > 0) && (
+                <div className="field">
+                  <label htmlFor={`${ids}-example`}>Start from</label>
+                  <div className="wizard-row nowrap">
+                    <div className="example-picker">
+                      <Icon name={definitionId ? "building" : "globe"} />
+                      <select id={`${ids}-example`} value={startFrom} onChange={(e) => chooseStart(e.target.value)}>
+                        <option value="">None</option>
+                        {examples.length > 0 && (
+                          <optgroup label="Real examples">
+                            {examples.map((p) => (
+                              <option key={p.id} value={`p:${p.id}`} title={p.headline}>
+                                {p.name}
+                              </option>
+                            ))}
+                          </optgroup>
+                        )}
+                        {definitions.length > 0 && (
+                          <optgroup label="Saved">
+                            {definitions.map((d) => (
+                              <option key={d.id} value={`d:${d.id}`}>
+                                {d.name}
+                              </option>
+                            ))}
+                          </optgroup>
+                        )}
+                      </select>
+                    </div>
+                    {definitionId && (
+                      <button type="button" className="ghost danger" onClick={deleteDefinition} title="Delete this saved definition">
+                        Delete
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+              {defsError && (
+                <p className="small muted" title={defsError}>
+                  Saved definitions unavailable.
+                </p>
+              )}
+              {basedOn && <PresetBasis preset={basedOn} />}
+            </Section>
+
+            <Section title="Details">
+              <Field label="Name" value={name} onChange={setName} numeric={false} placeholder={template.label} />
+              <label className="field">
+                <span>Description</span>
+                <textarea
+                  rows={3}
+                  value={description}
+                  placeholder="e.g. a 50 MW gas turbine plant with evaporative cooling"
+                  onChange={(e) => setDescription(e.target.value)}
+                />
+              </label>
+            </Section>
           </div>
         )}
-        {defsError && <p className="small muted">Saved definitions unavailable: {defsError}</p>}
 
-        <Field label="Name" value={name} onChange={setName} numeric={false} placeholder={template.label} />
-        <Section title="Description & source notes">
-        <label className="field">
-          <span>What do you want to build?</span>
-          <textarea
-            rows={3}
-            value={description}
-            placeholder="Plain-language description, e.g. a 50 MW gas turbine plant with evaporative cooling"
-            onChange={(e) => setDescription(e.target.value)}
-          />
-          <small className="muted">Saved with the definition. Numbers are never read from it — enter them in Resources and Impact &amp; costs.</small>
-        </label>
-
-        {basedOn && <PresetBasis preset={basedOn} />}
-        </Section>
-        </div>
-        <div hidden={definePage === "building"}>
-          <p className="subtitle small">{name.trim() || template.label} · blank fields remain unknown.</p>
-          <BuildingForm draft={stats} onChange={setStats} errors={parsed.errors} template={template} page={definePage === "impact" ? "impact" : "resources"} />
-        </div>
-        {missing.length > 0 && (
-          <details className="readiness-note"><summary>{missing.length} item{missing.length === 1 ? "" : "s"} still needed for a conclusive assessment</summary>
-          <div className="note">
-            <strong>Still needed to calculate everything</strong>
-            <ul>
-              {missing.map((m) => (
-                <li key={m}>{m}</li>
-              ))}
-            </ul>
-            <span className="muted small">Blank fields are treated as unknown, never as zero.</span>
-          </div></details>
+        {stage === "resources" && (
+          <div className="wizard-step">
+            <BuildingForm page="resources" draft={stats} onChange={setStats} errors={parsed.errors} template={template} />
+          </div>
         )}
 
-        {errorCount > 0 && <p className="warn small">Fix {errorCount} highlighted field{errorCount === 1 ? "" : "s"} before saving or placing.</p>}
-        <div className="actions">
-          <button className="primary" onClick={() => saveDefinition(false)} disabled={saving}>
-            {saving ? "Saving…" : definitionId ? "Save changes" : "Save definition"}
-          </button>
-          {definitionId && (
-            <button onClick={() => saveDefinition(true)} disabled={saving}>
-              Save as new
-            </button>
-          )}
-          <button className="right" onClick={startOver}>
-            Start over
-          </button>
-        </div>
-        {saveNote && <p className={`small ${saveNote.ok ? "ok" : "warn"}`}>{saveNote.text}</p>}
-        <p className="muted small">Saving is optional — you can place a building straight from this form.</p>
-      </section>
-
-      </div>
-      <div hidden={stage !== "site"}>
-        <div className="draft-summary"><Icon name="building" size={18} /><span><strong>{name.trim() || template.label}</strong><small>{template.label} · {fmtDays(periodDays)}</small></span><button className="link inline small" onClick={() => onStage("define")}>Edit</button></div>
-        <PanelTabs label="Site selection sections" value={sitePage} onChange={setSitePage} options={[
-          { value: "requirements", label: "Site needs", count: Object.keys(crit.errors).length }, { value: "search", label: "Find locations" },
-        ]} />
-      {/* ---------------- 2. Requirements ---------------- */}
-      <section className="panel" id="build-requirements" hidden={sitePage !== "requirements"}>
-        <h3 className="step">What a site must provide</h3>
-        <p className="muted small">
-          Worked out from your building's specs. Each location is checked against what its hexagon and the
-          surrounding hexagons can supply.
-        </p>
-        <ul className="site-needs">
-          {needs.map((x) => (
-            <li key={x.key}>
-              <strong>{x.label}{x.advisory && <span className="muted small"> (advisory)</span>}</strong>
-              {x.from ? <span className="num">{x.from}</span> : <span className={x.key === "land" ? "warn" : "muted"}>{x.hint}</span>}
-            </li>
-          ))}
-        </ul>
-        <Section title="Your own extra limits" meta={crit.criteria.length ? `${crit.criteria.length} set` : "optional"} invalid={Object.keys(crit.errors).length}>
-          <p className="muted small">Preferences on top of what the site provides, e.g. avoid high water stress or steep land, or keep within a budget.</p>
-          <CriteriaEditor drafts={criteria} onChange={setCriteria} errors={crit.errors} catalogue={catalogue} currency={currency} periodDays={periodDays} />
-        </Section>
-      </section>
-
-      {/* ---------------- 3. Find locations ---------------- */}
-      <section className="panel" hidden={sitePage !== "search"}>
-        <h3 className="step">Find a site</h3>
-        {targetOk && <div className="selected-site">
-          <span className="small">Selected point <strong className="block mono">{coordLabel(target!.latitude, target!.longitude)}</strong></span>
-          <button className={picking ? "active" : ""} disabled={!scenario || errorCount > 0} aria-pressed={picking} onClick={() => onPick(!picking)}>{picking ? "Cancel map pick" : "Pick another point"}</button>
-        </div>}
-        <details className="section search-setup" open={!areaFresh}>
-        <summary><span className="section-title">Search area</span><span className="section-meta">{AREA_LABEL[area]}</span></summary>
-        <div className="section-body">
-        {!needs[0].from && (
-          <p className="note small">
-            Enter the building's footprint in Define → Resources. Without it, whether a site has room for it
-            can't be judged and every hexagon will show “Can't tell yet”.
-          </p>
+        {stage === "impact" && (
+          <div className="wizard-step">
+            <BuildingForm page="impact" draft={stats} onChange={setStats} errors={parsed.errors} template={template} />
+            <Section title="Limits" invalid={Object.keys(crit.errors).length}>
+              <CriteriaEditor drafts={criteria} onChange={setCriteria} errors={crit.errors} catalogue={catalogue} currency={currency} periodDays={periodDays} />
+            </Section>
+          </div>
         )}
-        <fieldset className="radios">
-          <legend className="small muted">Area to assess</legend>
-          {(Object.keys(AREA_LABEL) as Area[]).map((a) => (
-            <label key={a} className="toggle compact">
-              <input type="radio" name="build-area" checked={area === a} onChange={() => setArea(a)} />
-              <span>{AREA_LABEL[a]}</span>
-            </label>
-          ))}
-        </fieldset>
-        <div className="actions">
-          <button className="primary" onClick={findLocations} disabled={!scenario || areaLoading || errorCount > 0}>
-            <Icon name="search" size={17} />{areaLoading ? "Assessing…" : "Find locations"}
-          </button>
-          {areaLoading && (
-            <button
-              onClick={() => {
-                areaCtrl.current?.abort();
-                setAreaLoading(false);
-              }}
-            >
-              Stop
-            </button>
-          )}
-          {areaResult && (
-            <button className="right" onClick={() => setAreaResult(null)}>
-              Clear results
-            </button>
-          )}
-        </div>
-        </div></details>
-        {areaError && <p className="warn small">{areaError}</p>}
-        {areaResult && !areaFresh && (
-          <p className="note small">The building, requirements or scenario changed since this search. Find locations again to update the results.</p>
-        )}
-        {areaResult && areaFresh && <AreaResults area={areaResult.area} periodDays={areaResult.periodDays} onPick={pickCandidate} />}
-      </section>
+      </div>
 
-      </div>
-      <div hidden={stage !== "place"}>{preview}</div>
-      </div>
       <footer className="workflow-footer">
-        {stage === "define" && statsErrorCount > 0 && <p className="warn small" role="status">Fix the marked resource or impact fields to continue. Blank fields are allowed.</p>}
-        {stage === "site" && !targetOk && <p className="muted small">Choose a candidate or pick an exact point on the map.</p>}
-        {stage === "place" && errorCount > 0 && <p className="warn small">Fix highlighted inputs before placing. <button className="link inline small" onClick={() => {
-          if (statsErrorCount) { setDefinePage(resourceErrors ? "resources" : "impact"); onStage("define"); }
-          else if (Object.keys(crit.errors).length) { setSitePage("requirements"); onStage("site"); }
-        }}>Review fields</button></p>}
+        {stepErrors[stageIndex] > 0 ? (
+          <p className="warn small" role="status">
+            Fix {fieldCount(stepErrors[stageIndex])} to continue.
+          </p>
+        ) : saveNote && !next ? (
+          <p className={`small ${saveNote.ok ? "ok" : "warn"}`} role="status">
+            {saveNote.text}
+          </p>
+        ) : null}
         <div className="actions">
-          {stage === "define" ? (
-            <button className="primary right" disabled={statsErrorCount > 0} onClick={() => onStage("site")}>Next: Find a site <Icon name="arrow" size={16} /></button>
-          ) : stage === "site" ? (
-            <>
-              <button onClick={() => onStage("define")}>Back</button>
-              {sitePage === "requirements" ? <button className="primary right" onClick={() => setSitePage("search")} disabled={errorCount > 0}>Continue to locations <Icon name="arrow" size={16} /></button>
-                : targetOk ? <button className="primary right" disabled={errorCount > 0} onClick={() => onStage("place")}>Next: Review & place <Icon name="arrow" size={16} /></button>
-                : <button className={picking ? "active right" : "primary right"} disabled={!scenario || errorCount > 0} aria-pressed={picking} onClick={() => onPick(!picking)}><Icon name="pin" size={16} />{picking ? "Cancel map pick" : "Pick on map"}</button>}
-            </>
+          {stageIndex > 0 ? (
+            <button type="button" onClick={() => onStage(BUILD_STAGES[stageIndex - 1].id)}>
+              Back
+            </button>
+          ) : (
+            <button type="button" className="ghost" onClick={startOver}>
+              Start over
+            </button>
+          )}
+          {next ? (
+            <button type="button" className="primary right" disabled={stepErrors[stageIndex] > 0} onClick={() => onStage(next.id)}>
+              Next: {next.label} <Icon name="arrow" size={16} />
+            </button>
           ) : (
             <>
-              <button disabled={building} onClick={() => { setSitePage("search"); onStage("site"); }}>Change site</button>
-              <button className="primary right" disabled={!canBuild} onClick={() => buildHere()}>{building ? "Placing…" : "Build here"}<Icon name="arrow" size={16} /></button>
+              {definitionId && (
+                <button type="button" className="right" onClick={() => saveDefinition(true)} disabled={saving}>
+                  Save as new
+                </button>
+              )}
+              <button type="button" className={definitionId ? "primary" : "primary right"} onClick={() => saveDefinition(false)} disabled={saving || errorCount > 0}>
+                {saving ? "Saving…" : definitionId ? "Save changes" : "Save definition"}
+              </button>
             </>
           )}
         </div>
       </footer>
+
+      {siteHost &&
+        createPortal(
+          <SitePanel
+            buildingName={name.trim() || template.label}
+            typeLabel={template.label}
+            colour={colour}
+            target={targetOk ? target : null}
+            loading={locLoading || (!!shownLoc && !locFresh && !locError && !errorCount)}
+            error={locError}
+            blocked={blocked}
+            location={shownLoc ? shownLoc.value : null}
+            periodDays={shownLoc ? shownLoc.periodDays : periodDays}
+            producesPower={template.producesPower}
+            producesWater={template.producesWater}
+            canBuild={canBuild}
+            building={building}
+            buildError={buildError}
+            supportNote={supportNote}
+            onBuild={() => buildHere()}
+            onCancel={() => onTarget(null)}
+            onSupport={canBuild ? placeWithSupport : undefined}
+            onApplyPrice={(o) => setStats((st) => applyLocationPrice(st, o))}
+            onRemovePrice={(r) => setStats((st) => removeLocationPrice(st, r))}
+          />,
+          siteHost,
+        )}
     </div>
   );
 }
 
-function AreaResults({ area, periodDays, onPick }: { area: AreaAssessment; periodDays: number; onPick: (lat: number, lon: number) => void }) {
-  const [page, setPage] = useState(0);
-  useEffect(() => { setPage(0); }, [area]);
-  const pages = Math.ceil(area.candidates.length / 5);
-  return (
-    <div className="results">
-      <p className="small">
-        {area.cellCount.toLocaleString()} cells assessed (resolution 6) · usage over {fmtDays(periodDays)}
-      </p>
-      <StateLegend counts={area.counts} />
-      {area.note && <details className="readiness-note"><summary>Screening method & limitations</summary><p className="note small">{area.note}</p></details>}
-      {area.candidates.length === 0 ? (
-        <p className="muted small">No candidate cells in this area.</p>
-      ) : (
-        <>
-          <h4>
-            Candidates{" "}
-            <span className="muted small">
-              (first {area.candidates.length}
-              {area.cellCount > area.candidates.length ? ` of ${area.cellCount.toLocaleString()}` : ""}: buildable, then can’t tell yet, then not buildable)
-            </span>
-          </h4>
-          <ol className="list candidates">
-            {area.candidates.slice(page * 5, page * 5 + 5).map((c) => {
-              const fails = c.assessment.checks.filter((x) => x.status === "fail").length;
-              const unknown = c.assessment.checks.filter((x) => x.status === "unknown").length;
-              return (
-                <li key={c.h3Id}>
-                  <button className="link" onClick={() => onPick(c.latitude, c.longitude)}>
-                    <StateBadge state={c.assessment.state} />
-                    <span className="grow">
-                      <span className="mono small">{coordLabel(c.latitude, c.longitude)}</span>
-                      <small className="muted block">
-                        {fails} failed · {unknown} unknown · {c.assessment.checks.length} check{c.assessment.checks.length === 1 ? "" : "s"}
-                      </small>
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-          </ol>
-          {pages > 1 && <div className="pagination"><button disabled={page === 0} onClick={() => setPage(page - 1)}>Previous</button><span>Page {page + 1} of {pages}</span><button disabled={page + 1 >= pages} onClick={() => setPage(page + 1)}>Next candidates</button></div>}
-        </>
-      )}
-    </div>
-  );
-}
-
-/** "Start from a real example": draggable cards; click loads one into the form. */
-function PresetPalette(props: {
-  presets: BuildingPreset[];
-  loaded: boolean;
-  error: string | null;
-  selectedId: string | null;
-  onLoad: (p: BuildingPreset) => void;
-}) {
-  const { presets, loaded, error, selectedId, onLoad } = props;
-  if (error) return <p className="muted small">Examples unavailable.</p>;
-  if (!loaded) return <p className="muted small">Loading real examples…</p>;
-  if (presets.length === 0) return <p className="muted small">No real-world examples for this building type yet. You can define your own specifications below.</p>;
-  return (
-    <div className="presets">
-      <p className="muted small">Choose an example to load its specifications, or drag it onto the map to preview a site.</p>
-      <div className="preset-grid">
-        {presets.map((p) => (
-          <div
-            key={p.id}
-            role="button"
-            tabIndex={0}
-            draggable
-            aria-pressed={p.id === selectedId}
-            className={`preset-card${p.id === selectedId ? " selected" : ""}`}
-            title={`${p.name} — ${presetPlace(p)}. Drag onto the map, or click to load.`}
-            onClick={() => onLoad(p)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                onLoad(p);
-              }
-            }}
-            onDragStart={(e) => {
-              e.dataTransfer.setData(PRESET_DRAG_TYPE, p.id);
-              e.dataTransfer.effectAllowed = "copy";
-            }}
-          >
-            <span className="preset-name">
-              <span className="dot" style={{ background: `rgb(${typeColour(p.type).join(",")})` }} />
-              {p.name}
-            </span>
-            <span className="preset-headline">{p.headline}</span>
-            <span className="preset-sources">{sourceCount(p.sources.length)}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/** Where the loaded example's figures come from. */
 function PresetBasis({ preset }: { preset: BuildingPreset }) {
   return (
-    <div className="preset-basis small">
-      <strong>Based on {presetPlace(preset)}</strong>
-      <p className="muted">
-        Figures are cited from the sources below; blanks are unknown. Edited sections are marked as your own assumption.
-      </p>
-      {preset.notes.length > 0 && (
-        <ul>
-          {preset.notes.map((n, i) => (
-            <li key={i}>{n}</li>
-          ))}
-        </ul>
-      )}
-      <ol className="preset-source-list">
-        {preset.sources.map((s) => (
-          <li key={s.id}>
-            <a href={s.url} target="_blank" rel="noreferrer noopener">
-              {s.title}
-            </a>
-            <span className="muted">
-              {" "}
-              · {s.publisher}
-              {s.year ? ` (${s.year})` : ""} [{s.id}]
-            </span>
-          </li>
-        ))}
-      </ol>
-    </div>
+    <p className="preset-basis small">
+      <span>Based on {presetPlace(preset)}</span>
+      {preset.sources.map((src, i) => (
+        <a key={src.id} href={src.url} target="_blank" rel="noreferrer noopener" title={`${src.title} · ${src.publisher}${src.year ? ` (${src.year})` : ""}`}>
+          [{i + 1}]
+        </a>
+      ))}
+    </p>
   );
 }
