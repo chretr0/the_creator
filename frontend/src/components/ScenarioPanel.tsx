@@ -42,7 +42,7 @@ export default function ScenarioPanel(props: Props) {
       <section className="panel">
         <h2>{scenario?.name ?? "No scenario"}</h2>
         {parent && <p className="subtitle">Branched from {parent}</p>}
-        <div className="actions">
+        <div className="actions scenario-actions">
           <button onClick={props.onCreate}>New</button>
           <button onClick={props.onBranch} disabled={!scenario}>
             Branch
@@ -61,7 +61,7 @@ export default function ScenarioPanel(props: Props) {
         {scenario && scenario.projects.length === 0 && (
           <p className="muted">No buildings yet. Choose Build to define a building, or use “Add building” on the map.</p>
         )}
-        <ul className="list">
+        <ul className="list scenario-projects">
           {scenario?.projects.map((p) => (
             <li key={p.id}>
               <button

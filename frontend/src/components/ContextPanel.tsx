@@ -118,7 +118,7 @@ export function ImageryPanel({ imagery, onImagery, defaultImageryDate, view, chi
         <span>True-colour imagery</span>
       </label>
       {imagery && (
-        <div className="sub">
+        <div className="sub imagery-controls">
           <div className="row">
             <label className="field">
               <span>Product</span>

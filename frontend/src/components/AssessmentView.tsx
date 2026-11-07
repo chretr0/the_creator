@@ -90,7 +90,7 @@ export function AssessmentView({
           <Section title="What the site provides" meta={`${site.resources.length} resources`}>
             <SiteCapacityView site={site} />
           </Section>
-          <Section title="Why — each check explained" meta={`${checks.length} checks`}>
+          <Section title="Why — each check explained" meta={`${checks.length} check${checks.length === 1 ? "" : "s"}`}>
             {list}
           </Section>
         </>

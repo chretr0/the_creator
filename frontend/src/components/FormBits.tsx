@@ -121,7 +121,7 @@ const rgb = (c: [number, number, number]) => `rgb(${c.join(",")})`;
 
 export function StateBadge({ state }: { state: AssessmentState }) {
   return (
-    <span className="badge" style={{ borderColor: rgb(STATE_COLOUR[state]), color: rgb(STATE_COLOUR[state]) }}>
+    <span className={`badge state-${state}`} style={{ borderColor: rgb(STATE_COLOUR[state]) }}>
       <span className="dot" style={{ background: rgb(STATE_COLOUR[state]) }} />
       {STATE_LABEL[state]}
     </span>

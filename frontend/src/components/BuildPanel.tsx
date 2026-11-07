@@ -602,7 +602,7 @@ export default function BuildPanel(props: Props) {
         </div>
         <details className="readiness-note"><summary>About this building type</summary><p className="muted small">{template.description}</p></details>
         <details className="section example-section"><summary><Icon name="globe" size={17} /><span className="section-title">Start from a real-world example</span></summary><div className="section-body">
-          <PresetPalette presets={presets} loaded={presetsLoaded} error={presetsError} selectedId={basedOn?.id ?? null} onLoad={loadPreset} />
+          <PresetPalette presets={presets.filter((preset) => preset.type === type)} loaded={presetsLoaded} error={presetsError} selectedId={basedOn?.id ?? null} onLoad={loadPreset} />
         </div></details>
         {presetNote && <p className="warn small">{presetNote}</p>}
 
@@ -824,7 +824,7 @@ function AreaResults({ area, periodDays, onPick }: { area: AreaAssessment; perio
                     <span className="grow">
                       <span className="mono small">{coordLabel(c.latitude, c.longitude)}</span>
                       <small className="muted block">
-                        {fails} failed · {unknown} unknown · {c.assessment.checks.length} checks
+                        {fails} failed · {unknown} unknown · {c.assessment.checks.length} check{c.assessment.checks.length === 1 ? "" : "s"}
                       </small>
                     </span>
                   </button>
@@ -850,11 +850,10 @@ function PresetPalette(props: {
   const { presets, loaded, error, selectedId, onLoad } = props;
   if (error) return <p className="muted small">Examples unavailable.</p>;
   if (!loaded) return <p className="muted small">Loading real examples…</p>;
-  if (presets.length === 0) return null;
+  if (presets.length === 0) return <p className="muted small">No real-world examples for this building type yet. You can define your own specifications below.</p>;
   return (
     <div className="presets">
-      <h4>Start from a real example</h4>
-      <p className="muted small">Drag onto the map to preview it there, or click to load it.</p>
+      <p className="muted small">Choose an example to load its specifications, or drag it onto the map to preview a site.</p>
       <div className="preset-grid">
         {presets.map((p) => (
           <div

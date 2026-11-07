@@ -26,6 +26,7 @@ import type { CellState } from "./lib/buildings";
 import LayerPanel from "./components/LayerPanel";
 import FacilityInspector from "./components/FacilityInspector";
 import Icon from "./components/Icon";
+import { useTheme } from "./lib/useTheme";
 import { BackLink, PanelTabs } from "./components/PanelNavigation";
 import DataPanel, { RecordsPanel, PreparedScenes, LayerLegend } from "./components/DataPanel";
 import { FieldList } from "./components/BaselineBlock";
@@ -64,6 +65,15 @@ type Tab = "layers" | "search" | "build" | "projects";
 type Mode = { kind: "inspect" } | { kind: "pick" } | { kind: "move"; projectId: string };
 
 const LAST_SCENARIO_KEY = "newworlds:lastScenario";
+const HEX_OUTLINES_KEY = "newworlds:hexOutlines";
+
+function readHexOutlines(): boolean {
+  try {
+    return localStorage.getItem(HEX_OUTLINES_KEY) !== "false";
+  } catch {
+    return true;
+  }
+}
 
 function readLastScenario(): string | null {
   try {
@@ -96,6 +106,7 @@ function writeLastScenario(id: string) {
 }
 
 export default function App() {
+  const { theme, toggleTheme } = useTheme();
   const [scenarios, setScenarios] = useState<ScenarioSummary[]>([]);
   const [scenario, setScenario] = useState<Scenario | null>(null);
   const [mode, setMode] = useState<Mode>({ kind: "inspect" });
@@ -116,6 +127,14 @@ export default function App() {
   const [companyFilter, setCompanyFilter] = useState<string | null>(null);
   const [selectedFacilityId, setSelectedFacilityId] = useState<string | null>(null);
   const [tilted, setTilted] = useState(false);
+  const [showHexOutlines, setShowHexOutlines] = useState(readHexOutlines);
+  useEffect(() => {
+    try {
+      localStorage.setItem(HEX_OUTLINES_KEY, String(showHexOutlines));
+    } catch {
+      // Keep the control usable when browser storage is unavailable.
+    }
+  }, [showHexOutlines]);
   const [view, setView] = useState<MapView | null>(null);
   const [sideTab, setSideTab] = useState<Tab>("layers");
   const [buildStage, setBuildStage] = useState<BuildStage>("define");
@@ -258,6 +277,9 @@ export default function App() {
 
   const selectProject = (p: Project) => {
     setBuildMapVisible(false);
+    setSelectedFacilityId(null);
+    ctx.setSelection(null);
+    data.setPicked(null);
     setSelectedProjectId(p.id);
     setInspectorOpen(true);
     setSelection({ h3Id: p.h3Id, latitude: p.latitude, longitude: p.longitude });
@@ -447,6 +469,7 @@ export default function App() {
 
   function pickRecord(r: QueryRecord) {
     setSelectedProjectId(null);
+    data.setPicked(null);
     setInspectorOpen(true);
     if (r.dataset === "datacenters" || r.dataset === "dams") {
       const f = r.ref as Facility;
@@ -508,11 +531,14 @@ export default function App() {
       if (!isShown(p.scenarioId, `"${p.name || p.type}"`)) return;
       setScenario((s) => (s && s.id === p.scenarioId ? { ...s, projects: [...s.projects, p] } : s));
       if (opts?.stay) return; // a supporting building is previewed next in the Build tab
+      setSelectedFacilityId(null);
+      ctx.setSelection(null);
+      data.setPicked(null);
       setSelectedProjectId(p.id);
       setSelection({ h3Id: p.h3Id, latitude: p.latitude, longitude: p.longitude });
       setInspectorOpen(true);
     },
-    [refreshList, isShown],
+    [refreshList, isShown, ctx.setSelection, data.setPicked],
   );
   // A save result only replaces the scenario it was made for (the user may have switched meanwhile).
   const applySavedScenario = useCallback((saved: Scenario) => setScenario((cur) => keepIfShown(cur, saved)), []);
@@ -583,7 +609,12 @@ export default function App() {
           <button aria-current={workspace === "scenarios" ? "page" : undefined} onClick={() => navigate("projects")}><Icon name="chart" />Scenarios</button>
         </nav>
         <div className="scenario-switcher"><span className="eyebrow">ACTIVE SCENARIO</span><ScenarioSelect scenarios={scenarios} scenario={scenario} onSwitch={scenarioActions.onSwitch} /></div>
-        <button className="sources-button" onClick={showCredits}><Icon name="info" size={18} /><span>Data & sources</span></button>
+        <div className="header-actions">
+          <button className="sources-button" onClick={showCredits}><Icon name="info" size={18} /><span>Data & sources</span></button>
+          <button className="theme-toggle" onClick={toggleTheme} aria-label={theme === "dark" ? "Switch to day mode" : "Switch to night mode"} title={theme === "dark" ? "Switch to day mode" : "Switch to night mode"}>
+            <Icon name={theme === "dark" ? "sun" : "moon"} size={19} />
+          </button>
+        </div>
       </header>
       <div className={`workspace workspace-${workspace}${dock ? " with-inspector" : ""}${buildMapVisible ? " mobile-map-open" : ""}`}>
         {workspace === "build" && <button className="mobile-map-toggle" aria-pressed={buildMapVisible} onClick={() => {
@@ -593,6 +624,8 @@ export default function App() {
         }}><Icon name={buildMapVisible ? "arrow" : "pin"} size={16} />{buildMapVisible ? "Back to building" : "Show map"}</button>}
         <main className="map-wrap" aria-label="Interactive world map">
           <WorldMap
+            theme={theme}
+            showHexOutlines={showHexOutlines}
             projects={projects}
             selectedProjectId={selectedProjectId}
             selectedCell={selection?.h3Id ?? null}
@@ -635,6 +668,9 @@ export default function App() {
                 <Icon name="plus" size={17} /> Add building
               </button>
               <span className="sep" />
+              <button className={showHexOutlines ? "active" : ""} aria-label="Hexagon outlines" aria-pressed={showHexOutlines} onClick={() => setShowHexOutlines((shown) => !shown)} title={showHexOutlines ? "Hide hexagon outlines" : "Show hexagon outlines"}>
+                <Icon name="hexagon" size={17} /> Grid
+              </button>
               <button className={tilted ? "active" : ""} aria-pressed={tilted} onClick={() => setTilted((t) => !t)} title="Tilt the map and show 3D buildings when zoomed in">
                 3D
               </button>
@@ -719,7 +755,10 @@ export default function App() {
                   </div>
                   {data.activeLayer && <button className="active-layer-shortcut" onClick={() => setExploreSection("environment")}><Icon name="layers" size={18} /><span><small>ACTIVE ENVIRONMENTAL LAYER</small>{data.activeLayer.name}</span><Icon name="chevron" size={16} /></button>}
                 </section>
-              ) : <div className="section-back"><BackLink onClick={() => setExploreSection("library")}>All data sections</BackLink><h2>{EXPLORE_SECTIONS.find((x) => x.value === exploreSection)?.label}</h2></div>}
+              ) : <div className="section-back"><BackLink onClick={() => {
+                if (exploreSection === "environment") data.setActive(null);
+                setExploreSection("library");
+              }}>All data sections</BackLink><h2>{EXPLORE_SECTIONS.find((x) => x.value === exploreSection)?.label}</h2></div>}
               <div hidden={exploreSection !== "environment"}><DataPanel data={data} onFitBBox={fitBBox} /></div>
               <div hidden={exploreSection !== "infrastructure"}>
                 <LayerPanel

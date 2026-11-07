@@ -76,6 +76,8 @@ function CellLayerPicker({ data, onFitBBox }: Props) {
     if (activeLayer) {
       setCategory(activeLayer.category);
       setShowSettings(true);
+    } else {
+      setShowSettings(false);
     }
   }, [activeLayer?.id]);
   const groups = useMemo(() => {
@@ -111,7 +113,7 @@ function CellLayerPicker({ data, onFitBBox }: Props) {
     <>
       {!showSettings && (
         <>
-          {category ? <><BackLink onClick={() => setCategory(null)}>All categories</BackLink><h3 className="detail-title">{category}</h3></> : <p className="subtitle small">Choose an environmental category.</p>}
+          {category ? <><BackLink onClick={() => { pick(""); setCategory(null); }}>All categories</BackLink><h3 className="detail-title">{category}</h3></> : <p className="subtitle small">Choose an environmental category.</p>}
           {!category ? <div className="category-grid">{groups.map(([cat, ls]) => {
             const icon: IconName = /water|soil/i.test(cat) ? "water" : /energy|climate|weather/i.test(cat) ? "sun" : /mineral|geolog|terrain/i.test(cat) ? "mountain" : "layers";
             return <button key={cat} onClick={() => setCategory(cat)}><Icon name={icon} size={18} /><span>{cat}</span><small>{ls.length} {ls.length === 1 ? "layer" : "layers"}</small></button>;
@@ -123,7 +125,7 @@ function CellLayerPicker({ data, onFitBBox }: Props) {
           {activeLayer && <button className="active-layer-shortcut" onClick={() => { setCategory(activeLayer.category); setShowSettings(true); }}><Icon name="layers" size={17} /><span><small>ACTIVE LAYER SETTINGS</small>{activeLayer.name}</span><Icon name="chevron" size={16} /></button>}
         </>
       )}
-      {showSettings && <BackLink onClick={() => setShowSettings(false)}>{category ?? "Choose a layer"}</BackLink>}
+      {showSettings && <BackLink onClick={() => pick("")}>{category ?? "Choose a layer"}</BackLink>}
       {showSettings && activeLayer && activeSlice && active && (
         <div className="layer-settings">
           <div className="panel-head"><h3>{activeLayer.name}</h3><span className="tag">Active layer</span></div>

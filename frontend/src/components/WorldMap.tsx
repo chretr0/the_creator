@@ -9,6 +9,8 @@ import { normaliseLongitude, viewportCells, type ViewportCells } from "../lib/h3
 import { typeColour, typeLabel } from "../lib/projectTypes";
 import { PRESET_DRAG_TYPE, STATE_COLOUR, STATE_LABEL, type CellState } from "../lib/buildings";
 import { facilityTitle, formatKw, type Facility } from "../lib/infrastructure";
+import { applyBasemapTheme } from "../lib/mapTheme";
+import type { Theme } from "../lib/theme";
 
 type RGB = [number, number, number];
 
@@ -93,6 +95,9 @@ const SCENE_SOURCE = "scene-image";
 export type SceneImage = { id: string; url: string; bounds: [number, number, number, number] };
 
 type Props = {
+  theme: Theme;
+  /** Show hexagon borders; fills, markers and picking remain available when hidden. */
+  showHexOutlines: boolean;
   projects: Project[];
   selectedProjectId: string | null;
   selectedCell: string | null;
@@ -128,6 +133,7 @@ export default function WorldMap(props: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const overlayRef = useRef<MapboxOverlay | null>(null);
+  const basemapRef = useRef<maplibregl.LayerSpecification[]>([]);
   const [grid, setGrid] = useState<ViewportCells>({ resolution: 0, cells: [], overview: true });
   const [labelled, setLabelled] = useState<Facility[]>([]);
   const [stemM, setStemM] = useState(0);
@@ -189,15 +195,8 @@ export default function WorldMap(props: Props) {
     };
     map.on("load", refreshGrid);
     map.on("load", () => {
-      // Restyle only the basemap. Scientific layers, imagery and their legends are unchanged.
-      for (const layer of map.getStyle().layers) {
-        if (layer.type === "fill" && layer["source-layer"] === "water") {
-          map.setPaintProperty(layer.id, "fill-color", "#c9e1ef");
-        }
-        if (layer.type === "background") {
-          map.setPaintProperty(layer.id, "background-color", "#f4f6f5");
-        }
-      }
+      basemapRef.current = structuredClone(map.getStyle().layers);
+      applyBasemapTheme(map, basemapRef.current, propsRef.current.theme);
     });
     map.on("moveend", refreshGrid);
     // The inspector and workspace panels resize the canvas without a window resize.
@@ -210,8 +209,14 @@ export default function WorldMap(props: Props) {
       map.remove();
       mapRef.current = null;
       overlayRef.current = null;
+      basemapRef.current = [];
     };
   }, []);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (map && basemapRef.current.length) applyBasemapTheme(map, basemapRef.current, props.theme);
+  }, [props.theme]);
 
   useEffect(() => {
     const canvas = mapRef.current?.getCanvas();
@@ -339,6 +344,8 @@ export default function WorldMap(props: Props) {
     const footprints = facilities.filter((f) => f.geometry.type !== "Point");
     const tip = tilted ? stemM : 0;
     const colourTrigger = [facilities, facilityColour];
+    const dark = props.theme === "dark";
+    const selectionLine: [number, number, number, number] = dark ? [150, 192, 255, 255] : [15, 23, 42, 255];
 
     const layers = [
       new H3HexagonLayer<string>({
@@ -346,13 +353,13 @@ export default function WorldMap(props: Props) {
         data: grid.cells,
         getHexagon: (d) => d,
         filled: true,
-        stroked: true,
+        stroked: props.showHexOutlines,
         extruded: false,
         highPrecision: true,
         // Neutral "no data" styling unless a baseline layer is active.
         getFillColor: props.cellFill ?? [89, 125, 175, 6],
-        getLineColor: props.cellFill ? [51, 65, 85, 30] : [86, 114, 151, 42],
-        updateTriggers: { getFillColor: props.cellFill, getLineColor: !!props.cellFill },
+        getLineColor: props.cellFill ? [51, 65, 85, 30] : dark ? [119, 151, 194, 25] : [86, 114, 151, 42],
+        updateTriggers: { getFillColor: props.cellFill, getLineColor: [!!props.cellFill, dark] },
         lineWidthUnits: "pixels",
         getLineWidth: 1,
         pickable: true,
@@ -365,7 +372,7 @@ export default function WorldMap(props: Props) {
         data: props.assessmentCells ?? [],
         getHexagon: (c) => c.h3Id,
         filled: true,
-        stroked: true,
+        stroked: props.showHexOutlines,
         extruded: false,
         highPrecision: true,
         getFillColor: (c) => [...STATE_COLOUR[c.state], 110],
@@ -379,7 +386,7 @@ export default function WorldMap(props: Props) {
         data: projects,
         getHexagon: (p) => p.h3Id,
         filled: true,
-        stroked: true,
+        stroked: props.showHexOutlines,
         extruded: false,
         highPrecision: true,
         getFillColor: (p) => [...typeColour(p.type), 60],
@@ -392,11 +399,11 @@ export default function WorldMap(props: Props) {
         data: selectedCell ? [selectedCell] : [],
         getHexagon: (d) => d,
         filled: true,
-        stroked: true,
+        stroked: props.showHexOutlines,
         extruded: false,
         highPrecision: true,
         getFillColor: [37, 99, 235, 40],
-        getLineColor: [15, 23, 42, 255],
+        getLineColor: selectionLine,
         lineWidthUnits: "pixels",
         getLineWidth: 3,
       }),
@@ -451,7 +458,7 @@ export default function WorldMap(props: Props) {
         data: labelled,
         getPosition: (f) => [f.properties.lon, f.properties.lat, tip],
         getText: (f) => facilityTitle(f.properties),
-        getColor: [15, 23, 42, 255],
+        getColor: dark ? [216, 229, 247, 255] : [15, 23, 42, 255],
         getSize: 12,
         fontWeight: 600,
         getPixelOffset: [0, -12],
@@ -461,7 +468,7 @@ export default function WorldMap(props: Props) {
         fontFamily: "Inter, system-ui, sans-serif",
         fontSettings: { sdf: true, fontSize: 64, buffer: 8 },
         outlineWidth: 2,
-        outlineColor: [255, 255, 255, 235],
+        outlineColor: dark ? [12, 24, 41, 245] : [255, 255, 255, 235],
         updateTriggers: { getPosition: tip },
       }),
       new ScatterplotLayer<Project>({
@@ -469,21 +476,21 @@ export default function WorldMap(props: Props) {
         data: projects,
         getPosition: (p) => [p.longitude, p.latitude],
         getFillColor: (p) => [...typeColour(p.type), 255],
-        getLineColor: (p) => (p.id === selectedProjectId ? [15, 23, 42, 255] : [255, 255, 255, 255]),
+        getLineColor: (p) => (p.id === selectedProjectId ? selectionLine : [255, 255, 255, 255]),
         getRadius: (p) => (p.id === selectedProjectId ? 9 : 6),
         radiusUnits: "pixels",
         stroked: true,
         lineWidthUnits: "pixels",
         getLineWidth: 2,
         pickable: true,
-        updateTriggers: { getLineColor: selectedProjectId, getRadius: selectedProjectId },
+        updateTriggers: { getLineColor: [selectedProjectId, dark], getRadius: selectedProjectId },
       }),
       new ScatterplotLayer<{ latitude: number; longitude: number; colour?: RGB }>({
         id: "build-preview",
         data: props.preview ? [props.preview] : [],
         getPosition: (p) => [p.longitude, p.latitude],
         getFillColor: (p) => [...(p.colour ?? [37, 99, 235]), 90],
-        getLineColor: [15, 23, 42, 255],
+        getLineColor: selectionLine,
         getRadius: 11,
         radiusUnits: "pixels",
         stroked: true,
@@ -560,6 +567,8 @@ export default function WorldMap(props: Props) {
     props.cellFill,
     props.assessmentCells,
     props.preview,
+    props.theme,
+    props.showHexOutlines,
   ]);
 
   // Preset drag-and-drop. HTML5 drag events bubble from the MapLibre and deck.gl canvases to the

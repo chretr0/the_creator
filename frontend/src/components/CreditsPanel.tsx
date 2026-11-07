@@ -19,8 +19,9 @@ export default function CreditsPanel({ sources, activeLayers }: Props) {
               <details>
                 <summary>
                   <span className={`dot ${active ? "on" : ""}`} aria-label={active ? "On the map now" : undefined} />
-                  <span>{s.name}</span>
-                  {s.commercialUse === false && <span className="badge warn">non-commercial</span>}
+                  <span className="source-name">{s.name}
+                    {s.commercialUse === false && <span className="badge warn">non-commercial</span>}
+                  </span>
                 </summary>
                 <dl className="kv small">
                   <dt>Licence</dt>
