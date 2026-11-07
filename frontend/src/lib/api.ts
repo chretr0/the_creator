@@ -1,4 +1,19 @@
-export type ProjectType = "data_centre" | "solar" | "greenhouse";
+import type {
+  AssessmentRequest,
+  AssessmentResponse,
+  BuildingDefinition,
+  BuildingDefinitionInput,
+  BuildingPreset,
+  BuildingTemplate,
+  BuildingType,
+  DefinitionSnapshot,
+  ScenarioAssumptions,
+  ScenarioEvaluation,
+  SiteAssumptions,
+  EvaluateRequest,
+} from "./buildings";
+
+export type ProjectType = BuildingType;
 export type ParamValue = number | string | boolean;
 
 export type Project = {
@@ -11,6 +26,10 @@ export type Project = {
   h3Id: string;
   h3Resolution: number;
   parameters: Record<string, ParamValue>;
+  /** Snapshot of the definition used to place it (legacy projects are adapted server-side). */
+  definition: DefinitionSnapshot;
+  sourceDefinitionId: string | null;
+  site: SiteAssumptions;
   createdAt: string;
   updatedAt: string;
 };
@@ -50,6 +69,9 @@ export type ProjectInput = {
   latitude: number;
   longitude: number;
   parameters?: Record<string, ParamValue>;
+  definition?: DefinitionSnapshot;
+  sourceDefinitionId?: string | null;
+  site?: SiteAssumptions;
 };
 
 export class ApiError extends Error {
@@ -99,7 +121,31 @@ export const api = {
   updateProject: (id: string, patch: Partial<ProjectInput>) =>
     request<Project>(`/api/projects/${id}`, { method: "PATCH", json: patch }),
   deleteProject: (id: string) => request<void>(`/api/projects/${id}`, { method: "DELETE" }),
+
+  // --- building system ---
+  listTemplates: (signal?: AbortSignal) => request<BuildingTemplate[]>("/api/building-templates", { signal }),
+  /** Real example buildings with cited figures. */
+  listPresets: (signal?: AbortSignal) => request<BuildingPreset[]>("/api/building-presets", { signal }),
+  listDefinitions: (signal?: AbortSignal) => request<BuildingDefinition[]>("/api/building-definitions", { signal }),
+  getDefinition: (id: string) => request<BuildingDefinition>(`/api/building-definitions/${id}`),
+  createDefinition: (input: BuildingDefinitionInput) =>
+    request<BuildingDefinition>("/api/building-definitions", { method: "POST", json: input }),
+  updateDefinition: (id: string, patch: Partial<BuildingDefinitionInput>) =>
+    request<BuildingDefinition>(`/api/building-definitions/${id}`, { method: "PATCH", json: patch }),
+  deleteDefinition: (id: string) => request<void>(`/api/building-definitions/${id}`, { method: "DELETE" }),
+  /** Read-only: nothing is saved. Exactly one of location / bounds / region. */
+  assess: (req: AssessmentRequest, signal?: AbortSignal) =>
+    request<AssessmentResponse>("/api/building-assessments", { method: "POST", json: req, signal }),
+  updateScenarioAssumptions: (id: string, assumptions: ScenarioAssumptions) =>
+    request<Scenario>(`/api/scenarios/${id}`, { method: "PATCH", json: { assumptions } }),
+  /** Overrides preview unsaved controls; saved values are used for anything omitted. */
+  evaluateScenario: (id: string, overrides: EvaluateRequest = {}, signal?: AbortSignal) =>
+    request<ScenarioEvaluation>(`/api/scenarios/${id}/evaluate`, { method: "POST", json: overrides, signal }),
 };
 
 export const locateCell = (latitude: number, longitude: number, signal?: AbortSignal) =>
   request<CellInfo>(`/api/cells/locate?latitude=${latitude}&longitude=${longitude}`, { signal });
+
+/** State update for a scenario returned by a save: apply it only if that scenario is still shown. */
+export const keepIfShown = (current: Scenario | null, saved: Scenario): Scenario | null =>
+  current && current.id === saved.id ? saved : current;

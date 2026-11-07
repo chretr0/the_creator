@@ -1,0 +1,773 @@
+[
+  {
+    "id": "palo-verde-nuclear",
+    "name": "Palo Verde Nuclear Generating Station",
+    "type": "power_station",
+    "description": "Three-unit pressurized-water-reactor nuclear plant west of Phoenix, cooled with treated municipal wastewater. Its figures are EIA-860 nameplate capacity, reported cooling-water use, site area, staffing and the reported construction cost. Generation is left unknown because a gross-generation figure could not be verified.",
+    "headline": "4,210 MW nuclear (3 × PWR) · Arizona",
+    "referenceSite": {
+      "name": "Palo Verde Nuclear Generating Station, Wintersburg, Maricopa County, Arizona",
+      "latitude": 33.3881,
+      "longitude": -112.8617,
+      "country": "United States"
+    },
+    "stats": {
+      "footprintM2": 16187424,
+      "footprintProvenance": {
+        "kind": "cited",
+        "note": "[S6] POWER magazine (Nov 2015): the plant is located on 4,000 acres of desert about 50 miles west of Phoenix. 4,000 acres × 4,046.856 m²/acre = 16,187,424 m². This is the whole site, including the 80-acre storage reservoir and the evaporation ponds, not only the power blocks."
+      },
+      "operatingHoursPerDay": 24,
+      "power": {
+        "averageDemandKw": null,
+        "peakDemandKw": null,
+        "averageOutputKw": null,
+        "ratedOutputKw": 4209600,
+        "capacityFactor": null,
+        "technology": "Three Combustion Engineering System 80 PWRs with steam turbines (in service 1986, 1986, 1988); three mechanical forced-draft cooling towers on treated municipal effluent",
+        "provenance": {
+          "kind": "cited",
+          "note": "[S1] GridInfo, republishing the 2025 EIA-860 report for plant 6008: three generators, each 1,403.2 MW nameplate, giving ratedOutputKw = 3 × 1,403.2 MW = 4,209.6 MW = 4,209,600 kW. The same source gives net summer capacities of 1,311, 1,314 and 1,312 MW (3,937 MW in total) and operating dates of January 1986, September 1986 and January 1988. [S6] gives the technology: Combustion Engineering System 80 PWRs, and three mechanical forced-draft cooling towers, one per unit. Average output, own-use demand and capacity factor are left unknown because the 2024 gross generation could not be confirmed. The EIA API was rate-limited, and no other source read states gross generation. Net-basis figures are given in the notes for context only; they are not entered, because averageOutputKw is gross output."
+        }
+      },
+      "water": {
+        "inputM3PerHour": 10252,
+        "outputM3PerHour": null,
+        "basis": "Treated municipal wastewater from Phoenix-area cities, further treated on site, used as cooling-tower make-up; blowdown goes to on-site evaporation ponds (no water output)",
+        "provenance": {
+          "kind": "cited",
+          "note": "[S4] Associated Press (May 2022): the plant uses about 65 million gallons of treated wastewater every day, more than 23 billion gallons a year. 65 MGD × 157.725491 = 10,252 m³/hour (a daily average spread over 24 h). Cross-checks: [S3] APS says Palo Verde recycles more than 20 billion gallons of wastewater a year, a lower bound. [S5] the 2010 agreement with Phoenix, Mesa, Tempe, Scottsdale and Glendale allows up to 80,000 acre-feet a year through 2050; this is an allocation cap, not actual use. [S6] says the effluent is further treated at the on-site Palo Verde Water Reclamation Facility and that cooling-tower blowdown is discharged to evaporation ponds, so water output is left empty."
+        }
+      },
+      "materials": [],
+      "emissions": [],
+      "light": {
+        "upwardLumens": null,
+        "hoursPerDay": null,
+        "provenance": {
+          "kind": "user_assumption",
+          "note": null
+        }
+      },
+      "workers": {
+        "capacity": null,
+        "staffingRequired": 2500,
+        "provenance": {
+          "kind": "cited",
+          "note": "[S3] APS: the plant has 2,500 full-time employees, used for staffingRequired. APS adds that 900 to 1,000 contractors are employed during the planned refuelling outages held twice a year; they are not included. The older POWER (2015) figure of about 3,000 workers [S6] is not used. No source states a maximum on-site capacity, so capacity is left unknown."
+        }
+      },
+      "costs": {
+        "currency": "USD",
+        "constructionTotal": 5900000000,
+        "priceBasis": "reported construction cost in nominal USD; construction ran 1976–1988 and POWER gives no price year (Wikipedia, citing Shepherd 1989, labels it 1986 USD)",
+        "operating": {
+          "amount": null,
+          "period": "year",
+          "kind": "total"
+        },
+        "electricityPricePerKwh": null,
+        "waterPricePerM3": null,
+        "provenance": {
+          "kind": "cited",
+          "note": "[S6] POWER magazine (2015): Palo Verde began construction in 1976 and was completed in 1988 at a cost of $5.9 billion. The figure has not been inflated or converted. [S7] Wikipedia labels the figure 1986 USD, citing Shepherd (1989). No source read states an operating cost or the effluent price. APS's $130 million a year of purchases from Arizona businesses [S3] is not a total operating cost, so it is not used."
+        }
+      },
+      "demandBasis": "direct"
+    },
+    "parameters": {},
+    "sources": [
+      {
+        "id": "S1",
+        "title": "Palo Verde (EIA plant 6008): generator nameplate, summer and winter capacities, operating dates and coordinates, from the 2025 EIA-860 report",
+        "publisher": "GridInfo (republishing U.S. EIA Form EIA-860 data)",
+        "url": "https://gridinfo.com/plant/palo-verde/6008",
+        "year": "2025",
+        "accessed": "2026-11-07"
+      },
+      {
+        "id": "S2",
+        "title": "Pinnacle West Reports 2024 Full-Year and Fourth-Quarter Results (press release, 25 Feb 2025)",
+        "publisher": "Pinnacle West Capital Corp (republished by Tiger Brokers)",
+        "url": "https://itiger.com/news/2514091004",
+        "year": "2025",
+        "accessed": "2026-11-07"
+      },
+      {
+        "id": "S3",
+        "title": "Palo Verde Generating Station",
+        "publisher": "Arizona Public Service (APS)",
+        "url": "https://aps.com/paloverde",
+        "year": null,
+        "accessed": "2026-11-07"
+      },
+      {
+        "id": "S4",
+        "title": "Arizona nuclear plant seeking alternative source of water (Associated Press, after the Arizona Republic)",
+        "publisher": "Underground Infrastructure / Associated Press",
+        "url": "https://undergroundinfrastructure.com/news/2022/may/arizona-nuclear-plant-seeking-alternative-source-of-water",
+        "year": "2022",
+        "accessed": "2026-11-07"
+      },
+      {
+        "id": "S5",
+        "title": "Arizona Public Service Co, Form 8-K (April 2010): effluent agreement with five Phoenix-area cities",
+        "publisher": "U.S. Securities and Exchange Commission (EDGAR)",
+        "url": "https://www.sec.gov/Archives/edgar/data/0000007286/000095012310038881/c99652e8vk.htm",
+        "year": "2010",
+        "accessed": "2026-11-07"
+      },
+      {
+        "id": "S6",
+        "title": "TOP PLANTS: Palo Verde Nuclear Generating Station, Wintersburg, Arizona",
+        "publisher": "POWER magazine",
+        "url": "https://www.powermag.com/palo-verde-nuclear-generating-station-wintersburg-arizona",
+        "year": "2015",
+        "accessed": "2026-11-07"
+      },
+      {
+        "id": "S7",
+        "title": "Palo Verde Nuclear Generating Station (used only as a pointer to the EIA generation table and the cost price year)",
+        "publisher": "Wikipedia",
+        "url": "https://en.wikipedia.org/wiki/Palo_Verde_Nuclear_Generating_Station",
+        "year": null,
+        "accessed": "2026-11-07"
+      }
+    ],
+    "notes": [
+      "operatingHoursPerDay is 24 because the plant runs as continuous baseload and the water figure is a daily average (65 million gallons a day) spread over 24 hours.",
+      "Power generation is left unknown. The app's averageOutputKw is gross output, and the 2024 gross generation could not be verified: the EIA Open Data API returned rate-limit errors, and no other source read states it. averageDemandKw (own use) and capacityFactor depend on that figure, so they are left unknown too.",
+      "For context only (not entered): 2024 net generation was 32,388,118 MWh, from the EIA Electricity Data Browser table reproduced in [S7], about 3,687,172 kW averaged over 8,784 h. Pinnacle West [S2] reports a 93.7% capacity factor for 2024, which matches 32,388,118 MWh ÷ (3,937 MW net summer capacity [S1] × 8,784 h) = 0.937.",
+      "Nameplate is 3 × 1,403.2 MW = 4,209.6 MW [S1, EIA-860 2025]; net summer capacity is 3,937 MW.",
+      "Water input is a 2022 press figure (about 65 million gallons a day) [S4]. APS's 'more than 20 billion gallons a year' [S3] and the 80,000 acre-feet a year contract cap [S5] bracket it; the cap is an allocation, not use.",
+      "Water output is left empty because cooling-tower blowdown goes to on-site evaporation ponds [S6]; the plant does not produce water.",
+      "Footprint is the whole 4,000-acre site [S6], including reservoirs and evaporation ponds.",
+      "Construction cost is the nominal reported $5.9 billion [S6]; it is not inflated.",
+      "Reference coordinates (33.3881, −112.8617) are the EIA-860 plant coordinates as republished by [S1]. The Wikipedia infobox point (33.38917, −112.865) is about 0.33 km away.",
+      "Left unknown because no source read states them: average and peak power output and demand, capacity factor, operating cost, electricity and water prices, materials, emissions, light and worker capacity."
+    ]
+  },
+  {
+    "id": "mesquite-generating-station-az",
+    "name": "Mesquite Generating Station",
+    "type": "power_station",
+    "description": "Natural-gas combined-cycle power plant (two 2x1 blocks: four gas turbines, two steam turbines) at Arlington, Arizona, in commercial operation since 2003. Output and emissions are 2023 measured annual totals from EPA's Clean Air Markets data averaged over all 8,760 hours; site area, staffing and cost are the developer's 2001 project figures.",
+    "headline": "1,322 MW gas combined cycle · Arizona",
+    "referenceSite": {
+      "name": "Mesquite Generating Station, Arlington, AZ",
+      "latitude": 33.3451,
+      "longitude": -112.8638,
+      "country": "United States"
+    },
+    "stats": {
+      "footprintM2": 364217,
+      "footprintProvenance": {
+        "kind": "cited",
+        "note": "[S1] Power Engineering, 27 Mar 2001: the project is on a 400-acre site, and the plant and its support facilities 'will occupy only 90 acres of the parcel'. 90 acres x 4,046.856 = 364,217 m2 (the whole 400-acre parcel would be 1,618,742 m2). Planned figure stated at groundbreaking."
+      },
+      "operatingHoursPerDay": 24,
+      "power": {
+        "averageDemandKw": null,
+        "peakDemandKw": null,
+        "averageOutputKw": 899027,
+        "ratedOutputKw": 1322000,
+        "capacityFactor": null,
+        "technology": "Natural-gas combined cycle, 2 x (2 gas turbines + 1 steam turbine), dry low-NOx burners + SCR",
+        "provenance": {
+          "kind": "cited",
+          "note": "averageOutputKw: [S2] EPA CAMPD 2023 annual gross load for units 1, 2, 5, 6 = 1,918,983.44 + 1,824,895.63 + 2,075,039.81 + 2,056,556.63 = 7,875,475.51 MWh (gross, not net) / 8,760 h = 899,027 kW, averaged over the whole year (operatingHoursPerDay 24). ratedOutputKw: [S3] EPA CAMPD 2023 facility attributes list associated generator nameplates GT1-GT4 170 MW each and ST1, ST2 321 MW each = 4 x 170 + 2 x 321 = 1,322 MW. Technology: [S3] unit type 'Combined cycle', primary fuel 'Pipeline Natural Gas', NOx controls 'Dry Low NOx Burners|Selective Catalytic Reduction'. capacityFactor left blank: no net generation (EIA-923) figure was obtained; gross load / nameplate would be 0.68 on a gross basis."
+        }
+      },
+      "water": {
+        "inputM3PerHour": null,
+        "outputM3PerHour": null,
+        "basis": "Groundwater ('underground sources'), per 2001 developer statement",
+        "provenance": {
+          "kind": "cited",
+          "note": "[S1] Power Engineering 2001: the plant 'will use water from underground sources' and 'is expected to use less than 8,000 acre-feet of water a year'. That is a planning upper bound (8,000 acre-ft x 1,233.48 m3 = 9.87 million m3/yr, < about 1,126 m3/hour if spread over 8,760 h), not a measured use, so inputM3PerHour is left unknown."
+        }
+      },
+      "materials": [],
+      "emissions": [
+        {
+          "id": "co2",
+          "pollutant": "CO2",
+          "rateKgPerHour": 343151,
+          "provenance": {
+            "kind": "cited",
+            "note": "[S2] EPA CAMPD 2023 CO2 mass, units 1, 2, 5, 6: 798,669.458 + 772,368.647 + 878,749.355 + 863,764.385 = 3,313,551.845 short tons x 907.18474 = 3,006,003,669 kg / 8,760 h = 343,151 kg/hour (annual average)."
+          }
+        },
+        {
+          "id": "nox",
+          "pollutant": "NOx",
+          "rateKgPerHour": 24.85,
+          "provenance": {
+            "kind": "cited",
+            "note": "[S2] EPA CAMPD 2023 NOx mass: 57.668 + 54.061 + 60.054 + 68.161 = 239.944 short tons x 907.18474 = 217,674 kg / 8,760 h = 24.85 kg/hour (annual average)."
+          }
+        },
+        {
+          "id": "so2",
+          "pollutant": "SO2",
+          "rateKgPerHour": 1.73,
+          "provenance": {
+            "kind": "cited",
+            "note": "[S2] EPA CAMPD 2023 SO2 mass: 4.032 + 3.899 + 4.436 + 4.361 = 16.728 short tons x 907.18474 = 15,175 kg / 8,760 h = 1.73 kg/hour (annual average)."
+          }
+        }
+      ],
+      "light": {},
+      "workers": {
+        "capacity": null,
+        "staffingRequired": 33,
+        "provenance": {
+          "kind": "cited",
+          "note": "[S1] Power Engineering 2001: the project 'will translate to 300 construction jobs and 33 full-time positions' -> staffingRequired 33 (permanent operating staff, planned). [S4] AZ Big Media 2012 corroborates: 'More than 30 people are employed at the plant.' The 300 construction jobs are not a capacity figure; capacity left unknown."
+        }
+      },
+      "costs": {
+        "currency": "USD",
+        "constructionTotal": 500000000,
+        "priceBasis": "2001 USD, announced project cost at groundbreaking (1,200 MW design)",
+        "operating": {
+          "amount": null,
+          "period": "year",
+          "kind": "total"
+        },
+        "electricityPricePerKwh": null,
+        "waterPricePerM3": null,
+        "provenance": {
+          "kind": "cited",
+          "note": "[S1] Power Engineering, 27 Mar 2001: 'a $500 million, 1,200-megawatt (MW) facility' -> constructionTotal 500,000,000 USD (2001, announced, not an audited final cost). For context only: [S4] SRP agreed in Dec 2012 to buy one of the two blocks for $371 million (a transaction price, not a construction cost). Operating costs, electricity and water prices: no source, left unknown."
+        }
+      },
+      "demandBasis": "direct"
+    },
+    "parameters": {},
+    "sources": [
+      {
+        "id": "S1",
+        "title": "Sempra Energy Resources breaks ground on Mesquite Power project",
+        "publisher": "Power Engineering (Clarion Energy)",
+        "url": "https://www.power-eng.com/operations-maintenance/sempra-energy-resources-breaks-ground-on-mesquite-power-project/",
+        "year": "2001",
+        "accessed": "2026-11-07"
+      },
+      {
+        "id": "S2",
+        "title": "Clean Air Markets Program Data: annual apportioned emissions, Mesquite Generating Station (ORIS 55481), 2023",
+        "publisher": "U.S. EPA Clean Air Markets Division",
+        "url": "https://api.epa.gov/easey/emissions-mgmt/emissions/apportioned/annual?api_key=DEMO_KEY&facilityId=55481&year=2023&page=1&perPage=50",
+        "year": "2023",
+        "accessed": "2026-11-07"
+      },
+      {
+        "id": "S3",
+        "title": "Clean Air Markets Program Data: facility attributes, Mesquite Generating Station (ORIS 55481), 2023",
+        "publisher": "U.S. EPA Clean Air Markets Division",
+        "url": "https://api.epa.gov/easey/facilities-mgmt/facilities/attributes?api_key=DEMO_KEY&facilityId=55481&year=2023&page=1&perPage=50",
+        "year": "2023",
+        "accessed": "2026-11-07"
+      },
+      {
+        "id": "S4",
+        "title": "SRP buys natural gas power plant",
+        "publisher": "AZ Big Media",
+        "url": "https://azbigmedia.com/business/srp-buys-natural-gas-power-plant",
+        "year": "2012",
+        "accessed": "2026-11-07"
+      }
+    ],
+    "notes": [
+      "Output, CO2, NOx and SO2 are 2023 annual totals from EPA CAMPD divided by 8,760 hours, so they are whole-year averages (operatingHoursPerDay 24). The four gas-turbine units actually reported 6,922 to 8,146 operating hours each in 2023 [S2], so rates while running are somewhat higher.",
+      "averageOutputKw is gross generation (CAMPD gross load), which includes the plant's own auxiliary use; EIA-923 net generation could not be retrieved and was not substituted.",
+      "Nameplate capacity differs by source: 1,322 MW from EPA CAMPD generator nameplates [S3] (used here); two 625 MW blocks = 1,250 MW in the 2012 press report [S4]; the 2001 announcement described a 1,200 MW plant [S1].",
+      "Commercial operation dates per EPA CAMPD [S3]: units 1 and 2 in February 2003, units 5 and 6 on 1 August 2003.",
+      "Footprint (90 acres), staffing (33) and cost ($500 million) are 2001 pre-construction figures from the developer's groundbreaking announcement [S1].",
+      "Water use is unknown: the only figure is a 2001 planning upper bound of less than 8,000 acre-feet per year from groundwater [S1].",
+      "Coordinates are the facility location reported in EPA CAMPD [S3]."
+    ]
+  },
+  {
+    "id": "agua-caliente-solar",
+    "name": "Agua Caliente Solar Project",
+    "type": "solar",
+    "description": "A 290 MW utility-scale photovoltaic plant in Yuma County, Arizona, using First Solar thin-film cadmium telluride modules on fixed-tilt mounts across about 2,400 acres. Output figures are EIA-reported 2024 net generation; land, water and staffing come from the DOE environmental assessment and loan announcement, DC capacity from EIA-860M, and cost from a co-owner's SEC filing.",
+    "headline": "290 MW thin-film solar PV · Arizona",
+    "referenceSite": {
+      "name": "Agua Caliente Solar Project (EIA plant 57373)",
+      "latitude": 32.9774,
+      "longitude": -113.4945,
+      "country": "United States"
+    },
+    "stats": {
+      "footprintM2": 9712454,
+      "footprintProvenance": {
+        "kind": "cited",
+        "note": "[S1] DOE/EA-1797 (Nov 2010): 'The Project would occupy approximately 2,400 acres', covering the solar module field, access roads, Project substation, the Q43 switchyard (approximately 30 acres of the Site) and the Gen-Tie line. 2,400 acres × 4,046.856 m²/acre = 9,712,454 m², which feeds footprintM2 and parameters.landAreaM2."
+      },
+      "operatingHoursPerDay": 24,
+      "power": {
+        "averageDemandKw": 666.7,
+        "averageOutputKw": 74687,
+        "ratedOutputKw": 290000,
+        "capacityFactor": 0.2575,
+        "technology": "First Solar thin-film cadmium telluride (CdTe) PV modules on fixed-tilt steel frames; DC-to-AC inverters rated 500-3,000 kW; 500 kV grid interconnection",
+        "provenance": {
+          "kind": "cited",
+          "note": "ratedOutputKw: [S1] the EA describes 'a 290 megawatt gross output photovoltaic (PV) solar power plant' (290 MW = 290,000 kW); DOE [S4], MEHC [S3] and Power Engineering [S5] also give 290 MW. averageOutputKw: [S2] EIA-923 2024 final, plant 57373 net generation 656,051 MWh; 656,051,000 kWh ÷ 8,784 h (2024 leap year) = 74,687 kW averaged over the whole year (operatingHoursPerDay = 24). capacityFactor: 74,687 ÷ 290,000 = 0.2575. On the EIA-860M AC nameplate sum [S6] (AGU1 90.7 + AGU2 136 + AGU3 121 = 347.7 MW) it would be 656,051 ÷ (347.7 × 8,784) = 0.215. averageDemandKw: [S1] EA estimate of grid station-service power for the O&M building, keeping transformers warm at night, plant lighting and security: 5,840 MWh/yr; 5,840,000 kWh ÷ 8,760 h = 666.7 kW yearly average (a 2010 pre-construction estimate, drawn mostly at night). technology: [S1] CdTe modules, fixed-tilt steel frame mounts, inverters 'rated between 500 kW and 3,000 kW', power stepped up to 500 kV; [S4] First Solar thin-film panels."
+        }
+      },
+      "water": {
+        "basis": "Existing on-site groundwater wells formerly used for irrigation; operational use is panel washing and domestic use",
+        "provenance": {
+          "kind": "cited",
+          "note": "[S1] DOE/EA-1797 (2010): 'Less than 20 acre-feet would be consumed annually for operation of the Project, including for panel washes and domestic use', from existing on-site wells (construction dust control: 150 acre-feet/yr). Because the operating figure is only an upper bound (<20 AF/yr × 1,233.48 m³/AF ÷ 8,760 h ≈ <2.82 m³/h), inputM3PerHour is left unknown."
+        }
+      },
+      "materials": [],
+      "emissions": [],
+      "light": {},
+      "workers": {
+        "staffingRequired": 10,
+        "provenance": {
+          "kind": "cited",
+          "note": "[S4] DOE loan guarantee announcement (Aug 2011): the project sponsor estimates '10 full time operating jobs', which feeds staffingRequired. [S1] The 2010 EA instead estimated 15-20 full-time personnel for operation, maintenance and security, with the operations workforce on site 24 hours a day. Construction workforce: 150/160-450 workers per the EA [S1], approximately 400 construction jobs per DOE [S4]. Maximum on-site capacity is not stated, so capacity is left unknown."
+        }
+      },
+      "costs": {
+        "currency": "USD",
+        "constructionTotal": 1700000000,
+        "priceBasis": "Nominal USD, approximate total project cost reported in MidAmerican Energy Holdings FY2013 Form 10-K (filed 2014)",
+        "provenance": {
+          "kind": "cited",
+          "note": "[S3] MEHC FY2013 10-K: 'The Agua Caliente Project cost approximately $1.7 billion and is comprised of 12 blocks of solar panels with a nominal facility capacity in-service of 315 MW.' This feeds constructionTotal = 1,700,000,000 USD. Financing per [S3]: equity from NRG Energy (51%) and an MEHC subsidiary (49%), plus a DOE loan-guarantee-program secured loan of up to $967 million maturing 2037, of which $878 million had been drawn as of 31 Dec 2013; the $967M guarantee is confirmed by [S4]. Operating cost and electricity/water prices are not reported."
+        }
+      },
+      "demandBasis": "direct"
+    },
+    "parameters": {
+      "capacityKwp": 398600,
+      "landAreaM2": 9712454
+    },
+    "sources": [
+      {
+        "id": "S1",
+        "title": "DOE/EA-1797 Final Environmental Assessment for Department of Energy Loan Guarantee for the Agua Caliente Solar Project in Yuma County, Arizona",
+        "publisher": "U.S. Department of Energy, Loan Guarantee Program Office",
+        "url": "https://www.energy.gov/sites/default/files/nepapub/nepa_documents/RedDont/EA-1797-FEA-2010.pdf",
+        "year": "2010",
+        "accessed": "2026-11-07"
+      },
+      {
+        "id": "S2",
+        "title": "EIA-923 Power Plant Operations Report, annual final data 2022-2025 (plant 57373 net generation); also shown in the Electricity Data Browser plant page",
+        "publisher": "U.S. Energy Information Administration",
+        "url": "https://www.eia.gov/electricity/data/browser/#/plant/57373",
+        "year": "2024",
+        "accessed": "2026-11-07"
+      },
+      {
+        "id": "S3",
+        "title": "MidAmerican Energy Holdings Company Form 10-K for fiscal year 2013 (Equity Investments: Agua Caliente)",
+        "publisher": "U.S. Securities and Exchange Commission (EDGAR)",
+        "url": "https://www.sec.gov/Archives/edgar/data/1081316/000108131614000006/mehc123113form10-k.htm",
+        "year": "2014",
+        "accessed": "2026-11-07"
+      },
+      {
+        "id": "S4",
+        "title": "Department of Energy Finalizes $967 Million Loan Guarantee to Support Agua Caliente Solar Project (DOE release, republished)",
+        "publisher": "U.S. Department of Energy via The National Law Review",
+        "url": "https://natlawreview.com/article/department-energy-finalizes-967-million-loan-guarantee-to-support-agua-caliente-solar-projec",
+        "year": "2011",
+        "accessed": "2026-11-07"
+      },
+      {
+        "id": "S5",
+        "title": "NRG, MidAmerican begin operations at 290-MW solar PV plant in Arizona",
+        "publisher": "Power Engineering",
+        "url": "https://www.power-eng.com/renewables/solar-energy/nrg-midamerican-begin-operations-at-290-mw-solar-pv-plant-in-arizona/",
+        "year": "2014",
+        "accessed": "2026-11-07"
+      },
+      {
+        "id": "S6",
+        "title": "EIA-860M Preliminary Monthly Electric Generator Inventory, September 2026 (Operating sheet, plant 57373 generators AGU1-AGU3)",
+        "publisher": "U.S. Energy Information Administration",
+        "url": "https://www.eia.gov/electricity/data/eia860m/xls/september_generator2026.xlsx",
+        "year": "2026",
+        "accessed": "2026-11-07"
+      }
+    ],
+    "notes": [
+      "Average output is EIA-923 2024 net generation (656,051 MWh) [S2] spread over all 8,784 hours of 2024, so operatingHoursPerDay is 24 and the figure already includes night-time zero output.",
+      "EIA-923 annual net generation [S2] has fallen: 726,680 MWh (2022), 691,334 MWh (2023), 656,051 MWh (2024) and 546,916 MWh (2025). 2025 had unusually low February (18,382 MWh) and March (23,745 MWh) output; the cause is not reported. 2024 is used as the latest representative full year. For comparison, the 2010 EA [S1] projected 690,298 gross MWh/yr.",
+      "capacityKwp: [S6] EIA-860M (September 2026) DC net capacity AGU1 116.3 + AGU2 141.6 + AGU3 140.7 = 398.6 MW = 398,600 kWp. Wikipedia's 410 MWdc figure was not used.",
+      "The AC rating differs by source: 290 MW gross output per the EA [S1] (used for ratedOutputKw), 'nominal facility capacity in-service of 315 MW' per MEHC's 10-K [S3], and 347.7 MW summed EIA-860M generator nameplate [S6]. The capacity factor is computed against 290 MW.",
+      "performanceRatio is left unknown because no source states it.",
+      "EIA-860M [S6] lists the generator units entering operation in May 2012 (AGU1), Dec 2012 (AGU2) and Feb 2014 (AGU3); Power Engineering reported the completed plant on 29 April 2014 [S5]. Output is sold to Pacific Gas & Electric under a 25-year power purchase agreement and First Solar maintains the facility [S5].",
+      "Reference coordinates are the EIA-860M plant location (32.9774, -113.4945) [S6]."
+    ]
+  },
+  {
+    "id": "carlsbad-desalination-plant",
+    "name": "Claude \"Bud\" Lewis Carlsbad Desalination Plant",
+    "type": "water_plant",
+    "description": "The largest seawater reverse-osmosis desalination plant in the United States, on Agua Hedionda Lagoon in Carlsbad, California, supplying the San Diego County Water Authority since late 2015. The figures describe the plant at its typical 50 million gallons per day (MGD) output.",
+    "headline": "50 MGD seawater RO desalination · California",
+    "referenceSite": {
+      "name": "Claude \"Bud\" Lewis Carlsbad Desalination Plant, Carlsbad, CA",
+      "latitude": 33.13889,
+      "longitude": -117.33528,
+      "country": "USA"
+    },
+    "stats": {
+      "footprintM2": 24281.1,
+      "footprintProvenance": {
+        "kind": "cited",
+        "note": "[S2] IDE Americas (EPC/O&M contractor), 2015 deck: 'Footprint: 6 acres (24,000 m²)' and 'Plant footprint - 6 acres'. 6 acres x 4,046.856 = 24,281.1 m². IDE's own rounded conversion is 24,000 m². This is the plant site only, not the 10-mile product pipeline or the lagoon."
+      },
+      "operatingHoursPerDay": 24,
+      "power": {
+        "averageDemandKw": 28100,
+        "peakDemandKw": null,
+        "averageOutputKw": null,
+        "ratedOutputKw": null,
+        "capacityFactor": null,
+        "technology": "Seawater reverse osmosis: dual-media and cartridge filtration, 14 RO trains (14,000 membranes), 4 high-pressure pumps with PX pressure-exchanger energy recovery, remineralisation",
+        "provenance": {
+          "kind": "cited",
+          "note": "averageDemandKw: [S3] Voutchkov (Jan 2009), total annual energy use of 246,156 MWh/yr at an annual average plant production of 50 MGD (13.5 kWh per 1,000 gallons of drinking water). 246,156,000 kWh / 8,760 h = 28,100 kW continuous average (operatingHoursPerDay = 24). This is a pre-operation design figure, not metered consumption. technology: [S2] process block diagram and 'Key Technical Parameters': 14 RO trains, 14,000 RO membranes, 4 high-pressure pumps, 8 ERI trains with 168 PX300Q pressure exchangers, re-hardening (post-treatment). peakDemandKw is left blank because no source gives a metered peak or a connection rating."
+        }
+      },
+      "water": {
+        "inputM3PerHour": 15772.55,
+        "outputM3PerHour": 7886.27,
+        "basis": "Open seawater intake on Agua Hedionda Lagoon (Pacific Ocean); SWRO at about 50% recovery; brine (about twice seawater salinity) discharged to the ocean",
+        "provenance": {
+          "kind": "cited",
+          "note": "outputM3PerHour: [S1] SDCWA says the plant 'is capable of delivering more than 50 million gallons of fresh, desalinated drinking water per day'. [S4] San Diego Regional Water Board gives 'an average daily flow of 50 million gallons per day (MGD)'. 50 MGD x 157.725491 = 7,886.27 m³/h. inputM3PerHour: [S1] SDCWA says 'On a typical day, the Carlsbad plant uses 100 million gallons of seawater'. 100 MGD x 157.725491 = 15,772.55 m³/h. Recovery in basis: 50/100 = 50% (derived); [S2] gives ~52% at design. Brine salinity is from [S4]."
+        }
+      },
+      "materials": [],
+      "emissions": [],
+      "light": {
+        "upwardLumens": null,
+        "hoursPerDay": null,
+        "provenance": {
+          "kind": "user_assumption",
+          "note": null
+        }
+      },
+      "workers": {
+        "capacity": null,
+        "staffingRequired": 38,
+        "provenance": {
+          "kind": "cited",
+          "note": "staffingRequired: [S2] IDE Americas 2015 says 'IDE O&M Team in Place: January of 2015 (38 employees)'. This is the operations and maintenance team at commissioning and is the only staffing figure found. capacity is left blank because no source states a maximum number of workers on site at one time. The 2,400 construction-period jobs in [S2] are not operating staff."
+        }
+      },
+      "costs": {
+        "currency": "USD",
+        "constructionTotal": 537000000,
+        "priceBasis": "2012 USD (project financed 2012), reported capital cost of the desalination plant only; total project with pipeline, financing and SDCWA works $1.003B",
+        "operating": {
+          "amount": null,
+          "period": "year",
+          "kind": "total"
+        },
+        "electricityPricePerKwh": null,
+        "waterPricePerM3": null,
+        "provenance": {
+          "kind": "cited",
+          "note": "constructionTotal: [S2] IDE Americas 2015 'Total Capital Cost' table: total desalination plant $537 million; total conveyance pipeline $159 million; financing costs $227 million; Water Authority improvements and oversight $80 million; total capital costs $1.003 billion. [S1] SDCWA also refers to 'the $537 million plant' and 'the $159 million pipeline'. [S2] dates financial close and notice to proceed to 2012. Operating cost, electricity price and water price are left blank because no source gives the plant's operating cost. The 2016 SDCWA water purchase price in [S2] ($2,131 to $2,367 per acre-foot, including the pipeline) is a wholesale price that includes capital recovery, so it is not an operating cost."
+        }
+      },
+      "demandBasis": "direct"
+    },
+    "parameters": {},
+    "sources": [
+      {
+        "id": "S1",
+        "title": "Seawater Desalination (Claude \"Bud\" Lewis Carlsbad Desalination Plant)",
+        "publisher": "San Diego County Water Authority",
+        "url": "https://www.sdcwa.org/your-water/local-water-supplies/seawater-desalination/",
+        "year": null,
+        "accessed": "2026-11-07"
+      },
+      {
+        "id": "S2",
+        "title": "Carlsbad Desalination Plant: A Texas Size Opportunity (Mark Lambert, CEO IDE Americas)",
+        "publisher": "IDE Technologies / Texas Desalination Association",
+        "url": "https://www.texasdesal.com/wp-content/uploads/2016/02/Mark_Lambert.pdf",
+        "year": "2015",
+        "accessed": "2026-11-07"
+      },
+      {
+        "id": "S3",
+        "title": "Green Desalination: Carlsbad (Nikolay Voutchkov)",
+        "publisher": "Water Conditioning & Purification Magazine",
+        "url": "https://wcponline.com/2009/01/10/green-desalination-carlsbad/",
+        "year": "2009",
+        "accessed": "2026-11-07"
+      },
+      {
+        "id": "S4",
+        "title": "Carlsbad Desalination Plant",
+        "publisher": "California Regional Water Quality Control Board, San Diego Region",
+        "url": "https://water.waterboards.ca.gov/sandiego/water_issues/programs/regulatory/carlsbad_desalination.html",
+        "year": null,
+        "accessed": "2026-11-07"
+      }
+    ],
+    "notes": [
+      "Flows are per-day figures spread evenly over 24 hours (operatingHoursPerDay = 24), because the plant runs continuously.",
+      "Output (50 MGD) and intake (100 MGD) are typical-day figures from SDCWA ([S1]). [S2] gives the design maximum: 54 MGD (204,412 m³/day) of product water from 104 MGD of intake, at about 52% recovery.",
+      "Electricity demand comes from the 2009 design energy budget ([S3]: 246,156 MWh/yr at 50 MGD), averaged over 8,760 h. It is not metered. The implied specific energy is 246,156,000 kWh / (7,886.27 m³/h x 8,760 h) = about 3.56 kWh/m³.",
+      "SDCWA ([S1]) says energy recovery devices save an estimated 146 million kWh/yr in one passage and 116 million kWh/yr in another. They are recorded here for context only.",
+      "No direct air emissions are recorded. [S3] gives a gross indirect footprint from grid electricity of 61,004 metric tons CO2/yr, using a 2009 grid factor. It is not entered as an emission because it would double-count the electricity demand.",
+      "[S4] describes the permitted intake as cooling water from the Encina Power Station, with a proposal to withdraw up to 299 MGD of lagoon seawater. The 100 MGD typical intake is from [S1].",
+      "The reference-site coordinates (33.13889, -117.33528) are from the Wikipedia infobox (33°08′20″N 117°20′07″W). They are for context only."
+    ]
+  },
+  {
+    "id": "meta-prineville-data-centre",
+    "name": "Meta Prineville Data Center",
+    "type": "data_centre",
+    "description": "Meta's hyperscale data centre campus in Prineville, Oregon (ground broken 2010). The figures are the campus's reported 2024 electricity use, water withdrawal and market-based operational GHG from Meta's 2025 Environmental Data Index, plus investment and jobs from Meta's site information sheet.",
+    "headline": "Hyperscale data centre · 1.73 TWh/yr (2024) · Oregon",
+    "referenceSite": {
+      "name": "Meta Prineville Data Center, Crook County, Oregon",
+      "latitude": 44.2979308,
+      "longitude": -120.8828847,
+      "country": "United States"
+    },
+    "stats": {
+      "footprintM2": null,
+      "footprintProvenance": {
+        "kind": "cited",
+        "note": "Unknown. Neither [S1] nor [S2] gives the campus's occupied ground area. Press figures for the campus are building floor space, not ground area, and predate later expansion. The [S3] OSM landuse polygon contains the reference point, but it is a volunteer-mapped boundary and is used only as a location reference, not as a footprint."
+      },
+      "operatingHoursPerDay": 24,
+      "power": {
+        "averageDemandKw": 196754,
+        "peakDemandKw": null,
+        "averageOutputKw": null,
+        "ratedOutputKw": null,
+        "capacityFactor": null,
+        "technology": "Hyperscale data centre campus, grid-supplied (Pacific Power)",
+        "provenance": {
+          "kind": "cited",
+          "note": "[S1] Electricity Consumption by Facility (in MWh), Prineville (OR), 2024: 1,728,291 MWh. averageDemandKw = 1,728,291,000 kWh / 8,784 h (2024 is a leap year) = 196,754 kW, a continuous 24 h/day average. [S2] says Meta worked with Pacific Power to plan the site's energy needs (technology field). Peak demand and connected capacity are not published."
+        }
+      },
+      "water": {
+        "inputM3PerHour": 37.34,
+        "outputM3PerHour": null,
+        "basis": "Water withdrawal (not consumption); City of Prineville water service",
+        "provenance": {
+          "kind": "cited",
+          "note": "[S1] Water Withdrawal by Facility (in megaliters), Prineville (OR), 2024: 328 ML = 328,000 m3. inputM3PerHour = 328,000 m3 / 8,784 h = 37.34 m3/h. This is withdrawal: [S1] reports water consumption only company-wide, not per facility. [S2] says Meta pays the City of Prineville the full cost of water and wastewater service. [S1] footnote: the 1,019 ML withdrawn in 2024 to build Meta data centres is excluded from the facility figures."
+        }
+      },
+      "materials": [],
+      "emissions": [
+        {
+          "id": "co2e-operational",
+          "pollutant": "CO2e (market-based Scope 1+2)",
+          "rateKgPerHour": 132.86,
+          "provenance": {
+            "kind": "cited",
+            "note": "[S1] Market-Based Scope 1 and 2 Emissions (in metric tons CO2e), Prineville (OR), 2024: 1,167 t. [S1] Scope 2 table gives Prineville 2024 market-based Scope 2 = 0, so the figure is Scope 1, which [S1] defines as stationary combustion, mobile combustion and fugitive emissions such as refrigerant losses. Rate = 1,167,000 kg / 8,784 h = 132.86 kg/h. The 2024 location-based Scope 2 of 498,192 t CO2e [S1] is not included."
+          }
+        }
+      ],
+      "light": {
+        "upwardLumens": null,
+        "hoursPerDay": null,
+        "provenance": {
+          "kind": "user_assumption",
+          "note": null
+        }
+      },
+      "workers": {
+        "capacity": null,
+        "staffingRequired": 350,
+        "provenance": {
+          "kind": "cited",
+          "note": "[S2] '350+ Operational jobs supported'; staffingRequired = 350 (lower bound). 'Jobs supported' may include contractors and is not split into employees and contingent workers. The 1,000 skilled trade workers on site at peak construction [S2] is a construction peak and is not used for operating capacity."
+        }
+      },
+      "costs": {
+        "currency": "USD",
+        "constructionTotal": 2000000000,
+        "priceBasis": "Nominal USD, cumulative data centre investment in Oregon reported as '$2B+' (lower bound), Meta 2026 site sheet",
+        "operating": {
+          "amount": null,
+          "period": "year",
+          "kind": "total"
+        },
+        "electricityPricePerKwh": null,
+        "waterPricePerM3": null,
+        "provenance": {
+          "kind": "cited",
+          "note": "[S2] '$2B+ Data center investment in Oregon' feeds constructionTotal = 2,000,000,000 USD. It is a lower bound, cumulative over the campus's build-out phases since ground was broken in 2010, and not a single construction contract. It may include equipment. Operating cost and tariff prices are not published."
+        }
+      },
+      "demandBasis": "direct"
+    },
+    "parameters": {},
+    "sources": [
+      {
+        "id": "S1",
+        "title": "2025 Environmental Data Index (reporting on fiscal year 2024)",
+        "publisher": "Meta Platforms, Inc.",
+        "url": "https://sustainability.atmeta.com/wp-content/uploads/2025/10/Meta_2025-Environmental-Data-Index.pdf",
+        "year": "2025",
+        "accessed": "2026-11-07"
+      },
+      {
+        "id": "S2",
+        "title": "Meta Prineville Data Center (information sheet)",
+        "publisher": "Meta Platforms, Inc.",
+        "url": "https://datacenters.atmeta.com/wp-content/uploads/2026/09/Metas-Prineville-Data-Center.pdf",
+        "year": "2026",
+        "accessed": "2026-11-07"
+      },
+      {
+        "id": "S3",
+        "title": "Meta Prineville Data Center (relation 19988712)",
+        "publisher": "OpenStreetMap contributors",
+        "url": "https://www.openstreetmap.org/relation/19988712",
+        "year": "2026",
+        "accessed": "2026-11-07"
+      }
+    ],
+    "notes": [
+      "All averages are 2024 annual totals spread over 8,784 hours (2024 is a leap year, and the [S1] fiscal year is calendar 2024), so operatingHoursPerDay is 24 and the averages hold for continuous operation.",
+      "Prineville history in [S1], 2020 to 2024: electricity 686,000 / 898,409 / 982,177 / 1,375,321 / 1,728,291 MWh; water withdrawal 445 / 354 / 240 / 180 / 328 ML. The campus is still growing, so these figures are a single-year snapshot.",
+      "Water is withdrawal, not consumption. [S1] reports consumption only for the whole fleet (3,123 ML total water consumption in 2024).",
+      "No site-specific PUE or WUE is published. [S1] gives only fleet-wide 2024 values: PUE 1.08 and WUE 0.19 L/kWh (water withdrawal / IT electricity load). Because they are fleet averages, they are not entered as this campus's parameters, and demandBasis stays 'direct'.",
+      "The reference coordinates lie inside the [S3] OSM polygon for the campus, whose centroid is about 44.2984, -120.8864.",
+      "IT power, load fraction, peak demand, footprint, operating cost and tariffs are not published and are left unknown.",
+      "Meta reports the investment ($2B+) and jobs (350+) as lower bounds."
+    ]
+  },
+  {
+    "id": "thanet-earth-glasshouse-4",
+    "name": "Thanet Earth Glasshouse 4",
+    "type": "greenhouse",
+    "description": "The fourth glasshouse at Thanet Earth, the large commercial glasshouse complex in Kent, UK. It covers about 8 ha, grows tomatoes and was reported complete and planted in January 2013 with its own combined heat and power (CHP) plant. The figures describe this one glasshouse as reported at completion, not the whole complex.",
+    "headline": "8 ha tomato glasshouse + 5 MW CHP · Kent, UK",
+    "referenceSite": {
+      "name": "Thanet Earth glasshouse complex (site of Glasshouse 4), near Birchington/Monkton, Isle of Thanet",
+      "latitude": 51.357,
+      "longitude": 1.286,
+      "country": "United Kingdom"
+    },
+    "stats": {
+      "footprintM2": 80000,
+      "footprintProvenance": {
+        "kind": "cited",
+        "note": "[S1] (17 Jan 2013): 'The fourth greenhouse covers approximately 8 hectares'; [S2] (19 May 2013): 'Covering eight hectares'. 8 ha x 10,000 = 80,000 m2. This is the area covered by the glasshouse only. It excludes reservoirs, packhouse and yard."
+      },
+      "operatingHoursPerDay": null,
+      "power": {
+        "averageDemandKw": null,
+        "peakDemandKw": null,
+        "averageOutputKw": null,
+        "ratedOutputKw": 5000,
+        "capacityFactor": null,
+        "technology": "Combined heat and power (CHP) cogeneration",
+        "provenance": {
+          "kind": "cited",
+          "note": "[S1] (17 Jan 2013): the new greenhouse 'will also increase the electricity generating capacity of the site overall to 20MW from the 15MW' it generates today; its construction cost includes its own CHP infrastructure. ratedOutputKw = 20,000 kW - 15,000 kW = 5,000 kW added with Glasshouse 4. No capacity factor, annual generation or electricity demand (lighting etc.) is published, so energy output and demand are left unknown."
+        }
+      },
+      "water": {
+        "inputM3PerHour": null,
+        "outputM3PerHour": null,
+        "basis": "Rainwater capture (no volume published for this glasshouse)",
+        "provenance": {
+          "kind": "cited",
+          "note": "[S1] says that, as with the original three greenhouses, this one uses rainwater capture. No water-use rate is published for this glasshouse. The site-wide figure in [S3] ('around 400,000m3 from rainfall and recirculation', storage capacity 300,000 m3, about 85% self-sufficient) has no stated period and covers the whole site, so no m3/hour is derived."
+        }
+      },
+      "materials": [],
+      "emissions": [],
+      "light": {
+        "upwardLumens": null,
+        "hoursPerDay": null,
+        "provenance": {
+          "kind": "cited",
+          "note": "No lighting quantity is published for this glasshouse. Left unknown."
+        }
+      },
+      "workers": {
+        "capacity": null,
+        "staffingRequired": 100,
+        "provenance": {
+          "kind": "cited",
+          "note": "[S1] (17 Jan 2013): the new greenhouse provides employment and seasonal work opportunities for 'approximately 100 more people', bringing the site total to 600 at the height of the season. staffingRequired = 100, the reported peak-season headcount added by this glasshouse (includes seasonal workers). No workers-at-one-time capacity is stated."
+        }
+      },
+      "costs": {
+        "currency": "GBP",
+        "constructionTotal": 17000000,
+        "priceBasis": "GBP as reported Jan 2013, construction cost incl. CHP and substation link",
+        "operating": {
+          "amount": null,
+          "period": "year",
+          "kind": "fixed"
+        },
+        "electricityPricePerKwh": null,
+        "waterPricePerM3": null,
+        "provenance": {
+          "kind": "cited",
+          "note": "[S1] (17 Jan 2013): the cost of construction, including its Combined Heat & Power infrastructure and the link to the site electrical substation, 'has been some £17 million'. [S2] (19 May 2013) also calls it a '£17m greenhouse'. constructionTotal = 17,000,000 GBP. No operating cost is published."
+        }
+      },
+      "demandBasis": "direct"
+    },
+    "parameters": {
+      "floorAreaM2": 80000
+    },
+    "sources": [
+      {
+        "id": "S1",
+        "title": "UK: Construction and planting fourth greenhouse Thanet Earth completed",
+        "publisher": "HortiDaily (FreshPublishers)",
+        "url": "https://www.hortidaily.com/article/6000576/uk-construction-and-planting-fourth-greenhouse-thanet-earth-completed",
+        "year": "2013",
+        "accessed": "2026-11-07"
+      },
+      {
+        "id": "S2",
+        "title": "Thanet Earth's fourth greenhouse envy of growers",
+        "publisher": "The Grocer",
+        "url": "https://www.thegrocer.co.uk/news/thanet-earths-fourth-greenhouse-envy-of-growers/343353.article",
+        "year": "2013",
+        "accessed": "2026-11-07"
+      },
+      {
+        "id": "S3",
+        "title": "Thanet Earth Energy",
+        "publisher": "Thanet Earth",
+        "url": "https://www.thanetearth.com/?p=486",
+        "year": null,
+        "accessed": "2026-11-07"
+      }
+    ],
+    "notes": [
+      "The preset is one glasshouse, Thanet Earth's fourth, so that area, CHP capacity, cost and staffing all describe the same building at the same date (January 2013, [S1]). Site-wide figures from other years do not match each other: CHP was 15 MW before this glasshouse and 20 MW after it [S1]; later reports give larger site totals.",
+      "referenceSite coordinates (51.357 N, 1.286 E) are the location given for the Thanet Earth complex as a whole (Wikipedia infobox, used as a pointer only). The exact position of Glasshouse 4 within the complex is not published in the cited sources.",
+      "floorAreaM2 and footprintM2 both use the reported covered area of about 8 ha (80,000 m2) [S1][S2]. For a single-storey glasshouse the growing floor is roughly the covered ground. The sources give no separate net growing area.",
+      "ratedOutputKw (5,000 kW) is the increase in site electricity generating capacity reported when this glasshouse was built (15 MW to 20 MW) [S1]. The CHP plant's heat output, gas use and annual electricity are not published, so heatDemandKwhPerYear, minSupplyTempC, capacity factor and average output are left unknown.",
+      "Water use is left unknown. The operator reports usually collecting about 400,000 m3 from rainfall and recirculation, 300,000 m3 of storage capacity and about 85% water self-sufficiency [S3]. Those figures cover the whole site, are undated and give no period, so they are not turned into a per-hour rate.",
+      "staffingRequired (100) is the reported peak-season headcount added by this glasshouse, including seasonal workers [S1]. It is not a count of workers on site at one time.",
+      "The construction cost (about £17m, as reported in 2013) covers the glasshouse, its CHP plant and the link to the site substation [S1]. It is reported in GBP and not converted."
+    ]
+  }
+]

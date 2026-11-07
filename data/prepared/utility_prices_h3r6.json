@@ -1,0 +1,31 @@
+{
+  "id": "utility_prices",
+  "title": "Average electricity and water prices",
+  "evidenceType": "reported",
+  "units": {
+    "electricity": "USD/kWh",
+    "water": "USD/m³"
+  },
+  "period": {
+    "label": "Latest available per area (2014–2026); see areas.csv"
+  },
+  "nativeResolution": "Country, or state/province for the US, Canada and Australia (electricity)",
+  "sampling": "Each resolution-6 cell takes the price of the area containing its centre (coastal cells: the overlapping area). Zoomed-out hexagons show the mean.",
+  "aggregation": {
+    "toRes6": "area value repeated in every cell",
+    "coarser": "mean"
+  },
+  "averaging": [
+    "Day/night (time-of-use) tariffs: hours-weighted average of the periods.",
+    "Tiered tariffs: effective price at a typical household use (~250 kWh, ~15 m³ per month), fixed charges included where known.",
+    "Seasonal tariffs: annual average. Official statistics (EIA, Eurostat) are revenue ÷ sales averages over all tariffs, so they already include these."
+  ],
+  "caveats": [
+    "One average per country or state: real tariffs vary by utility, city, customer size and contract.",
+    "Water prices are mostly the capital or largest utility's tariff; some exclude wastewater (see basis).",
+    "Converted to USD at the World Bank annual average exchange rate; volatile currencies distort comparisons.",
+    "Sources differ in year and tax treatment; read each cell's basis line before comparing."
+  ],
+  "builtAt": "2026-11-07",
+  "cells": 3705164
+}

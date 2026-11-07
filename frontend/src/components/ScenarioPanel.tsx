@@ -59,7 +59,7 @@ export default function ScenarioPanel(props: Props) {
       <section className="panel">
         <h3 style={{ marginTop: 0 }}>Projects</h3>
         {scenario && scenario.projects.length === 0 && (
-          <p className="muted">No projects yet. Use “Add” above the map, then click a location.</p>
+          <p className="muted">No buildings yet. Use “+ Add building” above the map, or the Build tab.</p>
         )}
         <ul className="list">
           {scenario?.projects.map((p) => (

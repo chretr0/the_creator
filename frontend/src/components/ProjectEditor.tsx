@@ -1,6 +1,26 @@
-import { useEffect, useState } from "react";
-import type { ParamValue, Project, ProjectInput, ProjectType } from "../lib/api";
-import { PROJECT_TYPES, PROJECT_TYPE_BY_ID } from "../lib/projectTypes";
+import { useEffect, useMemo, useState } from "react";
+import { api, type Project, type ProjectInput, type ProjectType } from "../lib/api";
+import type { DefinitionSnapshot, LocationAssessment } from "../lib/buildings";
+import {
+  criterionToDraft,
+  fmtDays,
+  parseCriteria,
+  parseSite,
+  parseStats,
+  SITE_FIELDS,
+  siteToDraft,
+  statsToDraft,
+  type CriterionDraft,
+  type SiteDraft,
+  type StatsDraft,
+} from "../lib/buildingForm";
+import type { CellLayer } from "../lib/datalayers";
+import { PROJECT_TYPES, typeColour, typeLabel } from "../lib/projectTypes";
+import { useBuildingTemplates } from "../lib/useBuildingTemplates";
+import BuildingForm from "./BuildingForm";
+import { AssessmentView, ResultView } from "./AssessmentView";
+import CriteriaEditor from "./CriteriaEditor";
+import { Field, Section } from "./FormBits";
 
 type Props = {
   project: Project;
@@ -9,6 +29,10 @@ type Props = {
   onMove: () => void;
   onDelete: () => void;
   onClose: () => void;
+  /** Layer catalogue for map-layer requirements. */
+  catalogue: CellLayer[];
+  /** The scenario's evaluation period (days). */
+  periodDays: number;
 };
 
 type Draft = {
@@ -16,30 +40,88 @@ type Draft = {
   type: ProjectType;
   latitude: string;
   longitude: string;
-  params: Record<string, string>;
+  description: string;
+  stats: StatsDraft;
+  site: SiteDraft;
+  criteria: CriterionDraft[];
 };
 
+const EMPTY_SNAPSHOT: DefinitionSnapshot = { schemaVersion: 1, name: "", description: "", stats: {}, criteria: [] };
+
+/** Legacy projects may come without a snapshot; treat every new statistic as unknown. */
+const snapshotOf = (p: Project): DefinitionSnapshot => ({ ...EMPTY_SNAPSHOT, ...(p.definition ?? {}) });
+
 function toDraft(p: Project): Draft {
+  const snap = snapshotOf(p);
   return {
     name: p.name,
     type: p.type,
     latitude: String(p.latitude),
     longitude: String(p.longitude),
-    params: Object.fromEntries(Object.entries(p.parameters).map(([k, v]) => [k, String(v)])),
+    description: snap.description ?? "",
+    stats: statsToDraft(snap.stats, p.parameters ?? {}),
+    site: siteToDraft(p.site),
+    criteria: (snap.criteria ?? []).map(criterionToDraft),
   };
 }
 
-export default function ProjectEditor({ project, moving, onSave, onMove, onDelete, onClose }: Props) {
+/** Change the type; leaving data centre resets the demand basis, whose selector only data centres show. */
+function withType(draft: Draft, type: ProjectType): Draft {
+  return { ...draft, type, stats: type === "data_centre" ? draft.stats : { ...draft.stats, demandBasis: "direct" } };
+}
+
+export default function ProjectEditor({ project, moving, onSave, onMove, onDelete, onClose, catalogue, periodDays }: Props) {
   const [draft, setDraft] = useState<Draft>(() => toDraft(project));
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const { templateFor } = useBuildingTemplates();
 
   useEffect(() => {
     setDraft(toDraft(project));
     setError(null);
   }, [project]);
 
-  const def = PROJECT_TYPE_BY_ID[draft.type];
+  const snap = snapshotOf(project);
+  const template = templateFor(draft.type, draft.type === project.type ? snap.templateId : null);
+  const parsed = useMemo(() => parseStats(draft.stats, template.parameters), [draft.stats, template]);
+  const site = useMemo(() => parseSite(draft.site), [draft.site]);
+  const crit = useMemo(() => parseCriteria(draft.criteria), [draft.criteria]);
+  const errorCount = Object.keys(parsed.errors).length + Object.keys(site.errors).length + Object.keys(crit.errors).length;
+
+  // Calculated results and checks for the saved building at its saved location (excluding itself
+  // from shared budgets so it is not counted twice).
+  const [assessed, setAssessed] = useState<{ key: string; value: LocationAssessment; periodDays: number } | null>(null);
+  const [assessError, setAssessError] = useState<string | null>(null);
+  const assessKey = `${project.id}:${project.updatedAt}:${project.latitude}:${project.longitude}`;
+  useEffect(() => {
+    const ctrl = new AbortController();
+    setAssessError(null);
+    const s = snapshotOf(project);
+    api
+      .assess(
+        {
+          scenarioId: project.scenarioId,
+          type: project.type,
+          stats: s.stats ?? {},
+          parameters: project.parameters ?? {},
+          criteria: s.criteria ?? [],
+          site: project.site ?? {},
+          location: { latitude: project.latitude, longitude: project.longitude },
+          excludeProjectId: project.id,
+        },
+        ctrl.signal,
+      )
+      .then((r) => {
+        if (!ctrl.signal.aborted && r.location) setAssessed({ key: assessKey, value: r.location, periodDays: r.periodDays });
+      })
+      .catch((e) => {
+        if (!ctrl.signal.aborted) setAssessError(e instanceof Error ? e.message : String(e));
+      });
+    return () => ctrl.abort();
+    // assessKey identifies the saved inputs.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assessKey]);
+  const fresh = assessed?.key === assessKey ? assessed : null;
 
   async function save() {
     const latitude = Number(draft.latitude);
@@ -50,20 +132,26 @@ export default function ProjectEditor({ project, moving, onSave, onMove, onDelet
     if (draft.longitude.trim() === "" || !Number.isFinite(longitude)) {
       return setError("Longitude must be a number.");
     }
-    const parameters: Record<string, ParamValue> = {};
-    for (const p of def.params) {
-      const raw = (draft.params[p.key] ?? "").trim();
-      if (raw === "") continue; // unknown stays unknown, never 0
-      if (p.kind === "number") {
-        const n = Number(raw);
-        if (!Number.isFinite(n)) return setError(`${p.label} must be a number.`);
-        parameters[p.key] = n;
-      } else {
-        parameters[p.key] = raw;
-      }
-    }
+    if (errorCount) return setError("Fix the highlighted fields before saving.");
+    const typeChanged = draft.type !== project.type;
+    const definition: DefinitionSnapshot = {
+      ...snap,
+      description: draft.description,
+      criteria: crit.criteria,
+      // The derived demand basis only exists for data centres (its selector is hidden for other types).
+      stats: draft.type === "data_centre" ? parsed.stats : { ...parsed.stats, demandBasis: "direct" },
+      ...(typeChanged
+        ? { templateId: template.version > 0 ? template.id : null, templateVersion: template.version > 0 ? template.version : null }
+        : {}),
+    };
     // Only send coordinates when edited, so exact stored values are never re-rounded.
-    const patch: Partial<ProjectInput> = { name: draft.name, type: draft.type, parameters };
+    const patch: Partial<ProjectInput> = {
+      name: draft.name,
+      type: draft.type,
+      parameters: parsed.parameters,
+      definition,
+      site: site.site,
+    };
     if (draft.latitude !== String(project.latitude)) patch.latitude = latitude;
     if (draft.longitude !== String(project.longitude)) patch.longitude = longitude;
 
@@ -78,26 +166,31 @@ export default function ProjectEditor({ project, moving, onSave, onMove, onDelet
     }
   }
 
+  const label = typeLabel(draft.type);
+
   return (
     <section className="panel">
       <div className="panel-head">
-        <h2>{draft.name || def.label}</h2>
+        <h2>
+          <span className="dot" style={{ background: `rgb(${typeColour(draft.type).join(",")})` }} /> {draft.name || label}
+        </h2>
         <button className="ghost" onClick={onClose} aria-label="Close project">
           ✕
         </button>
       </div>
+      <p className="subtitle small">
+        {label}
+        {project.sourceDefinitionId && " · from a saved definition (this building keeps its own copy)"}
+      </p>
+      {snap.description && <p className="small description">{snap.description}</p>}
 
       <label className="field">
         <span>Name</span>
-        <input
-          value={draft.name}
-          placeholder={def.label}
-          onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-        />
+        <input value={draft.name} placeholder={label} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
       </label>
       <label className="field">
         <span>Type</span>
-        <select value={draft.type} onChange={(e) => setDraft({ ...draft, type: e.target.value as ProjectType })}>
+        <select value={draft.type} onChange={(e) => setDraft(withType(draft, e.target.value as ProjectType))}>
           {PROJECT_TYPES.map((t) => (
             <option key={t.type} value={t.type}>
               {t.label}
@@ -108,50 +201,66 @@ export default function ProjectEditor({ project, moving, onSave, onMove, onDelet
       <div className="row">
         <label className="field">
           <span>Latitude (°)</span>
-          <input
-            className="mono"
-            value={draft.latitude}
-            onChange={(e) => setDraft({ ...draft, latitude: e.target.value })}
-          />
+          <input className="mono" value={draft.latitude} onChange={(e) => setDraft({ ...draft, latitude: e.target.value })} />
         </label>
         <label className="field">
           <span>Longitude (°)</span>
-          <input
-            className="mono"
-            value={draft.longitude}
-            onChange={(e) => setDraft({ ...draft, longitude: e.target.value })}
-          />
+          <input className="mono" value={draft.longitude} onChange={(e) => setDraft({ ...draft, longitude: e.target.value })} />
         </label>
       </div>
-      <h3>Assumptions</h3>
-      <p className="muted small">Leave blank if unknown.</p>
-      {def.params.map((p) => (
-        <label className="field" key={p.key} title={p.hint}>
-          <span>
-            {p.label} {p.unit && <em>({p.unit})</em>}
-          </span>
-          {p.kind === "select" ? (
-            <select
-              value={draft.params[p.key] ?? ""}
-              onChange={(e) => setDraft({ ...draft, params: { ...draft.params, [p.key]: e.target.value } })}
-            >
-              <option value="">Not set</option>
-              {p.options!.map((o) => (
-                <option key={o} value={o}>
-                  {o}
-                </option>
-              ))}
-            </select>
-          ) : (
-            <input
-              inputMode="decimal"
-              value={draft.params[p.key] ?? ""}
-              placeholder="Not set"
-              onChange={(e) => setDraft({ ...draft, params: { ...draft.params, [p.key]: e.target.value } })}
-            />
-          )}
-        </label>
-      ))}
+
+      <h3>Assessment at this location</h3>
+      {assessError && <p className="warn small">Unavailable: {assessError}</p>}
+      {!fresh && !assessError && <p className="muted small">Calculating…</p>}
+      {fresh && (
+        <>
+          <AssessmentView assessment={fresh.value.assessment} />
+          <Section title="Calculated usage and costs" meta={`over ${fmtDays(fresh.periodDays)}`} open>
+            <ResultView result={fresh.value.result} producesPower={template.producesPower} producesWater={template.producesWater} />
+          </Section>
+        </>
+      )}
+
+      <h3>Statistics</h3>
+      <p className="muted small">Blank means unknown. Changes apply to this building only.</p>
+      <label className="field">
+        <span>Description</span>
+        <textarea rows={2} value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
+      </label>
+      <BuildingForm draft={draft.stats} onChange={(stats) => setDraft({ ...draft, stats })} errors={parsed.errors} template={template} />
+
+      <Section title="Requirements" meta={`${crit.criteria.length} set`} invalid={Object.keys(crit.errors).length}>
+        <p className="muted small">
+          What this building needs from its location. Each becomes a pass / fail / unknown check above. Without any
+          (and without site assumptions) the assessment can only say “More information needed”.
+        </p>
+        <CriteriaEditor
+          drafts={draft.criteria}
+          onChange={(criteria) => setDraft({ ...draft, criteria })}
+          errors={crit.errors}
+          catalogue={catalogue}
+          currency={parsed.stats.costs?.currency || "currency"}
+          periodDays={periodDays}
+        />
+      </Section>
+
+      <Section title="Site assumptions" meta="this location only" invalid={Object.keys(site.errors).length}>
+        <p className="muted small">
+          What this exact location can provide. Each value you enter is checked against the building's demand (usable
+          area vs footprint, connected capacity vs peak demand, energy and water over the period).
+        </p>
+        {SITE_FIELDS.map((f) => (
+          <Field
+            key={f.key}
+            label={f.label}
+            unit={f.unit}
+            value={draft.site[f.key]}
+            onChange={(v) => setDraft({ ...draft, site: { ...draft.site, [f.key]: v } })}
+            error={site.errors[f.key]}
+          />
+        ))}
+        <Field label="Note" value={draft.site.note} onChange={(v) => setDraft({ ...draft, site: { ...draft.site, note: v } })} numeric={false} placeholder="Basis for these values" />
+      </Section>
 
       {error && <p className="warn">{error}</p>}
       <div className="actions">

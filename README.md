@@ -59,10 +59,38 @@ for product intent and [CLAUDE-World-Mapping.md](./CLAUDE-World-Mapping.md) for 
     facilities and Water Quality Portal sites (Arizona), NSTA offshore wellbores (UK), Aqueduct 4.0 baseline and
     projected water stress, HydroRIVERS and HydroBASINS level 6 (both regions), and the NESO regional carbon
     intensity table (Great Britain).
+  - *Prices* (global, every land cell): average **electricity** (USD/kWh) and **water + wastewater** (USD/m³)
+    prices, household and business. One average per country, or per state/province for US, Canadian and Australian
+    electricity. Day/night, seasonal and tiered tariffs are averaged into one rate. Sources: US EIA (by state),
+    Eurostat, and a cited research table ([data/reference/utility_prices/](./data/reference/utility_prices/README.md)).
+    The cell inspector shows each value's local price, exchange rate, year, source and method. Water is unknown
+    (grey) for about a quarter of land, mainly North Africa and the Sahel, Iran/Iraq/Afghanistan, Central Asia,
+    Mongolia and Myanmar. US water is a national 50-city average, except Arizona (Phoenix tariff).
+    Rebuild with `scripts/prepare_utility_prices.py`.
   - Clicking a cell now lists every layer's value for that cell (with monthly charts), the water-risk basin
     it sits in, rivers crossing it, and the nearest records from each point layer.
 
-Not built yet: the resource model, connections, and the comparison view. Manual-download sources
+- **Building system** ([CLAUDE.Building-System.md](./CLAUDE.Building-System.md)), in the sidebar's *Build* tab
+  (or *+ Add building*):
+  1. *Define*: pick Power station, Water plant, Data centre, Solar, Greenhouse or Custom, add a name and a
+     description, and fill in whatever statistics you know: footprint, hours, power use/output, water use/output,
+     raw materials, air emissions, light, workers and costs. Blank means unknown, never zero; no typical values are
+     filled in. Definitions can be saved and reused.
+  2. *Requirements*: map-layer limits (any registered H3 layer), site area, power/energy/water supply, budgets,
+     staffing, light and emission limits. Each is optional or required.
+  3. *Find locations*: screens resolution-6 cells in the current view or the Arizona/UK region and colours them
+     *meets criteria* / *more information needed* / *fails*, with a candidate list.
+  4. *Preview and place*: re-assesses the exact point (water stress uses the Aqueduct basin containing it) and
+     shows every check with values, units and sources. *Build here* saves a snapshot of the definition, so later
+     definition edits never change placed buildings.
+  - *Real examples*: cards for real facilities (Palo Verde nuclear, Mesquite gas, Agua Caliente solar, Carlsbad
+    desalination, Meta Prineville data centre, Thanet Earth glasshouse) with figures cited to public sources; drag a
+    card onto the map to place a new building with those figures. Unknown figures stay blank.
+  - *Scenario controls* (Projects tab): evaluation period, pooled resource budgets, and stress multipliers for water
+    and power availability, operating demand and prices, with unstressed vs stressed totals and per-building
+    shortfalls. Branching copies buildings, budgets and controls.
+
+Not built yet: connections between buildings and the cross-scenario comparison view. Manual-download sources
 ([data/MANUAL-DOWNLOADS.md](./data/MANUAL-DOWNLOADS.md)) appear once they are prepared: add a `LayerDef` in
 `backend/app/layers.py` for an H3 layer, or a manifest entry in `data/prepared/features/manifest.json` for records.
 
@@ -180,7 +208,7 @@ The backend API tests need the Docker database running.
 | `GET /api/cells/locate?latitude=&longitude=&resolution=6` | Cell containing a coordinate |
 | `GET /api/cells/{h3Id}` | Cell geometry, area, neighbours, parent |
 | `GET/POST /api/scenarios` | List / create scenarios |
-| `GET/PATCH/DELETE /api/scenarios/{id}` | Load (with projects) / rename / delete |
+| `GET/PATCH/DELETE /api/scenarios/{id}` | Load (with projects) / rename / delete; PATCH `assumptions` merges top-level keys (`periodDays`, `budgets`, `stress` validated) |
 | `POST /api/scenarios/{id}/branch` | Branch a scenario |
 | `GET /api/infrastructure[/{layer}]` | Datacenters / dams (region-tagged) + provenance |
 | `GET /api/boundaries[/{layer}]`, `GET /api/cables[/{layer}]` | Boundary and cable packs + provenance |
@@ -193,8 +221,13 @@ The backend API tests need the Docker database running.
 | `GET /api/cells/{h3Id}/profile` | Every H3 layer's values (all slices) for a cell of resolution 0–6, with source, licence and caveats per layer |
 | `GET /api/features`, `GET /api/features/{id}?west&south&east&north&category&q&limit` | Record layers (points, lines, polygons, tables) |
 | `GET /api/cells/{h3Id}/features` | Containing polygons, crossing rivers, and nearest records for one res-6 cell |
-| `POST /api/scenarios/{id}/projects` | Place a project (server computes the res-6 `h3Id`) |
+| `POST /api/scenarios/{id}/projects` | Place a project (server computes the res-6 `h3Id`); optional `definition` snapshot, `sourceDefinitionId`, `site` |
 | `PATCH/DELETE /api/projects/{id}` | Edit / move / remove a project |
+| `GET /api/building-templates` | Predefined building types (power station, water plant, data centre, solar, greenhouse, custom): fields, units, help; no numeric defaults |
+| `GET /api/building-presets` | Real example buildings: stats and parameters with cited provenance, sources, notes and reference site (read-only) |
+| `GET/POST /api/building-definitions`, `GET/PATCH/DELETE /api/building-definitions/{id}` | Saved building definitions; edits/deletes never change placed snapshots |
+| `POST /api/building-assessments` | Read-only calculation + pass/fail/unknown checks for a draft at an exact `location`, or over `bounds`/`region` res-6 cells (limit 30,000, else 422) |
+| `POST /api/scenarios/{id}/evaluate` `{stress?, periodDays?, budgets?}` | Unstressed vs stressed per-building results, pooled budgets and totals |
 
 Interactive docs: http://localhost:8000/docs
 
