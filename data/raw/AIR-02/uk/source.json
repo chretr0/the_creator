@@ -1,0 +1,29 @@
+{
+  "id": "AIR-02-uk-20261107",
+  "catalogueSourceId": "AIR-02",
+  "provider": "Copernicus Atmosphere Monitoring Service (CAMS) / ECMWF",
+  "product": "CAMS global reanalysis (EAC4) monthly averaged fields: monthly_mean 2024 (pm2p5, pm10, tcno2, tcso2, tcco, aod550)",
+  "version": "EAC4 as served by the ADS",
+  "documentationUrl": "https://ads.atmosphere.copernicus.eu/datasets/cams-global-reanalysis-eac4-monthly",
+  "accessUrl": "https://ads.atmosphere.copernicus.eu/api",
+  "accessMethod": "api",
+  "evidenceType": "modelled",
+  "licence": {
+    "name": "CC BY 4.0",
+    "url": "https://creativecommons.org/licenses/by/4.0/",
+    "attribution": "Inness et al. (2019), CAMS global reanalysis (EAC4) monthly averaged fields. Copernicus Atmosphere Monitoring Service (CAMS) Atmosphere Data Store. DOI: 10.24381/d58bbf47. Contains modified Copernicus Atmosphere Monitoring Service information 2024.",
+    "reviewedAt": "2026-11-07",
+    "notes": "Auto-generated from catalogue; confirm against the release's own licence before publishing."
+  },
+  "region": "uk",
+  "query": "region=uk; bbox W,S,E,N=-8.7,49.8,1.9,60.9",
+  "dataScope": "regional subset (data/README.md 'Data scope')",
+  "retrievedAt": "2026-11-07",
+  "files": [
+    {
+      "path": "cams_eac4_monthly_2024.nc",
+      "bytes": 113274,
+      "sha256": "aa2f93af67d055fb45a3ac6f9f18ac8cc1779e8a7fbab13dbd152d63042aa280"
+    }
+  ]
+}

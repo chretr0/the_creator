@@ -1,0 +1,36 @@
+{
+  "layer": "gedi_agbd_uk",
+  "sourceId": "LAND-04",
+  "provider": "NASA Earthdata (ORNL_CLOUD)",
+  "product": "GEDI L4B Gridded Aboveground Biomass Density v2.1 (1 km): MU and SE layers",
+  "version": "2.1",
+  "licence": "NASA open data",
+  "licenceUrl": "https://science.data.nasa.gov/about/license",
+  "attribution": "Dubayah, R.O., J. Armston, S.P. Healey, Z. Yang, P.L. Patterson, S. Saarela, G. Stahl, L. Duncanson, J.R. Kellner, J. Bruening, and A. Pascual. 2023. GEDI L4B Gridded Aboveground Biomass Density, Version 2.1. ORNL DAAC, Oak Ridge, Tennessee, USA. https://doi.org/10.3334/ORNLDAAC/2299",
+  "evidenceType": "model_output",
+  "retrievedAt": "2026-11-07",
+  "method": "Mean of valid pixels whose centres fall in each res-6 cell inside the region box. GEDI L4B v2.1 1 km gridded aboveground biomass density (MU) and its standard error (SE), pixel centres projected from EPSG:6933. agbd_se is the mean of the pixel standard errors, not the error of the cell mean. GEDI samples only up to ~51.6°N.",
+  "nativeResolution": "1 km EASE-Grid 2.0",
+  "sampling": "mean of pixel centres in cell",
+  "period": "Apr 2019 - Mar 2023",
+  "h3Resolution": 6,
+  "units": {
+    "agbd": "Mg/ha",
+    "agbd_se": "Mg/ha",
+    "n_pixels": "count of 1 km pixels"
+  },
+  "region": "uk",
+  "regionBbox": [
+    -8.7,
+    49.8,
+    1.9,
+    60.9
+  ],
+  "inputFiles": [
+    "GEDI04_B_MW019MW223_02_002_02_R01000M_MU_uk.tif",
+    "GEDI04_B_MW019MW223_02_002_02_R01000M_SE_uk.tif"
+  ],
+  "rowCount": 2593,
+  "generatedAt": "2026-11-07T16:46:26+00:00",
+  "script": "scripts/prepare_observation_h3.py"
+}

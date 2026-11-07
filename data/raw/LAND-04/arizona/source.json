@@ -1,0 +1,89 @@
+{
+  "id": "LAND-04-gedil4b-arizona-20261107",
+  "catalogueSourceId": "LAND-04",
+  "provider": "NASA Earthdata (ORNL_CLOUD)",
+  "product": "GEDI L4B Gridded Aboveground Biomass Density v2.1 (1 km): MU and SE layers",
+  "collectionShortName": "GEDI_L4B_Gridded_Biomass_V2_1_2299",
+  "collectionConceptId": "C2792577683-ORNL_CLOUD",
+  "version": "2.1",
+  "doi": "10.3334/ORNLDAAC/2299",
+  "documentationUrl": "https://daac.ornl.gov/GEDI/guides/GEDI_L4B_Gridded_Biomass_V2_1.html",
+  "accessMethod": "earthaccess (CMR search + HTTPS download, Earthdata Login)",
+  "evidenceType": "model_output",
+  "region": "arizona",
+  "dataScope": "regional subset (data/README.md 'Data scope')",
+  "retrievedAt": "2026-11-07",
+  "accessUrl": "https://data.ornldaac.earthdata.nasa.gov/protected/gedi/GEDI_L4B_Gridded_Biomass_V2_1/data/",
+  "licence": {
+    "name": "NASA open data",
+    "url": "https://science.data.nasa.gov/about/license",
+    "attribution": "Dubayah, R.O., J. Armston, S.P. Healey, Z. Yang, P.L. Patterson, S. Saarela, G. Stahl, L. Duncanson, J.R. Kellner, J. Bruening, and A. Pascual. 2023. GEDI L4B Gridded Aboveground Biomass Density, Version 2.1. ORNL DAAC, Oak Ridge, Tennessee, USA. https://doi.org/10.3334/ORNLDAAC/2299",
+    "reviewedAt": "2026-11-07",
+    "notes": "NASA Earth science data are open with no restriction on reuse; cite the product DOI. ORNL DAAC data use policy: https://science.nasa.gov/earth-science/earth-science-data/data-information-policy"
+  },
+  "query": "short_name=GEDI_L4B_Gridded_Biomass_V2_1_2299; layers MU, SE; region=arizona; bbox W,S,E,N=-113.5,31.3,-109.0,34.5",
+  "processing": "Global 1 km GeoTIFFs (EASE-Grid 2.0, EPSG:6933) clipped by scripts/clip_to_bbox.py raster (native grid window of the box's projected bounds, deflate); global originals deleted. Units Mg/ha; nodata -9999.",
+  "granules": [
+    {
+      "granuleId": "GEDI_L4B_Gridded_Biomass_V2_1.GEDI04_B_MW019MW223_02_002_02_R01000M_MU.tif",
+      "layer": "MU",
+      "meaning": "mean aboveground biomass density (AGBD), Mg/ha",
+      "beginDateTime": "2019-04-18T00:00:00.000Z",
+      "endDateTime": "2023-03-16T23:59:59.000Z",
+      "dataUrls": [
+        "https://data.ornldaac.earthdata.nasa.gov/protected/gedi/GEDI_L4B_Gridded_Biomass_V2_1/data/GEDI04_B_MW019MW223_02_002_02_R01000M_MU.tif"
+      ],
+      "upstreamBytes": 503162920,
+      "upstreamChecksum": "sha256 verified against ORNL .sha256 sidecar"
+    },
+    {
+      "granuleId": "GEDI_L4B_Gridded_Biomass_V2_1.GEDI04_B_MW019MW223_02_002_02_R01000M_SE.tif",
+      "layer": "SE",
+      "meaning": "standard error of mean AGBD, Mg/ha",
+      "beginDateTime": "2019-04-18T00:00:00.000Z",
+      "endDateTime": "2023-03-16T23:59:59.000Z",
+      "dataUrls": [
+        "https://data.ornldaac.earthdata.nasa.gov/protected/gedi/GEDI_L4B_Gridded_Biomass_V2_1/data/GEDI04_B_MW019MW223_02_002_02_R01000M_SE.tif"
+      ],
+      "upstreamBytes": 503270716,
+      "upstreamChecksum": "sha256 verified against ORNL .sha256 sidecar"
+    }
+  ],
+  "sanityStats": {
+    "MU": {
+      "validPixels": 148993,
+      "totalPixels": 149296,
+      "min": 0.0,
+      "p01": 0.0,
+      "median": 3.6800217628479004,
+      "p99": 121.13116668701127,
+      "max": 287.6658020019531,
+      "crs": "EPSG:6933",
+      "nodata": -9999.0
+    },
+    "SE": {
+      "validPixels": 148993,
+      "totalPixels": 149296,
+      "min": 0.0,
+      "p01": 0.0,
+      "median": 0.8929239511489868,
+      "p99": 15.5025489425659,
+      "max": 270.4939270019531,
+      "crs": "EPSG:6933",
+      "nodata": -9999.0
+    }
+  },
+  "notes": "GEDI samples only ~51.6 S to 51.6 N (ISS orbit) over Apr 2019 - Mar 2023. Cells north of ~51.6 N (most of the UK box) and unsampled cells are nodata = no coverage, never zero biomass. Gridded mean of footprint estimates, model-based (L4A models), not a wall-to-wall measurement; read SE (and the QF/NS layers, not fetched) before use.",
+  "files": [
+    {
+      "path": "GEDI04_B_MW019MW223_02_002_02_R01000M_MU_arizona.tif",
+      "bytes": 541711,
+      "sha256": "3a1093eb35a0ac97c04019b29f881df9728d8853430a07e3e357bb7dc27d9420"
+    },
+    {
+      "path": "GEDI04_B_MW019MW223_02_002_02_R01000M_SE_arizona.tif",
+      "bytes": 538272,
+      "sha256": "8657b13adfc03b3d77d3fc014b0b7d139cd0d4cbfe4e8601f3aca45668f350d5"
+    }
+  ]
+}

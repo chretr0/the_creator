@@ -2,7 +2,7 @@
 
 Snapshot 2026-11-07. Covers what has been downloaded, what has been parsed to H3, and how big a whole-world version would be. Manual steps are in [MANUAL-DOWNLOADS.md](./MANUAL-DOWNLOADS.md), and the access routes in [README.md](./README.md).
 
-## 1. Downloaded so far (no account needed)
+## 1. Downloaded so far
 
 **Data scope:** big datasets (> ~100 MB as a global file) are kept for two regions only:
 
@@ -37,6 +37,50 @@ The region boxes include neighbouring land:
 
 Filter with `data/prepared/boundaries/` when only one country is wanted.
 
+### Account-based data (NASA Earthdata + Copernicus CDS/ADS), fetched 2026-11-07
+
+These use the project owner's own accounts. The NASA login is read from `~/.netrc`; the Copernicus token is read from `~/.cdsapirc`. No credentials or signed URLs appear in any file in the repo.
+
+| ID | Product (version) | Period | arizona | uk | Script |
+| --- | --- | --- | --- | --- | --- |
+| GEO-01 | EMIT L2B minerals `EMITL2BMIN` v002, mineral + uncertainty NetCDF | 3 scenes (2023-05, 2023-10, 2024-04) over Globe–Miami, Ray and Morenci | 250 MB | — (not useful over vegetated UK) | `fetch_nasa_emit_gedi_grace.py` |
+| GEO-01 | EMIT L3 aggregate `EMITL3ASA` v002, 0.5° | 2022-08 to 2024-01 | — | — | Global file, 20 MB, kept whole |
+| LAND-04 | GEDI L4B gridded biomass v2.1, 1 km, mean + standard error | 2019–2023 | 1 MB (0–288 Mg/ha) | 0.5 MB; data only south of 51.6°N (8.8% of cells) | same |
+| WATER-02 | GRACE data-assimilation groundwater/soil-moisture percentiles `GRACEDADM_CLSM025GL_7D` v3.0 | 53 weeks of 2024 | 2.5 MB | 2.9 MB | same |
+| WATER-02 | GRACE-FO JPL mascons RL06.3 v4 | 2002-04 to 2026-08 | — | — | Global file, 44 MB, kept whole |
+| AIR-01 | Sentinel-5P NO₂ tropospheric column `S5P_L2__NO2____HiR` v2, pixels with qa > 0.75, as Parquet points | 1–7 Jul 2025 | 28k points, 0.6 MB | 93k points, 2 MB | `fetch_nasa_s5p_modis_smap.py` |
+| OBS-06 | MODIS NDVI monthly 1 km `MOD13A3` v061, whole sinusoidal tiles | 2024 | 2 tiles, 464 MB | 6 tiles, 720 MB | same |
+| WATER-01 | SMAP enhanced soil moisture `SPL3SMP_E` v006, Harmony-subsetted on the server | 1–7 Jul 2025 | 0.6 MB | 0.8 MB | same |
+| OBS-05 | ECOSTRESS LST `ECO_L2T_LSTE` v002, 70 m tiles | 3 clear daytime passes, Jun–Aug 2025 | Phoenix, 23 MB | London, 16 MB | `fetch_nasa_ecostress_pace_swot.py` |
+| OCEAN-01 | PACE OCI chlorophyll `PACE_OCI_L3M_BGC` v3.2, monthly 4 km | Jun–Aug 2025 | — (inland) | 0.5 MB | same |
+| WATER-03 | SWOT HR raster 100 m `SWOT_L2_HR_Raster_100m_D` | Cycle 036, 20 Jul–8 Aug 2025 | 4 granules (Lake Pleasant, Roosevelt Lake), 164 MB | 10 granules (Thames, Loch Ness), 697 MB | same |
+| CTX-01 | ERA5-Land monthly means (t2m, d2m, tp, e, ssrd, u10, v10, swvl1), 0.1° | 2024 | 0.4 MB | 1.1 MB | `fetch_copernicus_cds.py` |
+| AIR-02 | CAMS EAC4 monthly means (PM2.5, PM10, total-column NO₂/SO₂/CO, AOD550), 0.75° | 2024 | 0.1 MB | 0.1 MB | same |
+
+Spot checks (values read from the files):
+
+| Check | arizona | uk |
+| --- | --- | --- |
+| Mean air temperature, July (ERA5-Land) | Phoenix 37.0 °C | London 17.5 °C |
+| Mean air temperature, January (ERA5-Land) | Phoenix 10.4 °C | London 4.7 °C |
+| PM2.5, 2024 mean (CAMS) | 12.4 µg/m³ | 9.5 µg/m³ |
+| NO₂ tropospheric column, median (S5P) | Phoenix 4.3e-5 mol/m² | London 6.8e-5 mol/m² |
+| NDVI, July median (MODIS) | 0.23 | 0.76 |
+| Soil moisture, median (SMAP) | 0.10 m³/m³ | 0.18 m³/m³ |
+| Land-surface temperature, median (ECOSTRESS) | Phoenix 48–57 °C | London 35–40 °C |
+| Chlorophyll-a, median (PACE) | — | 0.8–1.2 mg/m³ |
+| Water-surface height (SWOT) | Roosevelt Lake ~642 m | Loch Ness ~15.1 m |
+
+Caveats for these products:
+
+- **EMIT:** the scenes are not orthorectified; use the GLT in the file's `location` group to place pixels. **Portlandite** appears in all three scenes and is probably a misidentification. Check it before showing it.
+- **S5P NO₂:** a column through the atmosphere, not a ground-level concentration. In the UK, 14 of 32 orbits had no pixel passing the quality filter (cloud).
+- **MODIS:** the file's `scale_factor=10000` follows the MODIS convention: *divide* by it. The UK set includes edge tiles that are mostly sea; dropping them would save about 350 MB.
+- **ECOSTRESS:** a skin (surface) temperature in kelvin, not air temperature. Passes are at irregular times because ECOSTRESS rides on the ISS.
+- **GEDI:** an empty cell north of 51.6°N means no coverage, not zero biomass.
+- **SWOT:** heights are relative to EGM2008 (a global sea-level model), so they differ slightly from local datums.
+- **Harmony subsetting for S5P is blocked** until the GES DISC licence is accepted in the Earthdata profile. Reading the orbits over HTTPS worked fine without it.
+
 ### Small global files (kept whole by the rule)
 
 | ID | What | Size |
@@ -59,7 +103,7 @@ These stay on disk on purpose. New runs do not create global copies. Their scrip
 | LAND-05 | FIRMS 2024 all-countries archive, zipped + unzipped (`aggregate_firms_h3.py`) | 2.4 GB |
 | IND-02 | EPA TRI 2023 + 2024, all US | 117 MB |
 
-`data/raw` is **12 GB** in total. About 1.9 GB of the regional data is described in this section; the rest is the global copies from the first run.
+`data/raw` is **14 GB** in total: about 1.9 GB of no-account regional data, about 2.4 GB of account-based regional data (mostly MODIS and SWOT tiles), and the global copies from the first run.
 
 Things to know about these downloads:
 
@@ -175,7 +219,7 @@ These projections are built from the per-slice measurements in §2, for a one-ye
 ## 5. Suggested next steps
 
 1. **Build per-region H3 layers** for both regions from the regional rasters (WorldCover fractions, DEM, SoilGrids 250 m, GHSL/WorldPop) with `scripts/aggregate_raster_to_h3.py`. That is minutes of compute and a few MB each.
-2. **After you create an Earthdata login** (manual list item 1): EMIT minerals (Arizona only), GEDI biomass, MODIS NDVI and S5P, fetched for both region boxes.
+2. **Done:** the Earthdata and Copernicus CDS/ADS products are fetched; see the account-based table above. Next: aggregate them to H3 per region as well.
 3. **After you complete the GEM download form:** the power-plant tracker. The global workbook is under 100 MB, so it is kept whole.
 4. **UK manual items:** BGS Geology 625k and Environment Agency water quality.
 

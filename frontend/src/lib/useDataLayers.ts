@@ -12,6 +12,7 @@ import {
   NO_DATA,
   OTHER,
   SEQUENTIAL_ORANGE,
+  viewTouchesRegions,
   type CellLayer,
   type ColourScale,
   type DataFeature,
@@ -297,12 +298,19 @@ export function useDataLayers(view: MapView | null, gridCells: string[]) {
 
   const scene = scenes.find((s) => s.id === sceneId) ?? null;
 
+  /** A regional layer is active but the map shows neither of its regions: say so instead of a blank grid. */
+  const outsideRegions =
+    !!activeLayer && activeLayer.coverage === "regions" && !!view && !viewTouchesRegions(view.bounds, activeLayer.regions);
+
   const attributions = useMemo(() => {
     const a: string[] = [];
     if (scene) a.push(`${scene.name}: ${scene.attribution}`);
-    if (activeLayer?.provenance.attribution) {
-      const short = activeLayer.provenance.attribution.split(/(?<=\.)\s/)[0];
-      a.push(`${activeLayer.name}: ${short.length > 140 ? `${activeLayer.provenance.provider ?? short.slice(0, 140)}` : short}`);
+    if (activeLayer) {
+      // The full attribution text is in the cell inspector and the sources panel; the map names the
+      // provider and licence so the line stays readable.
+      const p = activeLayer.provenance;
+      const who = p.attribution && p.attribution.length <= 90 ? p.attribution : (p.provider ?? p.attribution?.slice(0, 90));
+      if (who) a.push(`${activeLayer.name}: ${who}${p.licence ? ` (${p.licence})` : ""}`);
     }
     for (const id of enabledIds) {
       const m = manifest.find((x) => x.id === id);
@@ -322,6 +330,7 @@ export function useDataLayers(view: MapView | null, gridCells: string[]) {
     opacity,
     setOpacity,
     values,
+    outsideRegions,
     cellStatus,
     scale,
     cellFill,

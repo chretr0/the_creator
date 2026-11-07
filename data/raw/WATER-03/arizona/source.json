@@ -1,0 +1,186 @@
+{
+  "id": "WATER-03-arizona-20261107",
+  "catalogueSourceId": "WATER-03",
+  "provider": "NASA JPL / CNES SWOT mission; distributed by NASA PO.DAAC",
+  "product": "SWOT Level 2 Water Mask Raster Image 100m Data Product",
+  "collection": {
+    "shortName": "SWOT_L2_HR_Raster_100m_D",
+    "version": "D",
+    "conceptId": "C3233942298-POCLOUD"
+  },
+  "version": "D (CRID in each granule name, e.g. PID0)",
+  "doi": "10.5067/SWOT-RASTER-D",
+  "documentationUrl": "https://archive.podaac.earthdata.nasa.gov/podaac-ops-cumulus-docs/web-misc/swot_mission_docs/D-109532_SWOT_UserHandbook_RevA_20250311_sig-final.pdf",
+  "accessUrl": "https://archive.swot.podaac.earthdata.nasa.gov/podaac-swot-ops-cumulus-protected/SWOT_L2_HR_Raster_D/",
+  "accessMethod": "earthaccess (NASA Earthdata Cloud HTTPS, Earthdata Login)",
+  "evidenceType": "satellite retrieval",
+  "retrievedAt": "2026-11-07",
+  "licence": {
+    "name": "NASA open data",
+    "url": "https://earthdata.nasa.gov/earth-observation-data/data-use-policy",
+    "attribution": "SWOT (2025). SWOT Level 2 Water Mask Raster Image 100m Data Product, Version D. Ver. D. PO.DAAC, CA, USA. https://doi.org/10.5067/SWOT-RASTER-D. SWOT is a joint NASA/CNES mission with contributions from CSA and UKSA.",
+    "reviewedAt": "2026-11-07",
+    "notes": "NASA Earth science data are openly shared without restriction on use; cite the collection DOI and acknowledge the DAAC."
+  },
+  "region": "arizona",
+  "dataScope": "regional subset (data/README.md 'Data scope')",
+  "query": {
+    "regionBboxWGS84": [
+      -113.5,
+      31.3,
+      -109.0,
+      34.5
+    ],
+    "targets_lonlat": {
+      "Lake Pleasant": [
+        -112.27,
+        33.85
+      ],
+      "Theodore Roosevelt Lake": [
+        -111.16,
+        33.67
+      ]
+    },
+    "cycle": 36,
+    "temporal": "granules of repeat cycle 036 (searched 2025-07-10/2025-08-20)",
+    "criteria": "all cycle-036 granules whose CMR footprint contains a target point, restricted to the region's UTM zones, latest product counter per pass/scene, cap 15; then kept only if >= 50 good water pixels fall inside a target box",
+    "targetBoxesWGS84": {
+      "Lake Pleasant": [
+        -112.33,
+        33.8,
+        -112.22,
+        33.92
+      ],
+      "Theodore Roosevelt Lake": [
+        -111.3,
+        33.62,
+        -110.95,
+        33.75
+      ]
+    }
+  },
+  "processing": "None. Granule NetCDF files kept whole as delivered (UTM 100 m tiles; all variables including wse, wse_qual, wse_uncert, water_area, water_frac, geolocation latitude/longitude and quality flags).",
+  "semantics": {
+    "wse": "water-surface elevation, m, above the EGM2008 geoid (not ODN/NAVD88 directly)",
+    "wse_qual": "0 good, 1 suspect, 2 degraded, 3 bad",
+    "water_frac": "fraction of pixel area that is water",
+    "note": "Single-pass snapshots; elevation/extent are not volumes, allocations or water quality. targetSummary = median wse within 2 km of the target with wse_qual<=1 and water_frac>0.5 (sanity check only)."
+  },
+  "granules": [
+    {
+      "granuleId": "SWOT_L2_HR_Raster_100m_UTM12S_N_x_x_x_036_177_107F_20250726T192141_20250726T192202_PID0_01_swot",
+      "utmZone": "UTM12S",
+      "cycle": 36,
+      "pass": 177,
+      "scene": "107F",
+      "crid": "PID0",
+      "start": "2025-07-26T19:21:41.388Z",
+      "end": "2025-07-26T19:22:02.479Z",
+      "matchedTargets": [
+        "Lake Pleasant"
+      ],
+      "accessUrl": "https://archive.swot.podaac.earthdata.nasa.gov/podaac-swot-ops-cumulus-protected/SWOT_L2_HR_Raster_D/SWOT_L2_HR_Raster_100m_UTM12S_N_x_x_x_036_177_107F_20250726T192141_20250726T192202_PID0_01.nc",
+      "targetSummary": {
+        "Lake Pleasant": {
+          "goodWaterPixelsInBox": 1302,
+          "pixelsWithin2km": 848,
+          "goodWaterPixelsWithin2km": 116,
+          "medianWseWithin2km_m": 457.18
+        }
+      }
+    },
+    {
+      "granuleId": "SWOT_L2_HR_Raster_100m_UTM12S_N_x_x_x_036_190_048F_20250727T061046_20250727T061107_PID0_01_swot",
+      "utmZone": "UTM12S",
+      "cycle": 36,
+      "pass": 190,
+      "scene": "048F",
+      "crid": "PID0",
+      "start": "2025-07-27T06:10:46.555Z",
+      "end": "2025-07-27T06:11:07.641Z",
+      "matchedTargets": [
+        "Lake Pleasant"
+      ],
+      "accessUrl": "https://archive.swot.podaac.earthdata.nasa.gov/podaac-swot-ops-cumulus-protected/SWOT_L2_HR_Raster_D/SWOT_L2_HR_Raster_100m_UTM12S_N_x_x_x_036_190_048F_20250727T061046_20250727T061107_PID0_01.nc",
+      "targetSummary": {
+        "Lake Pleasant": {
+          "goodWaterPixelsInBox": 3386,
+          "pixelsWithin2km": 965,
+          "goodWaterPixelsWithin2km": 709,
+          "medianWseWithin2km_m": 509.5
+        }
+      }
+    },
+    {
+      "granuleId": "SWOT_L2_HR_Raster_100m_UTM12S_N_x_x_x_036_455_107F_20250805T174357_20250805T174418_PID0_01_swot",
+      "utmZone": "UTM12S",
+      "cycle": 36,
+      "pass": 455,
+      "scene": "107F",
+      "crid": "PID0",
+      "start": "2025-08-05T17:43:57.107Z",
+      "end": "2025-08-05T17:44:18.197Z",
+      "matchedTargets": [
+        "Theodore Roosevelt Lake"
+      ],
+      "accessUrl": "https://archive.swot.podaac.earthdata.nasa.gov/podaac-swot-ops-cumulus-protected/SWOT_L2_HR_Raster_D/SWOT_L2_HR_Raster_100m_UTM12S_N_x_x_x_036_455_107F_20250805T174357_20250805T174418_PID0_01.nc",
+      "targetSummary": {
+        "Theodore Roosevelt Lake": {
+          "goodWaterPixelsInBox": 3995,
+          "pixelsWithin2km": 756,
+          "goodWaterPixelsWithin2km": 308,
+          "medianWseWithin2km_m": 642.13
+        }
+      }
+    },
+    {
+      "granuleId": "SWOT_L2_HR_Raster_100m_UTM12S_N_x_x_x_036_468_048F_20250806T043302_20250806T043323_PID0_01_swot",
+      "utmZone": "UTM12S",
+      "cycle": 36,
+      "pass": 468,
+      "scene": "048F",
+      "crid": "PID0",
+      "start": "2025-08-06T04:33:02.226Z",
+      "end": "2025-08-06T04:33:23.317Z",
+      "matchedTargets": [
+        "Theodore Roosevelt Lake"
+      ],
+      "accessUrl": "https://archive.swot.podaac.earthdata.nasa.gov/podaac-swot-ops-cumulus-protected/SWOT_L2_HR_Raster_D/SWOT_L2_HR_Raster_100m_UTM12S_N_x_x_x_036_468_048F_20250806T043302_20250806T043323_PID0_01.nc",
+      "targetSummary": {
+        "Theodore Roosevelt Lake": {
+          "goodWaterPixelsInBox": 2788,
+          "pixelsWithin2km": 504,
+          "goodWaterPixelsWithin2km": 40,
+          "medianWseWithin2km_m": 641.96
+        }
+      }
+    }
+  ],
+  "excludedGranules": [],
+  "files": [
+    {
+      "path": "SWOT_L2_HR_Raster_100m_UTM12S_N_x_x_x_036_177_107F_20250726T192141_20250726T192202_PID0_01.nc",
+      "bytes": 57033375,
+      "sha256": "df7a3058d2c8afcb38933daf7962ed7147978e24b4f771e45b7944e7e61cf14b",
+      "granuleId": "SWOT_L2_HR_Raster_100m_UTM12S_N_x_x_x_036_177_107F_20250726T192141_20250726T192202_PID0_01_swot"
+    },
+    {
+      "path": "SWOT_L2_HR_Raster_100m_UTM12S_N_x_x_x_036_190_048F_20250727T061046_20250727T061107_PID0_01.nc",
+      "bytes": 56571545,
+      "sha256": "ff23c5a5def4cbd0213a759217f31f69a5db8b514ffd639680aadc301cac9198",
+      "granuleId": "SWOT_L2_HR_Raster_100m_UTM12S_N_x_x_x_036_190_048F_20250727T061046_20250727T061107_PID0_01_swot"
+    },
+    {
+      "path": "SWOT_L2_HR_Raster_100m_UTM12S_N_x_x_x_036_455_107F_20250805T174357_20250805T174418_PID0_01.nc",
+      "bytes": 28747746,
+      "sha256": "c978b73c900cc74908f3a91b7d71c96555b68a54919c3c34772432fd4f1c3ed0",
+      "granuleId": "SWOT_L2_HR_Raster_100m_UTM12S_N_x_x_x_036_455_107F_20250805T174357_20250805T174418_PID0_01_swot"
+    },
+    {
+      "path": "SWOT_L2_HR_Raster_100m_UTM12S_N_x_x_x_036_468_048F_20250806T043302_20250806T043323_PID0_01.nc",
+      "bytes": 28757427,
+      "sha256": "105d6d15f35db0ade2b452f61266d65a97e3bf5d41b59d3c81f53c496f6262b9",
+      "granuleId": "SWOT_L2_HR_Raster_100m_UTM12S_N_x_x_x_036_468_048F_20250806T043302_20250806T043323_PID0_01_swot"
+    }
+  ]
+}

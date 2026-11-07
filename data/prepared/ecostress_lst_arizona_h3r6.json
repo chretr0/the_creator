@@ -1,0 +1,38 @@
+{
+  "layer": "ecostress_lst_arizona",
+  "sourceId": "OBS-05",
+  "provider": "NASA JPL / NASA Land Processes DAAC (LP DAAC)",
+  "product": "ECOSTRESS Tiled Land Surface Temperature and Emissivity Instantaneous L2 Global 70 m",
+  "version": "002 (collection 0713, PGE per granule)",
+  "licence": "NASA open data",
+  "licenceUrl": "https://earthdata.nasa.gov/earth-observation-data/data-use-policy",
+  "attribution": "Hook, S., Hulley, G. (2022). ECOSTRESS Tiled Land Surface Temperature and Emissivity Instantaneous L2 Global 70 m V002. NASA Land Processes Distributed Active Archive Center. https://doi.org/10.5067/ECOSTRESS/ECO_L2T_LSTE.002",
+  "evidenceType": "satellite retrieval",
+  "retrievedAt": "2026-11-07",
+  "method": "Mean of valid pixels whose centres fall in each res-6 cell inside the region box. ECOSTRESS L2T LSTE v002 70 m land surface (skin) temperature, cloud-masked with the granule's cloud layer; one column per overpass date (tiles of the same pass combined). Single instantaneous snapshots at differing times of day.",
+  "nativeResolution": "70 m",
+  "sampling": "mean of pixel centres in cell",
+  "period": "single overpasses, 2025",
+  "h3Resolution": 6,
+  "units": {
+    "lst_*": "°C (skin temperature)"
+  },
+  "region": "arizona",
+  "regionBbox": [
+    -113.5,
+    31.3,
+    -109.0,
+    34.5
+  ],
+  "inputFiles": [
+    "ECOv002_L2T_LSTE_39319_011_12SUC_20250612T214059_0713_01_LST.tif",
+    "ECOv002_L2T_LSTE_39319_011_12SVC_20250612T214059_0713_01_LST.tif",
+    "ECOv002_L2T_LSTE_40050_005_12SUC_20250729T193648_0713_01_LST.tif",
+    "ECOv002_L2T_LSTE_40050_005_12SVC_20250729T193648_0713_01_LST.tif",
+    "ECOv002_L2T_LSTE_40314_012_12SUC_20250815T202416_0713_01_LST.tif",
+    "ECOv002_L2T_LSTE_40314_012_12SVC_20250815T202416_0713_01_LST.tif"
+  ],
+  "rowCount": 614,
+  "generatedAt": "2026-11-07T16:48:33+00:00",
+  "script": "scripts/prepare_observation_h3.py"
+}

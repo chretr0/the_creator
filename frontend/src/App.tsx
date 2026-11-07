@@ -23,6 +23,7 @@ import LayerPanel from "./components/LayerPanel";
 import FacilityInspector from "./components/FacilityInspector";
 import DataPanel, { RecordsPanel, PreparedScenes } from "./components/DataPanel";
 import { FieldList } from "./components/BaselineBlock";
+import CreditsPanel from "./components/CreditsPanel";
 import { useDataLayers } from "./lib/useDataLayers";
 import {
   COLOURED_COMPANIES,
@@ -38,7 +39,7 @@ import {
   type InfraManifest,
 } from "./lib/infrastructure";
 import { api, type Project, type ProjectInput, type ProjectType, type Scenario, type ScenarioSummary } from "./lib/api";
-import { normaliseLongitude, simulationCell } from "./lib/h3grid";
+import { cellContains, displayCell, normaliseLongitude, simulationCell } from "./lib/h3grid";
 import { PROJECT_TYPES } from "./lib/projectTypes";
 
 type Tab = "details" | "layers" | "search" | "projects";
@@ -173,7 +174,7 @@ export default function App() {
   const projects = scenario?.projects ?? [];
   const selectedProject = projects.find((p) => p.id === selectedProjectId) ?? null;
   const projectsInCell = useMemo(
-    () => (selection ? projects.filter((p) => p.h3Id === selection.h3Id) : []),
+    () => (selection ? projects.filter((p) => cellContains(selection.h3Id, p.h3Id)) : []),
     [projects, selection],
   );
 
@@ -238,7 +239,9 @@ export default function App() {
         return;
       }
       ctx.setSelection(null);
-      setSelection({ h3Id: simulationCell(latitude, longitude), latitude, longitude });
+      // A plain click selects the hexagon drawn there: zoomed out, that is a larger cell whose values
+      // aggregate the resolution-6 simulation cells inside it.
+      setSelection({ h3Id: displayCell(latitude, longitude, grid.resolution), latitude, longitude });
     } catch (e) {
       report(e);
     }
@@ -425,6 +428,28 @@ export default function App() {
   const placingLabel = mode.kind === "place" ? PROJECT_TYPES.find((t) => t.type === mode.type)?.label : null;
   const hasDetail = !!(selectedProject || selectedFacility || data.picked || ctx.selection || selection);
 
+  // Layer keys (as listed by /api/sources) of everything drawn on the map right now.
+  const activeCredits = new Set<string>(["basemap"]);
+  if (tilted) activeCredits.add("buildings3d");
+  if (data.active) activeCredits.add(`h3:${data.active.layerId}`);
+  for (const [id, on] of Object.entries(data.enabled)) if (on) activeCredits.add(`features:${id}`);
+  for (const [id, on] of Object.entries(visibleLayers)) if (on) activeCredits.add(id);
+  if (Object.values(ctx.toggles.boundaries).some(Boolean)) activeCredits.add("boundaries");
+  if (ctx.toggles.cables) activeCredits.add("cables");
+  if (ctx.toggles.earthquakes) activeCredits.add("earthquakes");
+  if (ctx.toggles.fires) activeCredits.add("fires");
+  if (ctx.rasterImagery) activeCredits.add("imagery");
+  if (ctx.power) activeCredits.add("power");
+  const mapCredits = [
+    ...(ctx.rasterImagery ? [ctx.rasterImagery.attribution] : []),
+    ...ctx.attributions,
+    ...data.attributions,
+  ];
+  const showCredits = () => {
+    setSideTab("layers");
+    requestAnimationFrame(() => document.getElementById("data-credits")?.scrollIntoView({ behavior: "smooth" }));
+  };
+
   return (
     <div className="app">
       <main className="map-wrap">
@@ -485,6 +510,19 @@ export default function App() {
               3D
             </button>
           </div>
+        </div>
+
+        <div className="map-credits small">
+          <a href="https://openfreemap.org" target="_blank" rel="noreferrer">OpenFreeMap</a>{" "}
+          <a href="https://www.openmaptiles.org/" target="_blank" rel="noreferrer">© OpenMapTiles</a> Data from{" "}
+          <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a>
+          {mapCredits.map((a) => (
+            <span key={a}> · {a}</span>
+          ))}
+          {" · "}
+          <button className="link inline" onClick={showCredits}>
+            Sources &amp; licences
+          </button>
         </div>
 
         {crosshair && (
@@ -603,6 +641,10 @@ export default function App() {
                     setSideTab("layers");
                   }}
                   onGoTo={(lat, lon) => setFocus({ latitude: lat, longitude: lon, zoom: 11, nonce: Date.now() })}
+                  onSelectSimulationCell={() =>
+                    setSelection((s) => (s ? { ...s, h3Id: simulationCell(s.latitude, s.longitude) } : s))
+                  }
+                  onZoomToCell={(bbox) => setFocus({ latitude: (bbox[1] + bbox[3]) / 2, longitude: (bbox[0] + bbox[2]) / 2, bbox, zoom: 12, nonce: Date.now() })}
                   onFilterRegion={(country, admin1) => {
                     setQuery((q) => ({ ...q, dataset: "datacenters", country, admin1, sort: "metric" }));
                     setSideTab("search");
@@ -642,6 +684,7 @@ export default function App() {
               >
                 <PreparedScenes data={data} onFitBBox={fitBBox} />
               </ImageryPanel>
+              <CreditsPanel sources={ctx.sources} activeLayers={activeCredits} />
             </>
           )}
 

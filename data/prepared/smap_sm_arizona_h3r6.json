@@ -1,0 +1,34 @@
+{
+  "layer": "smap_sm_arizona",
+  "sourceId": "WATER-01",
+  "provider": "NASA NSIDC DAAC (SMAP mission, JPL/GSFC)",
+  "product": "SMAP Enhanced L3 Radiometer Global and Polar Grid Daily 9 km EASE-Grid Soil Moisture V006 (SPL3SMP_E)",
+  "version": "006",
+  "licence": "NASA open data",
+  "licenceUrl": "https://www.earthdata.nasa.gov/engage/open-data-services-software-policies/data-use-guidance",
+  "attribution": "SMAP Enhanced L3 Radiometer Global and Polar Grid Daily 9 km EASE-Grid Soil Moisture V006. Version 006. NASA National Snow and Ice Data Center Distributed Active Archive Center. https://doi.org/10.5067/M20OXIZHY3RJ.",
+  "evidenceType": "satellite_retrieval",
+  "retrievedAt": "2026-11-07",
+  "method": "Each res-6 cell whose centre lies in the region box takes the value of the grid pixel containing its centre (nearest-pixel sampling, as for the NASA POWER layers); neighbouring cells repeat values. SMAP SPL3SMP_E surface soil moisture: mean of the AM and PM DCA retrievals with recommended quality (retrieval_qual_flag bit 0 = 0), 20250701-20250707; the 9 km EASE-Grid 2.0 pixel is found by projecting the cell centre to EPSG:6933.",
+  "nativeResolution": "9 km EASE-Grid 2.0",
+  "sampling": "nearest grid pixel at each cell centre",
+  "period": "20250701-20250707",
+  "h3Resolution": 6,
+  "units": {
+    "sm_mean": "m³/m³",
+    "n_retrievals": "count of AM/PM retrievals"
+  },
+  "region": "arizona",
+  "regionBbox": [
+    -113.5,
+    31.3,
+    -109.0,
+    34.5
+  ],
+  "inputFiles": [
+    "smap_spl3smpe_arizona_20250701_20250707.nc"
+  ],
+  "rowCount": 3065,
+  "generatedAt": "2026-11-07T16:45:34+00:00",
+  "script": "scripts/prepare_observation_h3.py"
+}

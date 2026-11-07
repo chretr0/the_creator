@@ -22,6 +22,8 @@ from app.config import REPO_ROOT, settings
 from app.h3store import Source
 
 REGIONS = ("arizona", "uk")
+# Boxes the regional (big) datasets are clipped to: data/README.md §0.1. W, S, E, N.
+REGION_BOXES = {"arizona": (-113.5, 31.3, -109.0, 34.5), "uk": (-8.7, 49.8, 1.9, 60.9)}
 MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
 RAW_DIR = REPO_ROOT / "data" / "raw"
@@ -38,6 +40,7 @@ class Slice:
     scale: float | None = None
     units: str | None = None
     display: str | None = None  # overrides the layer display ("value" | "density" | "percent")
+    categorical: bool | None = None  # overrides "categories + mode aggregation means categorical"
 
 
 @dataclass
@@ -63,6 +66,8 @@ class LayerDef:
     description: str = ""
     limitations: list[str] = field(default_factory=list)
     default_slice: str | None = None
+    # Extra per-cell columns shown in the cell profile (resolution 6 only), as (column, label).
+    attributes: list[tuple[str, str]] = field(default_factory=list)
 
     def slice(self, slice_id: str | None) -> Slice:
         if slice_id is None:
@@ -307,10 +312,317 @@ _SOIL = [
 ]
 LAYERS += _SOIL
 
+
+# ---------------------------------------------------------------------------------------------
+# Satellite and reanalysis layers built by scripts/prepare_observation_h3.py. Grids coarser than a
+# res-6 cell are sampled at each cell centre (like POWER); finer pixels are averaged per cell.
+
+
+def _monthly(file: str, prefix: str, year: str = "2024") -> list[Slice]:
+    """Annual mean plus one slice per month, so the month stepper works as for the POWER layers."""
+    slices = [Slice(f"{year}-ann", f"{year} mean", (file,), f"{prefix}ann", year)]
+    slices += [
+        Slice(f"{year}-{i + 1:02d}", f"{m} {year}", (file,), f"{prefix}m{i + 1:02d}", year)
+        for i, m in enumerate(MONTHS)
+    ]
+    return slices
+
+
+def _regional(r: str) -> tuple[str, ...]:
+    return tuple(f"{r}/{reg}" for reg in REGIONS)
+
+
+SAMPLED = "Coarse grid sampled to every H3 cell: neighbouring cells repeat the same value."
+ERA5_FILE = "era5land_2024_{region}_h3r6.parquet"
+CAMS_FILE = "cams_2024_{region}_h3r6.parquet"
+GRACE_DA_FILE = "grace_dadm_2024_{region}_h3r6.parquet"
+
+
+def _era5(layer_id: str, name: str, prefix: str, units: str, category="Solar & climate", **kw) -> LayerDef:
+    return LayerDef(
+        id=layer_id,
+        name=name,
+        category=category,
+        source_id="CTX-01",
+        provenance=_regional("CTX-01"),
+        slices=_monthly(ERA5_FILE, prefix),
+        units=units,
+        coverage="regions",
+        limitations=[SAMPLED + " (0.1° grid, ~9 km)", "Reanalysis model output, land only: sea cells are blank."],
+        **kw,
+    )
+
+
+def _cams(layer_id: str, name: str, prefix: str, units: str, description: str, **kw) -> LayerDef:
+    return LayerDef(
+        id=layer_id,
+        name=name,
+        category="Air quality",
+        source_id="AIR-02",
+        provenance=_regional("AIR-02"),
+        slices=_monthly(CAMS_FILE, prefix),
+        units=units,
+        coverage="regions",
+        description=description,
+        limitations=[SAMPLED + " (0.75° grid, ~80 km)", "Global reanalysis: smooths out local sources such as roads."],
+        **kw,
+    )
+
+
+def _grace_da(layer_id: str, name: str, prefix: str, description: str) -> LayerDef:
+    return LayerDef(
+        id=layer_id,
+        name=name,
+        category="Water",
+        source_id="WATER-02",
+        provenance=_regional("WATER-02"),
+        slices=_monthly(GRACE_DA_FILE, prefix),
+        units="percentile",
+        palette="diverging",
+        domain=(0.0, 100.0),
+        coverage="regions",
+        description=description,
+        limitations=[
+            SAMPLED + " (0.25° grid)",
+            "Drought indicator relative to 1948–2014, not a volume or an allocatable supply.",
+            "Monthly value is the mean of the 7-day percentiles starting in that month.",
+        ],
+    )
+
+
+ECOSTRESS_PASSES = {
+    "arizona": [("20250612", "12 Jun 2025"), ("20250729", "29 Jul 2025"), ("20250815", "15 Aug 2025")],
+    "uk": [("20250613", "13 Jun 2025"), ("20250808", "8 Aug 2025"), ("20250812", "12 Aug 2025")],
+}
+EMIT_MINERALS = ["Calcite", "Chlorite", "Dolomite", "Goethite", "Gypsum", "Hematite", "Illite+Muscovite",
+                 "Kaolinite", "Montmorillonite", "Vermiculite", "Quartz+Feldspar"]
+
+LAYERS += [
+    _era5("era5_t2m", "Air temperature (ERA5-Land 2024)", "t2m_", "°C", palette="diverging", domain=(-30.0, 30.0),
+          description="Monthly mean 2 m air temperature from the ERA5-Land reanalysis."),
+    _era5("era5_precip", "Precipitation (ERA5-Land 2024)", "tp_", "mm/day", domain=(0.0, 10.0),
+          description="Mean daily precipitation for each month of 2024."),
+    _era5("era5_evap", "Evaporation (ERA5-Land 2024)", "evap_", "mm/day",
+          description="Mean daily total evaporation (positive = water leaving the surface)."),
+    _era5("era5_solar", "Solar irradiation (ERA5-Land 2024)", "ssrd_", "kWh/m²/day", domain=(0.0, 8.0),
+          description="Mean daily surface downward short-wave radiation (GHI) per month."),
+    _era5("era5_soil_water", "Soil water 0–7 cm (ERA5-Land 2024)", "swvl1_", "m³/m³", category="Water",
+          domain=(0.0, 0.5), description="Volumetric soil water in the top layer (0–7 cm), modelled."),
+    _cams("cams_pm25", "PM2.5 (CAMS 2024)", "pm25_", "µg/m³", "Near-surface fine particulate matter, monthly mean."),
+    _cams("cams_pm10", "PM10 (CAMS 2024)", "pm10_", "µg/m³", "Near-surface coarse particulate matter, monthly mean."),
+    _cams("cams_no2", "NO₂ total column (CAMS 2024)", "no2col_", "µmol/m²",
+          "Total-column nitrogen dioxide; a column amount, not a ground-level concentration."),
+    _cams("cams_so2", "SO₂ total column (CAMS 2024)", "so2col_", "µmol/m²", "Total-column sulphur dioxide."),
+    _cams("cams_co", "CO total column (CAMS 2024)", "cocol_", "mmol/m²", "Total-column carbon monoxide."),
+    _cams("cams_aod", "Aerosol optical depth 550 nm (CAMS 2024)", "aod_", "", "Total aerosol optical depth."),
+    LayerDef(
+        id="s5p_no2",
+        name="NO₂ tropospheric column (Sentinel-5P)",
+        category="Air quality",
+        source_id="AIR-01",
+        provenance=_regional("AIR-01"),
+        slices=[
+            Slice("mean", "Mean, 1–7 Jul 2025", ("s5p_no2_{region}_h3r6.parquet",), "no2"),
+            Slice("n", "Ground pixels used", ("s5p_no2_{region}_h3r6.parquet",), "n_obs", agg="sum", units="pixels"),
+        ],
+        units="µmol/m²",
+        coverage="regions",
+        description="TROPOMI tropospheric NO₂ (qa ≥ 0.75) averaged over one week of overpasses.",
+        limitations=["Column amount, not a breathing-height concentration.", "One week only: weather-dependent."],
+    ),
+    _grace_da("grace_groundwater", "Groundwater percentile (GRACE DA 2024)", "gws_",
+              "Groundwater storage wetness percentile from GRACE/GRACE-FO data assimilation."),
+    _grace_da("grace_rootzone", "Root-zone soil moisture percentile (GRACE DA 2024)", "rtzsm_",
+              "Root-zone soil moisture wetness percentile from GRACE/GRACE-FO data assimilation."),
+    _grace_da("grace_surface_sm", "Surface soil moisture percentile (GRACE DA 2024)", "sfsm_",
+              "Surface soil moisture wetness percentile from GRACE/GRACE-FO data assimilation."),
+    LayerDef(
+        id="grace_tws",
+        name="Water storage anomaly (GRACE mascons 2024)",
+        category="Water",
+        source_id="WATER-02",
+        provenance=("WATER-02/global",),
+        slices=_monthly("grace_tws_2024_h3r6.parquet", "tws_"),
+        units="cm",
+        palette="diverging",
+        domain=(-30.0, 30.0),
+        description="Terrestrial water storage anomaly (equivalent water height) against the 2004–2009 mean.",
+        limitations=[SAMPLED + " (~3° mascons on a 0.5° grid)", "Not a kilometre-scale aquifer measure."],
+    ),
+    LayerDef(
+        id="smap_soil_moisture",
+        name="Soil moisture (SMAP, Jul 2025)",
+        category="Water",
+        source_id="WATER-01",
+        provenance=_regional("WATER-01"),
+        slices=[
+            Slice("mean", "Mean, 1–7 Jul 2025", ("smap_sm_{region}_h3r6.parquet",), "sm_mean"),
+            Slice("n", "Retrievals used", ("smap_sm_{region}_h3r6.parquet",), "n_retrievals", units="retrievals"),
+        ],
+        units="m³/m³",
+        domain=(0.0, 0.5),
+        coverage="regions",
+        description="Surface (~0–5 cm) soil moisture from the SMAP radiometer, recommended-quality retrievals only.",
+        limitations=[SAMPLED + " (9 km EASE grid)", "One week of retrievals; not groundwater or river flow."],
+    ),
+    LayerDef(
+        id="swot_water",
+        name="Surface water (SWOT, summer 2025)",
+        category="Water",
+        source_id="WATER-03",
+        provenance=_regional("WATER-03"),
+        slices=[
+            Slice("frac", "Water share of observed area", ("swot_water_{region}_h3r6.parquet",), "water_frac",
+                  display="percent"),
+            Slice("wse", "Water-surface elevation", ("swot_water_{region}_h3r6.parquet",), "wse", units="m"),
+        ],
+        units="fraction",
+        coverage="regions",
+        description="SWOT 100 m raster passes: share of observed area that is water, and water-surface height.",
+        limitations=[
+            "Only cells under the few passes downloaded have values.",
+            "Elevation is above the EGM2008 geoid; single-pass snapshots, not volumes.",
+        ],
+    ),
+    LayerDef(
+        id="gedi_biomass",
+        name="Aboveground biomass (GEDI L4B)",
+        category="Vegetation",
+        source_id="LAND-04",
+        provenance=_regional("LAND-04"),
+        slices=[
+            Slice("mean", "Biomass density", ("gedi_agbd_{region}_h3r6.parquet",), "agbd"),
+            Slice("se", "Standard error", ("gedi_agbd_{region}_h3r6.parquet",), "agbd_se"),
+        ],
+        units="Mg/ha",
+        domain=(0.0, 150.0),
+        coverage="regions",
+        description="Gridded 1 km aboveground biomass density from GEDI lidar footprints (2019–2023).",
+        limitations=["No coverage north of ~51.6°N (most of the UK box).", "Model-based gridded mean, not wall-to-wall."],
+    ),
+    LayerDef(
+        id="modis_ndvi",
+        name="Vegetation greenness NDVI (MODIS 2024)",
+        category="Vegetation",
+        source_id="OBS-06",
+        provenance=_regional("OBS-06"),
+        slices=_monthly("modis_ndvi_2024_{region}_h3r6.parquet", "ndvi_"),
+        units="NDVI",
+        domain=(0.0, 0.9),
+        coverage="regions",
+        description="Monthly 1 km NDVI composites (MOD13A3), good-quality pixels averaged per cell.",
+        limitations=["Cloudy months leave cells blank.", "Greenness index, not biomass or crop yield."],
+    ),
+    LayerDef(
+        id="ecostress_lst",
+        name="Land surface temperature (ECOSTRESS)",
+        category="Solar & climate",
+        source_id="OBS-05",
+        provenance=_regional("OBS-05"),
+        slices=[
+            Slice(f"{region}-{day}", label, (f"ecostress_lst_{region}_h3r6.parquet",), f"lst_{day}",
+                  group="Arizona" if region == "arizona" else "UK")
+            for region, passes in ECOSTRESS_PASSES.items()
+            for day, label in passes
+        ],
+        units="°C",
+        coverage="regions",
+        description="70 m skin temperature from single ISS overpasses, cloud-masked, averaged per cell.",
+        limitations=[
+            "Skin (surface) temperature, not air temperature.",
+            "Each slice is one instantaneous overpass at a different time of day.",
+        ],
+    ),
+    LayerDef(
+        id="pace_chlorophyll",
+        name="Ocean chlorophyll-a (PACE 2025)",
+        category="Ocean",
+        source_id="OCEAN-01",
+        provenance=("OCEAN-01/uk",),
+        slices=[
+            Slice(f"2025-{m:02d}", f"{MONTHS[m - 1]} 2025", ("pace_chlor_a_uk_h3r6.parquet",), f"chl_2025_{m:02d}",
+                  "2025")
+            for m in (6, 7, 8)
+        ],
+        units="mg/m³",
+        scale_type="log",
+        domain=(0.1, 20.0),
+        coverage="regions",
+        description="Near-surface chlorophyll-a concentration, monthly 4 km composites (UK waters).",
+        limitations=["Sediment-rich coastal waters (Thames, Severn) can read high.", "Not fish stock or biomass."],
+    ),
+    LayerDef(
+        id="emit_minerals",
+        name="Surface mineral abundance (EMIT L3)",
+        category="Geology",
+        source_id="GEO-01",
+        provenance=("GEO-01/global",),
+        slices=[
+            Slice(m.lower().replace("+", "_"), m.replace("+", " + "), ("emit_minerals_h3r6.parquet",),
+                  m.lower().replace("+", "_"))
+            for m in EMIT_MINERALS
+        ],
+        units="abundance",
+        description="Spectral abundance of exposed surface minerals from the EMIT imaging spectrometer.",
+        limitations=[SAMPLED + " (0.5° grid)", "Only arid areas EMIT has imaged carry values.",
+                     "Exposed surface only; says nothing about ore at depth.",
+                     "Built from the gridded L3 product only. The L2B scenes in data/raw/GEO-01/arizona are unused: "
+                     "they need the GLT to be georeferenced, and their portlandite hits look like misidentification."],
+    ),
+]
+
+# ---------------------------------------------------------------------------------------------
+# Aqueduct 4.0 baseline water stress, built by scripts/build_layers.py. Each cell takes the basin
+# containing its centre; the index is never averaged or split, so coarser hexagons show the most
+# common class (mode) rather than a mean. "No Data" basins keep a null value.
+
+AQUEDUCT_BWS = [
+    (0, "Low (<10%)", "#fde3d6"),
+    (1, "Low – medium (10–20%)", "#f8bc9f"),
+    (2, "Medium – high (20–40%)", "#f29169"),
+    (3, "High (40–80%)", "#c4501f"),
+    (4, "Extremely high (>80%)", "#62270d"),
+    (-1, "Arid and low water use", "#9b8fd0"),
+]
+WATER_STRESS_FILE = "layers/water_stress_baseline/{region}.parquet"
+
+LAYERS.append(
+    LayerDef(
+        id="water_stress",
+        name="Baseline water stress (Aqueduct 4.0)",
+        category="Water",
+        source_id="WATER-06",
+        provenance=_regional("WATER-06"),
+        slices=[
+            Slice("category", "Category", (WATER_STRESS_FILE,), "bws_cat", agg="mode", categorical=True),
+            Slice("score", "Score (0–5)", (WATER_STRESS_FILE,), "value", agg="mode", categorical=False,
+                  units="score 0–5"),
+        ],
+        units="score 0–5",
+        agg="mode",
+        domain=(0.0, 5.0),
+        coverage="regions",
+        categories=[{"value": v, "label": label, "colour": c} for v, label, c in AQUEDUCT_BWS],
+        attributes=[("bws_label", "Aqueduct category"), ("string_id", "Aqueduct unit")],
+        description=(
+            "Ratio of water withdrawals to renewable supply in the sub-basin containing the cell centre, "
+            "as Aqueduct's 0–5 score and category."
+        ),
+        limitations=[
+            "Basin-level risk index, not a measured volume or an allocatable supply.",
+            "Every cell in a basin repeats the same score; zoomed out, hexagons show the most common class.",
+            "'Arid and low water use' basins score 5: read the category as well as the score.",
+            "Basins Aqueduct publishes no score for ('No Data') are blank.",
+        ],
+    )
+)
+
 BY_ID = {layer.id: layer for layer in LAYERS}
 
 
 def is_categorical(layer: LayerDef, s: Slice) -> bool:
+    if s.categorical is not None:
+        return s.categorical
     return layer.categories is not None and (s.agg or layer.agg) == "mode"
 
 
@@ -334,9 +646,10 @@ def _source_record(rel: str) -> dict | None:
     return json.loads(p.read_text()) if p.exists() else None
 
 
-def provenance(layer: LayerDef) -> dict:
-    """Licence, attribution and retrieval date from the first source.json found."""
-    for rel in layer.provenance:
+def provenance(layer: LayerDef, region: str | None = None) -> dict:
+    """Licence, attribution and retrieval date from the layer's source.json (the cell's region first)."""
+    rels = sorted(layer.provenance, key=lambda rel: not (region and rel.endswith(f"/{region}")))
+    for rel in rels:
         rec = _source_record(rel)
         if not rec:
             continue
@@ -355,6 +668,70 @@ def provenance(layer: LayerDef) -> dict:
             "documentationUrl": rec.get("documentationUrl"),
         }
     return {}
+
+
+@lru_cache(maxsize=None)
+def _sidecar(path: str, _mtime: float) -> dict:
+    return json.loads(Path(path).read_text())
+
+
+def sidecar(data_file: Path) -> dict:
+    """The prepare script's JSON record next to a prepared file (<stem>.json, or layer.json in a layer dir)."""
+    for p in (data_file.with_suffix(".json"), data_file.parent / "layer.json"):
+        if p.exists():
+            return _sidecar(str(p), p.stat().st_mtime)
+    return {}
+
+
+def _text(v) -> str | None:
+    if isinstance(v, dict):
+        return v.get("label") or v.get("name")
+    return v if isinstance(v, str) and v else None
+
+
+def layer_meta(layer: LayerDef, region: str | None = None) -> dict:
+    """Period, native resolution, sampling and evidence type from Parquet metadata or the sidecar JSON."""
+    files = next((slice_files(s) for s in layer.slices if slice_files(s)), [])
+    if region:
+        files = sorted(files, key=lambda f: _region_of(f) != region)
+    if not files:
+        return {}
+    pm = parquet_meta(files[0])
+    sc = sidecar(files[0])
+    return {
+        "period": _text(sc.get("period")) or pm.get("period"),
+        "nativeResolution": _text(sc.get("nativeResolution")) or pm.get("native_res"),
+        "sampling": _text(sc.get("sampling")) or pm.get("sampling"),
+        "evidenceType": sc.get("evidenceType"),
+    }
+
+
+def region_at(lat: float, lon: float) -> str | None:
+    for r, (w, s_, e, n) in REGION_BOXES.items():
+        if w <= lon <= e and s_ <= lat <= n:
+            return r
+    return None
+
+
+def cell_source(layer: LayerDef, region: str | None) -> dict:
+    """Everything the inspector shows next to a value: what it is, where it came from and its licence."""
+    prov = provenance(layer, region)
+    meta = layer_meta(layer, region)
+    return {
+        "sourceId": layer.source_id,
+        "provider": prov.get("provider"),
+        "product": prov.get("product"),
+        "period": meta.get("period"),
+        "nativeResolution": meta.get("nativeResolution"),
+        "sampling": meta.get("sampling"),
+        "evidenceType": prov.get("evidenceType") or meta.get("evidenceType"),
+        "licence": prov.get("licence"),
+        "licenceUrl": prov.get("licenceUrl"),
+        "attribution": prov.get("attribution"),
+        "retrievedAt": prov.get("retrievedAt"),
+        "documentationUrl": prov.get("documentationUrl"),
+        "limitations": layer.limitations,
+    }
 
 
 def slice_units(layer: LayerDef, s: Slice) -> str:
@@ -397,7 +774,8 @@ def describe(layer: LayerDef) -> dict:
     first = next((slice_files(s) for s in layer.slices if slice_files(s)), [])
     if first:
         m = parquet_meta(first[0])
-        meta = {k: m[k] for k in ("long_name", "definition", "native_res", "sampling", "period") if k in m}
+        meta = {k: m[k] for k in ("long_name", "definition") if k in m}
+    lm = layer_meta(layer)
     return {
         "id": layer.id,
         "name": layer.name,
@@ -414,14 +792,15 @@ def describe(layer: LayerDef) -> dict:
         "defaultSlice": layer.default_slice or (available[0]["id"] if available else layer.slices[0].id),
         "slices": slices,
         "limitations": layer.limitations,
-        "nativeResolution": meta.get("native_res"),
-        "sampling": meta.get("sampling"),
+        "nativeResolution": lm.get("nativeResolution"),
+        "sampling": lm.get("sampling"),
+        "period": lm.get("period"),
         "provenance": provenance(layer),
     }
 
 
 def _region_of(path: Path) -> str:
     for r in REGIONS:
-        if f"_{r}_" in path.name:
+        if f"_{r}_" in path.name or path.stem == r:
             return r
     return "global"

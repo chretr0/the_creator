@@ -1,0 +1,128 @@
+{
+  "id": "WATER-01-spl3smpe-arizona-20261107",
+  "catalogueSourceId": "WATER-01",
+  "provider": "NASA NSIDC DAAC (SMAP mission, JPL/GSFC)",
+  "product": "SMAP Enhanced L3 Radiometer Global and Polar Grid Daily 9 km EASE-Grid Soil Moisture V006 (SPL3SMP_E)",
+  "collectionShortName": "SPL3SMP_E",
+  "version": "006",
+  "collectionConceptId": "C2938664763-NSIDC_CPRD",
+  "doi": "10.5067/M20OXIZHY3RJ",
+  "documentationUrl": "https://nsidc.org/data/spl3smp_e/versions/6",
+  "accessUrl": "https://harmony.earthdata.nasa.gov/ (service sds/HOSS-regridder-reformatter)",
+  "harmonyJobId": "bd5d5874-4553-43dd-b46d-0d0b844a1a94",
+  "harmonyRequestUrl": "https://harmony.earthdata.nasa.gov/C2938664763-NSIDC_CPRD/ogc-api-coverages/1.0.0/collections/parameter_vars/coverage/rangeset",
+  "accessMethod": "NASA Harmony server-side bbox + variable subset (HOSS); global daily HDF5 (~650 MB) never downloaded",
+  "evidenceType": "satellite_retrieval",
+  "semantics": "Surface (~0-5 cm) volumetric soil moisture (m3/m3; upstream unit string cm**3/cm**3) from the SMAP L-band radiometer, DCA retrieval on the 9 km EASE-Grid 2.0 global grid (EPSG:6933). AM = 6:00 descending, PM = 18:00 ascending local solar time passes; cells without a pass that day are NaN (missing, not zero). retrieval_qual_flag bit 0 = recommended quality NOT met (0 = recommended). Soil moisture is not river discharge, groundwater or available water.",
+  "licence": {
+    "name": "NASA open data",
+    "url": "https://www.earthdata.nasa.gov/engage/open-data-services-software-policies/data-use-guidance",
+    "notes": "NASA Earth Science Data and Information Policy: no restrictions on reuse; cite the dataset DOI.",
+    "reviewedAt": "2026-11-07",
+    "attribution": "SMAP Enhanced L3 Radiometer Global and Polar Grid Daily 9 km EASE-Grid Soil Moisture V006. Version 006. NASA National Snow and Ice Data Center Distributed Active Archive Center. https://doi.org/10.5067/M20OXIZHY3RJ."
+  },
+  "citation": "SMAP Enhanced L3 Radiometer Global and Polar Grid Daily 9 km EASE-Grid Soil Moisture V006. Version 006. NASA National Snow and Ice Data Center Distributed Active Archive Center. https://doi.org/10.5067/M20OXIZHY3RJ.",
+  "region": "arizona",
+  "dataScope": "regional subset (data/README.md 'Data scope')",
+  "query": "collection C2938664763-NSIDC_CPRD; bbox W,S,E,N=-113.5,31.3,-109.0,34.5; temporal 2025-07-01T00:00:00..2025-07-07T23:59:59; variables ['Soil_Moisture_Retrieval_Data_AM/soil_moisture', 'Soil_Moisture_Retrieval_Data_AM/retrieval_qual_flag', 'Soil_Moisture_Retrieval_Data_AM/latitude', 'Soil_Moisture_Retrieval_Data_AM/longitude', 'Soil_Moisture_Retrieval_Data_PM/soil_moisture_pm', 'Soil_Moisture_Retrieval_Data_PM/retrieval_qual_flag_pm', 'Soil_Moisture_Retrieval_Data_PM/latitude_pm', 'Soil_Moisture_Retrieval_Data_PM/longitude_pm']",
+  "processing": "Harmony HOSS returned the EASE-2 grid window covering the bbox (cells overlapping the edges are included) with the listed variables; per-day outputs are kept in harmony_subsets/. The combined NetCDF stacks the 7 days on a 'date' dimension, converts fills (-9999 / 65534) to NaN / kept fill, and adds lat/lon of every cell centre computed from EASE-2 x/y (EPSG:6933 -> EPSG:4326). No resampling. Script: scripts/fetch_nasa_s5p_modis_smap.py smap.",
+  "granules": [
+    {
+      "granule": "SMAP_L3_SM_P_E_20250701_R19240_001.h5",
+      "url": "https://data.nsidc.earthdatacloud.nasa.gov/nsidc-cumulus-prod-protected/SMAP/SPL3SMP_E/006/2025/07/01/SMAP_L3_SM_P_E_20250701_R19240_001.h5"
+    },
+    {
+      "granule": "SMAP_L3_SM_P_E_20250702_R19240_002.h5",
+      "url": "https://data.nsidc.earthdatacloud.nasa.gov/nsidc-cumulus-prod-protected/SMAP/SPL3SMP_E/006/2025/07/02/SMAP_L3_SM_P_E_20250702_R19240_002.h5"
+    },
+    {
+      "granule": "SMAP_L3_SM_P_E_20250703_R19240_002.h5",
+      "url": "https://data.nsidc.earthdatacloud.nasa.gov/nsidc-cumulus-prod-protected/SMAP/SPL3SMP_E/006/2025/07/03/SMAP_L3_SM_P_E_20250703_R19240_002.h5"
+    },
+    {
+      "granule": "SMAP_L3_SM_P_E_20250704_R19240_002.h5",
+      "url": "https://data.nsidc.earthdatacloud.nasa.gov/nsidc-cumulus-prod-protected/SMAP/SPL3SMP_E/006/2025/07/04/SMAP_L3_SM_P_E_20250704_R19240_002.h5"
+    },
+    {
+      "granule": "SMAP_L3_SM_P_E_20250705_R19240_001.h5",
+      "url": "https://data.nsidc.earthdatacloud.nasa.gov/nsidc-cumulus-prod-protected/SMAP/SPL3SMP_E/006/2025/07/05/SMAP_L3_SM_P_E_20250705_R19240_001.h5"
+    },
+    {
+      "granule": "SMAP_L3_SM_P_E_20250706_R19240_002.h5",
+      "url": "https://data.nsidc.earthdatacloud.nasa.gov/nsidc-cumulus-prod-protected/SMAP/SPL3SMP_E/006/2025/07/06/SMAP_L3_SM_P_E_20250706_R19240_002.h5"
+    },
+    {
+      "granule": "SMAP_L3_SM_P_E_20250707_R19240_002.h5",
+      "url": "https://data.nsidc.earthdatacloud.nasa.gov/nsidc-cumulus-prod-protected/SMAP/SPL3SMP_E/006/2025/07/07/SMAP_L3_SM_P_E_20250707_R19240_002.h5"
+    }
+  ],
+  "stats": {
+    "dates": [
+      "20250701",
+      "20250702",
+      "20250703",
+      "20250704",
+      "20250705",
+      "20250706",
+      "20250707"
+    ],
+    "grid": [
+      39,
+      49
+    ],
+    "validCellsAM": 5289,
+    "validCellsPM": 6986,
+    "rangeAll_m3m3": [
+      0.03455493971705437,
+      0.4570116400718689
+    ],
+    "medianAll_m3m3": 0.09955515712499619,
+    "rangeRecommendedQuality_m3m3": [
+      0.041086092591285706,
+      0.3949697017669678
+    ]
+  },
+  "retrievedAt": "2026-11-07",
+  "files": [
+    {
+      "path": "harmony_subsets/SMAP_L3_SM_P_E_20250701_R19240_001_subsetted.nc4",
+      "bytes": 75374,
+      "sha256": "9ee8149daa49c97ac05489c25034e90ae0392594b4a200312354bdf88d53a089"
+    },
+    {
+      "path": "harmony_subsets/SMAP_L3_SM_P_E_20250702_R19240_002_subsetted.nc4",
+      "bytes": 75448,
+      "sha256": "6d279f94e9559eb148497069e40c1028028ee93a29216bdd03e45b25e5a40471"
+    },
+    {
+      "path": "harmony_subsets/SMAP_L3_SM_P_E_20250703_R19240_002_subsetted.nc4",
+      "bytes": 73137,
+      "sha256": "e3279b2859fc303c6ab7001618d4bf25528302ef437d161757ba08cef18e02fb"
+    },
+    {
+      "path": "harmony_subsets/SMAP_L3_SM_P_E_20250704_R19240_002_subsetted.nc4",
+      "bytes": 77545,
+      "sha256": "a6fc591f10ce9361e88a5c433082f9b59f153853138654341d82d4c938de5381"
+    },
+    {
+      "path": "harmony_subsets/SMAP_L3_SM_P_E_20250705_R19240_001_subsetted.nc4",
+      "bytes": 75452,
+      "sha256": "8e1b6e2ff0b04a4002ab86dd01fed4839ce2693e50aef2ebe51e9929728cac2d"
+    },
+    {
+      "path": "harmony_subsets/SMAP_L3_SM_P_E_20250706_R19240_002_subsetted.nc4",
+      "bytes": 75303,
+      "sha256": "c17861803e897ea2245cd198635ed47935f2f2553cc46b7934ad0aa7c1740505"
+    },
+    {
+      "path": "harmony_subsets/SMAP_L3_SM_P_E_20250707_R19240_002_subsetted.nc4",
+      "bytes": 78433,
+      "sha256": "7ed1da3dcb42590f4495eed8838fd2504fbe93939236bf6a620b9e250adf30df"
+    },
+    {
+      "path": "smap_spl3smpe_arizona_20250701_20250707.nc",
+      "bytes": 83345,
+      "sha256": "1c2a13c0cfe8042f8240104967fda4bbbf0e246031179667cba230aabc25a628"
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "layer": "cams_2024_uk",
+  "sourceId": "AIR-02",
+  "provider": "Copernicus Atmosphere Monitoring Service (CAMS) / ECMWF",
+  "product": "CAMS global reanalysis (EAC4) monthly averaged fields: monthly_mean 2024 (pm2p5, pm10, tcno2, tcso2, tcco, aod550)",
+  "version": "EAC4 as served by the ADS",
+  "licence": "CC BY 4.0",
+  "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+  "attribution": "Inness et al. (2019), CAMS global reanalysis (EAC4) monthly averaged fields. Copernicus Atmosphere Monitoring Service (CAMS) Atmosphere Data Store. DOI: 10.24381/d58bbf47. Contains modified Copernicus Atmosphere Monitoring Service information 2024.",
+  "evidenceType": "modelled",
+  "retrievedAt": "2026-11-07",
+  "method": "Each res-6 cell whose centre lies in the region box takes the value of the grid pixel containing its centre (nearest-pixel sampling, as for the NASA POWER layers); neighbouring cells repeat values. CAMS EAC4 monthly means of 2024. PM is the model's lowest-level (near-surface) mass concentration; NO2/SO2/CO are total columns converted from kg/m² with molar masses.",
+  "nativeResolution": "0.75° (~80 km)",
+  "sampling": "nearest grid pixel at each cell centre",
+  "period": "2024, monthly",
+  "h3Resolution": 6,
+  "units": {
+    "pm25_*": "µg/m³",
+    "pm10_*": "µg/m³",
+    "no2col_*": "µmol/m²",
+    "so2col_*": "µmol/m²",
+    "cocol_*": "mmol/m²",
+    "aod_*": "1"
+  },
+  "region": "uk",
+  "regionBbox": [
+    -8.7,
+    49.8,
+    1.9,
+    60.9
+  ],
+  "inputFiles": [
+    "cams_eac4_monthly_2024.nc"
+  ],
+  "rowCount": 25838,
+  "generatedAt": "2026-11-07T16:45:32+00:00",
+  "script": "scripts/prepare_observation_h3.py"
+}

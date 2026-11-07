@@ -1,0 +1,47 @@
+{
+  "id": "GEO-01-emitl3asa-global-20261107",
+  "catalogueSourceId": "GEO-01",
+  "provider": "NASA Earthdata (LPCLOUD)",
+  "product": "EMIT L3 Aggregated Mineral Spectral Abundance and Uncertainty 0.5 Deg V002",
+  "collectionShortName": "EMITL3ASA",
+  "collectionConceptId": "C3147269019-LPCLOUD",
+  "version": "002",
+  "doi": "10.5067/EMIT/EMITL3ASA.002",
+  "documentationUrl": "https://lpdaac.usgs.gov/documents/2262/EMITL3ASA_User_Guide_V2.pdf",
+  "accessMethod": "earthaccess (CMR search + HTTPS download, Earthdata Login)",
+  "evidenceType": "satellite_retrieval",
+  "region": "global",
+  "dataScope": "global file < ~100 MB kept whole (data/README.md 'Data scope')",
+  "retrievedAt": "2026-11-07",
+  "accessUrl": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/EMITL3ASA.002/EMIT_L3_ASA_002/EMIT_L3_ASA_002.nc",
+  "licence": {
+    "name": "NASA open data",
+    "url": "https://science.data.nasa.gov/about/license",
+    "attribution": "Robert Green. 2025. EMIT L3 Aggregated Mineral Spectral Abundance and Uncertainty 0.5 Deg V002. NASA Land Processes Distributed Active Archive Center. https://doi.org/10.5067/EMIT/EMITL3ASA.002",
+    "reviewedAt": "2026-11-07",
+    "notes": "NASA Earth science data are open with no restriction on reuse; cite the product DOI."
+  },
+  "query": "short_name=EMITL3ASA version=002 (single global granule)",
+  "processing": "None (global 0.5 degree aggregate, < 100 MB, kept whole).",
+  "granules": [
+    {
+      "granuleId": "EMIT_L3_ASA_002",
+      "beginDateTime": "2022-08-10T01:14:48Z",
+      "endDateTime": "2024-01-20T00:00:00Z",
+      "dataUrls": [
+        "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/EMITL3ASA.002/EMIT_L3_ASA_002/EMIT_L3_ASA_002.nc"
+      ],
+      "upstreamChecksum": {
+        "EMIT_L3_ASA_002.nc": "no upstream checksum"
+      }
+    }
+  ],
+  "notes": "Aggregated spectral abundance at 0.5 degree; coarse, coverage limited to EMIT acquisitions.",
+  "files": [
+    {
+      "path": "EMIT_L3_ASA_002.nc",
+      "bytes": 20086468,
+      "sha256": "4476ba0e77c4661aaecea4eb875128124f77c0d20a868bb872e6b4e4cc59bf3a"
+    }
+  ]
+}

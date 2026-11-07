@@ -27,7 +27,7 @@ export default function DataPanel({ data, onFitBBox }: Props) {
     <section className="panel">
       <h2>Colour the grid</h2>
       {data.loadError && <p className="warn small">Couldn't load data layers: {data.loadError}</p>}
-      <CellLayerPicker data={data} />
+      <CellLayerPicker data={data} onFitBBox={onFitBBox} />
       <div className="actions tight" style={{ marginTop: 14 }}>
         <span className="muted small" style={{ alignSelf: "center" }}>Jump to</span>
         <button className="chip" onClick={() => onFitBBox(null)}>World</button>
@@ -71,7 +71,7 @@ export function PreparedScenes({ data, onFitBBox }: Props) {
   );
 }
 
-function CellLayerPicker({ data }: { data: DataLayersState }) {
+function CellLayerPicker({ data, onFitBBox }: Props) {
   const { catalogue, active, activeLayer, activeSlice, values, cellStatus } = data;
   const groups = useMemo(() => {
     const m = new Map<string, CellLayer[]>();
@@ -169,16 +169,34 @@ function CellLayerPicker({ data }: { data: DataLayersState }) {
             />
           </label>
 
-          <Legend data={data} />
-
-          {cellStatus.loading && <p className="muted small">Loading…</p>}
-          {cellStatus.error && <p className="warn small">{cellStatus.error}</p>}
-          {!cellStatus.loading && !cellStatus.error && values && (
-            <p className="muted small">
-              Grey cells have no data.
-              {activeLayer.coverage === "regions" &&
-                ` Available for ${activeLayer.regions.map((r) => REGION_LABEL[r] ?? r).join(" and ")} only.`}
-            </p>
+          {data.outsideRegions ? (
+            <div className="no-coverage" role="status">
+              <strong>No baseline data for this area</strong>
+              <p className="small">
+                {activeLayer.name} is only prepared for {activeLayer.regions.map((r) => REGION_LABEL[r] ?? r).join(" and ")}.
+                Cells here are blank (unknown), not zero.
+              </p>
+              <div className="actions tight">
+                {REGION_VIEWS.filter((r) => activeLayer.regions.includes(r.id)).map((r) => (
+                  <button key={r.id} className="chip" onClick={() => onFitBBox(r.bbox)}>
+                    Go to {r.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <>
+              <Legend data={data} />
+              {cellStatus.loading && <p className="muted small">Loading…</p>}
+              {cellStatus.error && <p className="warn small">{cellStatus.error}</p>}
+              {!cellStatus.loading && !cellStatus.error && values && (
+                <p className="muted small">
+                  <span className="swatch no-data" aria-hidden /> Faint grey = no data (unknown, never zero).
+                  {activeLayer.coverage === "regions" &&
+                    ` Available for ${activeLayer.regions.map((r) => REGION_LABEL[r] ?? r).join(" and ")} only.`}
+                </p>
+              )}
+            </>
           )}
           {activeLayer.description && <p className="small">{activeLayer.description}</p>}
         </>

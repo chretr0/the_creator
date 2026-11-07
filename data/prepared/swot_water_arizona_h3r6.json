@@ -1,0 +1,38 @@
+{
+  "layer": "swot_water_arizona",
+  "sourceId": "WATER-03",
+  "provider": "NASA JPL / CNES SWOT mission; distributed by NASA PO.DAAC",
+  "product": "SWOT Level 2 Water Mask Raster Image 100m Data Product",
+  "version": "D (CRID in each granule name, e.g. PID0)",
+  "licence": "NASA open data",
+  "licenceUrl": "https://earthdata.nasa.gov/earth-observation-data/data-use-policy",
+  "attribution": "SWOT (2025). SWOT Level 2 Water Mask Raster Image 100m Data Product, Version D. Ver. D. PO.DAAC, CA, USA. https://doi.org/10.5067/SWOT-RASTER-D. SWOT is a joint NASA/CNES mission with contributions from CSA and UKSA.",
+  "evidenceType": "satellite retrieval",
+  "retrievedAt": "2026-11-07",
+  "method": "Mean of valid pixels whose centres fall in each res-6 cell inside the region box. SWOT L2 HR Raster 100 m: water_frac is the mean water fraction of observed pixels with water_area_qual ≤ 1 (suspect or better) over all passes; wse is the mean water-surface elevation of pixels with wse_qual ≤ 1 and water_frac > 0.5. Single-pass snapshots.",
+  "nativeResolution": "100 m",
+  "sampling": "mean of pixel centres in cell",
+  "period": "Jul-Aug 2025 passes",
+  "h3Resolution": 6,
+  "units": {
+    "water_frac": "fraction of observed area",
+    "wse": "m above EGM2008 geoid",
+    "n_pixels": "count of observed 100 m pixels"
+  },
+  "region": "arizona",
+  "regionBbox": [
+    -113.5,
+    31.3,
+    -109.0,
+    34.5
+  ],
+  "inputFiles": [
+    "SWOT_L2_HR_Raster_100m_UTM12S_N_x_x_x_036_177_107F_20250726T192141_20250726T192202_PID0_01.nc",
+    "SWOT_L2_HR_Raster_100m_UTM12S_N_x_x_x_036_190_048F_20250727T061046_20250727T061107_PID0_01.nc",
+    "SWOT_L2_HR_Raster_100m_UTM12S_N_x_x_x_036_455_107F_20250805T174357_20250805T174418_PID0_01.nc",
+    "SWOT_L2_HR_Raster_100m_UTM12S_N_x_x_x_036_468_048F_20250806T043302_20250806T043323_PID0_01.nc"
+  ],
+  "rowCount": 901,
+  "generatedAt": "2026-11-07T16:48:36+00:00",
+  "script": "scripts/prepare_observation_h3.py"
+}

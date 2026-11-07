@@ -1,0 +1,28 @@
+{
+  "layer": "grace_tws_2024",
+  "sourceId": "WATER-02",
+  "provider": "NASA Earthdata (POCLOUD)",
+  "product": "JPL GRACE and GRACE-FO Mascon Ocean, Ice, and Hydrology Equivalent Water Height Coastal Resolution Improvement (CRI) Filtered Release 06.3 Version 04",
+  "version": "RL06.3Mv04",
+  "licence": "NASA open data",
+  "licenceUrl": "https://science.data.nasa.gov/about/license",
+  "attribution": "D. N. Wiese, D.-N. Yuan, C. Boening, F. W. Landerer, M. M. Watkins. 2023. JPL GRACE and GRACE-FO Mascon Ocean, Ice, and Hydrology Equivalent Water Height CRI Filtered RL06.3Mv04. PO.DAAC. https://doi.org/10.5067/TEMSC-3JC634",
+  "evidenceType": "satellite_retrieval",
+  "retrievedAt": "2026-11-07",
+  "method": "Each res-6 cell whose centre lies in the region box takes the value of the grid pixel containing its centre (nearest-pixel sampling, as for the NASA POWER layers); neighbouring cells repeat values. JPL RL06.3 CRI mascon liquid-water-equivalent thickness × the CRI land scale factor, land mask applied (ocean absent). Anomaly relative to the 2004.0-2009.999 mean. 2024 months present: 2024-01-16, 2024-02-15, 2024-03-16, 2024-04-16, 2024-05-16, 2024-06-16, 2024-07-16, 2024-08-16, 2024-09-16, 2024-10-16, 2024-11-16, 2024-12-16.",
+  "nativeResolution": "0.5° grid of ~3° mascons",
+  "sampling": "nearest grid pixel at each cell centre",
+  "period": "2024, monthly",
+  "h3Resolution": 6,
+  "units": {
+    "tws_*": "cm equivalent water height (anomaly)"
+  },
+  "region": "global",
+  "regionBbox": null,
+  "inputFiles": [
+    "GRCTellus.JPL.200204_202608.GLO.RL06.3M.MSCNv04CRI.nc"
+  ],
+  "rowCount": 3610599,
+  "generatedAt": "2026-11-07T16:48:48+00:00",
+  "script": "scripts/prepare_observation_h3.py"
+}

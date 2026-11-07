@@ -1,0 +1,172 @@
+{
+  "id": "AIR-01-arizona-20261107",
+  "catalogueSourceId": "AIR-01",
+  "provider": "ESA / Copernicus Sentinel-5P (KNMI processor), distributed by NASA GES DISC",
+  "product": "Sentinel-5P TROPOMI Tropospheric NO2 1-Orbit L2 5.5km x 3.5km V2 (S5P_L2__NO2____HiR)  (S5P_L2__NO2____HiR)",
+  "collectionShortName": "S5P_L2__NO2____HiR",
+  "version": "2 (processor 02.08.00 per granule names: _020800_)",
+  "collectionConceptId": "C2089270961-GES_DISC",
+  "doi": "10.5270/S5P-9bnp8q8",
+  "documentationUrl": "https://disc.gsfc.nasa.gov/datasets/S5P_L2__NO2____HiR_2/summary",
+  "accessUrl": "https://data.gesdisc.earthdata.nasa.gov/data/S5P_TROPOMI_Level2/S5P_L2__NO2____HiR.2/",
+  "accessMethod": "earthaccess CMR search + HTTPS byte-range streaming (earthaccess.open, h5netcdf); global orbit files never written to disk",
+  "evidenceType": "satellite_retrieval",
+  "semantics": "nitrogendioxide_tropospheric_column is a tropospheric vertical column density in mol/m2 (multiply by 6.02214e19 for molecules/cm2), NOT a ground-level / breathing-height concentration and not a facility emission. Pixels ~5.5 x 3.5 km at nadir; overpass ~13:30 local solar time. Each row = one L2 pixel (orbit, scanline, ground_pixel) with its scanline time.",
+  "units": {
+    "no2_trop_column_mol_m2": "mol m-2",
+    "no2_trop_column_precision_mol_m2": "mol m-2",
+    "qa_value": "1 (0-1)",
+    "latitude": "degrees_north (pixel centre)",
+    "longitude": "degrees_east (pixel centre)",
+    "time_utc": "UTC scanline time (reference time + delta_time)"
+  },
+  "upstreamVariableAttributes": {
+    "nitrogendioxide_tropospheric_column": {
+      "units": "mol m-2",
+      "standard_name": "troposphere_mole_content_of_nitrogen_dioxide",
+      "long_name": "Tropospheric vertical column of nitrogen dioxide",
+      "ancillary_variables": "nitrogendioxide_tropospheric_column_precision air_mass_factor_troposphere air_mass_factor_total averaging_kernel",
+      "multiplication_factor_to_convert_to_molecules_percm2": "6.02214e+19"
+    },
+    "nitrogendioxide_tropospheric_column_precision": {
+      "units": "mol m-2",
+      "standard_name": "troposphere_mole_content_of_nitrogen_dioxide standard_error",
+      "long_name": "Precision of the tropospheric vertical column of nitrogen dioxide",
+      "multiplication_factor_to_convert_to_molecules_percm2": "6.022141e+19"
+    },
+    "qa_value": {
+      "units": "1",
+      "valid_min": "0",
+      "valid_max": "100",
+      "long_name": "data quality value",
+      "comment": "A continuous quality descriptor, varying between 0 (no data) and 1 (full quality data). Recommend to ignore data with qa_value < 0.5"
+    },
+    "latitude": {
+      "long_name": "pixel center latitude",
+      "units": "degrees_north",
+      "standard_name": "latitude",
+      "valid_min": "-90.0",
+      "valid_max": "90.0",
+      "bounds": "/PRODUCT/SUPPORT_DATA/GEOLOCATIONS/latitude_bounds"
+    },
+    "longitude": {
+      "long_name": "pixel center longitude",
+      "units": "degrees_east",
+      "standard_name": "longitude",
+      "valid_min": "-180.0",
+      "valid_max": "180.0",
+      "bounds": "/PRODUCT/SUPPORT_DATA/GEOLOCATIONS/longitude_bounds"
+    },
+    "delta_time": {
+      "long_name": "offset of start time of measurement relative to time_reference",
+      "units": "milliseconds since 2025-07-02 00:00:00"
+    },
+    "time": {
+      "units": "seconds since 2010-01-01 00:00:00",
+      "standard_name": "time",
+      "axis": "T",
+      "long_name": "reference time for the measurements",
+      "comment": "The time in this variable corresponds to the time in the time_reference global attribute"
+    }
+  },
+  "licence": {
+    "name": "Copernicus Sentinel data legal notice",
+    "url": "https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice",
+    "attribution": "Contains modified Copernicus Sentinel data 2025",
+    "notes": "Free, full and open access; the credit line above is required on any display or redistribution. GES DISC Harmony access asked for a separate EULA that was not accepted; direct HTTPS access was used.",
+    "reviewedAt": "2026-11-07"
+  },
+  "citation": "Copernicus Sentinel data processed by ESA, Koninklijk Nederlands Meteorologisch Instituut (KNMI). (2021). Sentinel-5P TROPOMI Tropospheric NO2 1-Orbit L2 5.5km x 3.5km. Version 2. Goddard Earth Sciences Data and Information Services Center (GES DISC). https://doi.org/10.5270/S5P-9bnp8q8.",
+  "region": "arizona",
+  "dataScope": "regional subset (data/README.md 'Data scope')",
+  "query": "short_name=S5P_L2__NO2____HiR version=2; bbox W,S,E,N=-113.5,31.3,-109.0,34.5; temporal 2025-07-01T00:00:00..2025-07-07T23:59:59 (UTC)",
+  "processing": "For each orbit returned by CMR for the bbox/time: read PRODUCT/latitude+longitude, keep pixels whose centre lies inside the bbox, read only the scanline rows spanning them, keep pixels with qa_value > 0.75 (scale_factor applied by xarray), write one row per kept pixel to Parquet (zstd). No regridding, averaging or unit conversion. Script: scripts/fetch_nasa_s5p_modis_smap.py s5p.",
+  "granules": [
+    {
+      "granule": "S5P_OFFL_L2__NO2____20250701T185431_20250701T203601_39986_03_020800_20250703T110430.nc",
+      "orbit": 39986,
+      "pixelsInBox": 2585,
+      "pixelsKept": 2224,
+      "url": "https://data.gesdisc.earthdata.nasa.gov/data/S5P_TROPOMI_Level2/S5P_L2__NO2____HiR.2/2025/182/S5P_OFFL_L2__NO2____20250701T185431_20250701T203601_39986_03_020800_20250703T110430.nc"
+    },
+    {
+      "granule": "S5P_OFFL_L2__NO2____20250701T203601_20250701T221731_39987_03_020800_20250703T130058.nc",
+      "orbit": 39987,
+      "pixelsInBox": 2019,
+      "pixelsKept": 1744,
+      "url": "https://data.gesdisc.earthdata.nasa.gov/data/S5P_TROPOMI_Level2/S5P_L2__NO2____HiR.2/2025/182/S5P_OFFL_L2__NO2____20250701T203601_20250701T221731_39987_03_020800_20250703T130058.nc"
+    },
+    {
+      "granule": "S5P_OFFL_L2__NO2____20250702T183529_20250702T201659_40000_03_020800_20250704T105002.nc",
+      "orbit": 40000,
+      "pixelsInBox": 721,
+      "pixelsKept": 100,
+      "url": "https://data.gesdisc.earthdata.nasa.gov/data/S5P_TROPOMI_Level2/S5P_L2__NO2____HiR.2/2025/183/S5P_OFFL_L2__NO2____20250702T183529_20250702T201659_40000_03_020800_20250704T105002.nc"
+    },
+    {
+      "granule": "S5P_OFFL_L2__NO2____20250702T201659_20250702T215828_40001_03_020800_20250704T123015.nc",
+      "orbit": 40001,
+      "pixelsInBox": 3351,
+      "pixelsKept": 1815,
+      "url": "https://data.gesdisc.earthdata.nasa.gov/data/S5P_TROPOMI_Level2/S5P_L2__NO2____HiR.2/2025/183/S5P_OFFL_L2__NO2____20250702T201659_20250702T215828_40001_03_020800_20250704T123015.nc"
+    },
+    {
+      "granule": "S5P_OFFL_L2__NO2____20250703T195756_20250703T213926_40015_03_020800_20250705T120949.nc",
+      "orbit": 40015,
+      "pixelsInBox": 5905,
+      "pixelsKept": 4191,
+      "url": "https://data.gesdisc.earthdata.nasa.gov/data/S5P_TROPOMI_Level2/S5P_L2__NO2____HiR.2/2025/184/S5P_OFFL_L2__NO2____20250703T195756_20250703T213926_40015_03_020800_20250705T120949.nc"
+    },
+    {
+      "granule": "S5P_OFFL_L2__NO2____20250704T193854_20250704T212024_40029_03_020800_20250706T115539.nc",
+      "orbit": 40029,
+      "pixelsInBox": 7163,
+      "pixelsKept": 6379,
+      "url": "https://data.gesdisc.earthdata.nasa.gov/data/S5P_TROPOMI_Level2/S5P_L2__NO2____HiR.2/2025/185/S5P_OFFL_L2__NO2____20250704T193854_20250704T212024_40029_03_020800_20250706T115539.nc"
+    },
+    {
+      "granule": "S5P_OFFL_L2__NO2____20250705T191951_20250705T210121_40043_03_020800_20250707T113418.nc",
+      "orbit": 40043,
+      "pixelsInBox": 5114,
+      "pixelsKept": 4325,
+      "url": "https://data.gesdisc.earthdata.nasa.gov/data/S5P_TROPOMI_Level2/S5P_L2__NO2____HiR.2/2025/186/S5P_OFFL_L2__NO2____20250705T191951_20250705T210121_40043_03_020800_20250707T113418.nc"
+    },
+    {
+      "granule": "S5P_OFFL_L2__NO2____20250706T190048_20250706T204218_40057_03_020800_20250708T111956.nc",
+      "orbit": 40057,
+      "pixelsInBox": 2811,
+      "pixelsKept": 2464,
+      "url": "https://data.gesdisc.earthdata.nasa.gov/data/S5P_TROPOMI_Level2/S5P_L2__NO2____HiR.2/2025/187/S5P_OFFL_L2__NO2____20250706T190048_20250706T204218_40057_03_020800_20250708T111956.nc"
+    },
+    {
+      "granule": "S5P_OFFL_L2__NO2____20250706T204218_20250706T222348_40058_03_020800_20250708T125806.nc",
+      "orbit": 40058,
+      "pixelsInBox": 1211,
+      "pixelsKept": 1208,
+      "url": "https://data.gesdisc.earthdata.nasa.gov/data/S5P_TROPOMI_Level2/S5P_L2__NO2____HiR.2/2025/187/S5P_OFFL_L2__NO2____20250706T204218_20250706T222348_40058_03_020800_20250708T125806.nc"
+    },
+    {
+      "granule": "S5P_OFFL_L2__NO2____20250707T184146_20250707T202315_40071_03_020800_20250709T105850.nc",
+      "orbit": 40071,
+      "pixelsInBox": 1745,
+      "pixelsKept": 1223,
+      "url": "https://data.gesdisc.earthdata.nasa.gov/data/S5P_TROPOMI_Level2/S5P_L2__NO2____HiR.2/2025/188/S5P_OFFL_L2__NO2____20250707T184146_20250707T202315_40071_03_020800_20250709T105850.nc"
+    },
+    {
+      "granule": "S5P_OFFL_L2__NO2____20250707T202315_20250707T220445_40072_03_020800_20250709T124200.nc",
+      "orbit": 40072,
+      "pixelsInBox": 2718,
+      "pixelsKept": 2315,
+      "url": "https://data.gesdisc.earthdata.nasa.gov/data/S5P_TROPOMI_Level2/S5P_L2__NO2____HiR.2/2025/188/S5P_OFFL_L2__NO2____20250707T202315_20250707T220445_40072_03_020800_20250709T124200.nc"
+    }
+  ],
+  "rows": 27988,
+  "retrievedAt": "2026-11-07",
+  "files": [
+    {
+      "path": "s5p_no2_trop_arizona_20250701_20250707_qa075.parquet",
+      "bytes": 607088,
+      "sha256": "c2c3be44c7012a4e5a65192d7b5721a0a21ea3c1dd9dae64c84c5ddb7dc32e9f"
+    }
+  ]
+}

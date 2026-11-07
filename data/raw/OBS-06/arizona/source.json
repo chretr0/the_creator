@@ -1,0 +1,302 @@
+{
+  "id": "OBS-06-mod13a3-arizona-20261107",
+  "catalogueSourceId": "OBS-06",
+  "provider": "NASA LP DAAC (USGS EROS)",
+  "product": "MODIS/Terra Vegetation Indices Monthly L3 Global 1km SIN Grid V061 (MOD13A3)",
+  "collectionShortName": "MOD13A3",
+  "version": "061",
+  "collectionConceptId": "C2327962326-LPCLOUD",
+  "doi": "10.5067/MODIS/MOD13A3.061",
+  "documentationUrl": "https://lpdaac.usgs.gov/products/mod13a3v061/",
+  "accessUrl": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/",
+  "accessMethod": "earthaccess CMR search + whole-tile HTTPS download (tiles are already regional; no clip)",
+  "evidenceType": "satellite_retrieval",
+  "semantics": "Monthly 1 km NDVI/EVI composites on the MODIS sinusoidal grid (HDF4-EOS). SDS '1 km monthly NDVI' is int16 with scale factor 0.0001 (NDVI = DN * 0.0001; the in-file attribute scale_factor=10000 follows the MODIS convention physical = DN / scale_factor, so do not multiply by it), valid range -2000..10000, fill -3000. Use the '1 km monthly VI Quality' bit field (bits 0-1 MODLAND QA: 00 good, 01 check other QA, 10/11 cloudy/not produced) and 'pixel reliability' to screen pixels. Granule date AYYYYDDD is the first day of the month.",
+  "tilesIntersectingBox": {
+    "h08v05": 0.9987,
+    "h09v05": 0.0013
+  },
+  "tileNotes": "Fraction = share of a 0.01 deg lon/lat sample grid over the box falling in each tile; small fractions are edge slivers kept for completeness.",
+  "licence": {
+    "name": "NASA open data",
+    "url": "https://www.earthdata.nasa.gov/engage/open-data-services-software-policies/data-use-guidance",
+    "notes": "NASA Earth Science Data and Information Policy: no restrictions on reuse; cite the dataset DOI.",
+    "reviewedAt": "2026-11-07",
+    "attribution": "Kamel Didan. (2021). MODIS/Terra Vegetation Indices Monthly L3 Global 1km SIN Grid V061. NASA Land Processes Distributed Active Archive Center. https://doi.org/10.5067/MODIS/MOD13A3.061."
+  },
+  "citation": "Kamel Didan. (2021). MODIS/Terra Vegetation Indices Monthly L3 Global 1km SIN Grid V061. NASA Land Processes Distributed Active Archive Center. https://doi.org/10.5067/MODIS/MOD13A3.061.",
+  "region": "arizona",
+  "dataScope": "regional subset (data/README.md 'Data scope')",
+  "query": "short_name=MOD13A3 version=061; bbox W,S,E,N=-113.5,31.3,-109.0,34.5; temporal 2024-01-01..2024-12-31",
+  "processing": "None. Tiles kept exactly as downloaded (no clip/reprojection). Script: scripts/fetch_nasa_s5p_modis_smap.py modis.",
+  "granules": [
+    {
+      "granule": "MOD13A3.A2024001.h08v05.061.2024038042458",
+      "tile": "h08v05",
+      "date": "A2024001",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024001.h08v05.061.2024038042458/MOD13A3.A2024001.h08v05.061.2024038042458.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024001.h09v05.061.2024038042835",
+      "tile": "h09v05",
+      "date": "A2024001",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024001.h09v05.061.2024038042835/MOD13A3.A2024001.h09v05.061.2024038042835.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024032.h08v05.061.2024066072959",
+      "tile": "h08v05",
+      "date": "A2024032",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024032.h08v05.061.2024066072959/MOD13A3.A2024032.h08v05.061.2024066072959.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024032.h09v05.061.2024066072511",
+      "tile": "h09v05",
+      "date": "A2024032",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024032.h09v05.061.2024066072511/MOD13A3.A2024032.h09v05.061.2024066072511.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024061.h08v05.061.2024099104819",
+      "tile": "h08v05",
+      "date": "A2024061",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024061.h08v05.061.2024099104819/MOD13A3.A2024061.h08v05.061.2024099104819.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024061.h09v05.061.2024099104823",
+      "tile": "h09v05",
+      "date": "A2024061",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024061.h09v05.061.2024099104823/MOD13A3.A2024061.h09v05.061.2024099104823.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024092.h08v05.061.2024133221808",
+      "tile": "h08v05",
+      "date": "A2024092",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024092.h08v05.061.2024133221808/MOD13A3.A2024092.h08v05.061.2024133221808.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024092.h09v05.061.2024133221814",
+      "tile": "h09v05",
+      "date": "A2024092",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024092.h09v05.061.2024133221814/MOD13A3.A2024092.h09v05.061.2024133221814.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024122.h08v05.061.2024162171711",
+      "tile": "h08v05",
+      "date": "A2024122",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024122.h08v05.061.2024162171711/MOD13A3.A2024122.h08v05.061.2024162171711.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024122.h09v05.061.2024162173309",
+      "tile": "h09v05",
+      "date": "A2024122",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024122.h09v05.061.2024162173309/MOD13A3.A2024122.h09v05.061.2024162173309.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024153.h08v05.061.2024195021404",
+      "tile": "h08v05",
+      "date": "A2024153",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024153.h08v05.061.2024195021404/MOD13A3.A2024153.h08v05.061.2024195021404.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024153.h09v05.061.2024195021532",
+      "tile": "h09v05",
+      "date": "A2024153",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024153.h09v05.061.2024195021532/MOD13A3.A2024153.h09v05.061.2024195021532.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024183.h08v05.061.2024228025125",
+      "tile": "h08v05",
+      "date": "A2024183",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024183.h08v05.061.2024228025125/MOD13A3.A2024183.h08v05.061.2024228025125.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024183.h09v05.061.2024228023359",
+      "tile": "h09v05",
+      "date": "A2024183",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024183.h09v05.061.2024228023359/MOD13A3.A2024183.h09v05.061.2024228023359.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024214.h08v05.061.2024267145641",
+      "tile": "h08v05",
+      "date": "A2024214",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024214.h08v05.061.2024267145641/MOD13A3.A2024214.h08v05.061.2024267145641.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024214.h09v05.061.2024267145548",
+      "tile": "h09v05",
+      "date": "A2024214",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024214.h09v05.061.2024267145548/MOD13A3.A2024214.h09v05.061.2024267145548.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024245.h08v05.061.2024290024634",
+      "tile": "h08v05",
+      "date": "A2024245",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024245.h08v05.061.2024290024634/MOD13A3.A2024245.h08v05.061.2024290024634.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024245.h09v05.061.2024290023823",
+      "tile": "h09v05",
+      "date": "A2024245",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024245.h09v05.061.2024290023823/MOD13A3.A2024245.h09v05.061.2024290023823.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024275.h08v05.061.2024326214609",
+      "tile": "h08v05",
+      "date": "A2024275",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024275.h08v05.061.2024326214609/MOD13A3.A2024275.h08v05.061.2024326214609.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024275.h09v05.061.2024326214942",
+      "tile": "h09v05",
+      "date": "A2024275",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024275.h09v05.061.2024326214942/MOD13A3.A2024275.h09v05.061.2024326214942.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024306.h08v05.061.2024338120432",
+      "tile": "h08v05",
+      "date": "A2024306",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024306.h08v05.061.2024338120432/MOD13A3.A2024306.h08v05.061.2024338120432.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024306.h09v05.061.2024338114510",
+      "tile": "h09v05",
+      "date": "A2024306",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024306.h09v05.061.2024338114510/MOD13A3.A2024306.h09v05.061.2024338114510.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024336.h08v05.061.2025004001259",
+      "tile": "h08v05",
+      "date": "A2024336",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024336.h08v05.061.2025004001259/MOD13A3.A2024336.h08v05.061.2025004001259.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024336.h09v05.061.2025003235652",
+      "tile": "h09v05",
+      "date": "A2024336",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024336.h09v05.061.2025003235652/MOD13A3.A2024336.h09v05.061.2025003235652.hdf"
+    }
+  ],
+  "retrievedAt": "2026-11-07",
+  "files": [
+    {
+      "path": "MOD13A3.A2024001.h08v05.061.2024038042458.hdf",
+      "bytes": 17759647,
+      "sha256": "4d802440c0869ca4aef953d58d455d9c9e13822338d61cdffe9205ae166875ef"
+    },
+    {
+      "path": "MOD13A3.A2024001.h09v05.061.2024038042835.hdf",
+      "bytes": 21671428,
+      "sha256": "daaab90bb0944c4c15b3f48c48cc2902baa271a83acc9b3302e46fb35d934744"
+    },
+    {
+      "path": "MOD13A3.A2024032.h08v05.061.2024066072959.hdf",
+      "bytes": 18000484,
+      "sha256": "f1653a7586cac91cb206ad53a1e19625c227558a1d76f221c6031805ff0dbd7b"
+    },
+    {
+      "path": "MOD13A3.A2024032.h09v05.061.2024066072511.hdf",
+      "bytes": 21965094,
+      "sha256": "41507065ef17f737923887fb2d8fa4185487f6ca9fe2de59dc5be958593512a4"
+    },
+    {
+      "path": "MOD13A3.A2024061.h08v05.061.2024099104819.hdf",
+      "bytes": 18052646,
+      "sha256": "227cb14abcc991ceec83e3bb58a93484923f0bac121d54ade175d1f7b372205c"
+    },
+    {
+      "path": "MOD13A3.A2024061.h09v05.061.2024099104823.hdf",
+      "bytes": 22024906,
+      "sha256": "7d04aebde1f5c7f9c0330e2f90b253b377c5c8f98a563864005317bb494145ae"
+    },
+    {
+      "path": "MOD13A3.A2024092.h08v05.061.2024133221808.hdf",
+      "bytes": 18017799,
+      "sha256": "f8cbbda433265a1850deeb9a92aa2b8313ec48601adee0a2316bce00370b1df2"
+    },
+    {
+      "path": "MOD13A3.A2024092.h09v05.061.2024133221814.hdf",
+      "bytes": 22030833,
+      "sha256": "c26a17934550ca80b6dac6cf1c8c8ab3e9073710f1c589c2f0770098f1939acc"
+    },
+    {
+      "path": "MOD13A3.A2024122.h08v05.061.2024162171711.hdf",
+      "bytes": 17992374,
+      "sha256": "417f73c438931312240934cd3b424a32f5ca90d0f2b4824695e1019575715a6c"
+    },
+    {
+      "path": "MOD13A3.A2024122.h09v05.061.2024162173309.hdf",
+      "bytes": 21952997,
+      "sha256": "0c811bd638ae05ecbe3d11b3a1907de977a1c3d3f63c51f94d0f8272234506b4"
+    },
+    {
+      "path": "MOD13A3.A2024153.h08v05.061.2024195021404.hdf",
+      "bytes": 17905013,
+      "sha256": "718a8e67c5f222d744a9002501613f789c9b20e9ec3de6e7f5cc708d08348b55"
+    },
+    {
+      "path": "MOD13A3.A2024153.h09v05.061.2024195021532.hdf",
+      "bytes": 22039723,
+      "sha256": "8a5e34afc4bdc5caf1e7833b65b4f74f083a9f47a011fdd1491d91d7b296da99"
+    },
+    {
+      "path": "MOD13A3.A2024183.h08v05.061.2024228025125.hdf",
+      "bytes": 18007046,
+      "sha256": "b03927ca152f19ff26a6c20ab14165aa5cde79bc7b79ed35d414755e0f107542"
+    },
+    {
+      "path": "MOD13A3.A2024183.h09v05.061.2024228023359.hdf",
+      "bytes": 21995812,
+      "sha256": "c448efc4e973a6267ce6bc367c0ee6ffcedb75a55d576ab91df078f6798e7f9d"
+    },
+    {
+      "path": "MOD13A3.A2024214.h08v05.061.2024267145641.hdf",
+      "bytes": 17903111,
+      "sha256": "a8090955302f64e414bd7f4f815aaca9e33b5e9e2df5182419f5b96162a720f1"
+    },
+    {
+      "path": "MOD13A3.A2024214.h09v05.061.2024267145548.hdf",
+      "bytes": 21905981,
+      "sha256": "396e97e482f7f96ce6dfd934d4bf52ea2a96dda9fda4361f23d73e0af972b7d4"
+    },
+    {
+      "path": "MOD13A3.A2024245.h08v05.061.2024290024634.hdf",
+      "bytes": 17899348,
+      "sha256": "d8373acbfb230e3bc67eb38a38e0f5bc46727cdf6f256b6ef41dbc6f8d3c59ee"
+    },
+    {
+      "path": "MOD13A3.A2024245.h09v05.061.2024290023823.hdf",
+      "bytes": 21807755,
+      "sha256": "10f5e9772cbf67580c9b013f09593951657e14ad34a4457439c7934f236d1b80"
+    },
+    {
+      "path": "MOD13A3.A2024275.h08v05.061.2024326214609.hdf",
+      "bytes": 17638898,
+      "sha256": "57ee87b36dfdd7b48564228da082d6bb13c649b6e677546e6659a77c0aa905e3"
+    },
+    {
+      "path": "MOD13A3.A2024275.h09v05.061.2024326214942.hdf",
+      "bytes": 21525785,
+      "sha256": "7cccde53ae39ef0f8e1c5a6badc3dd559f6ecbc55a646f470bd4382c171fd66b"
+    },
+    {
+      "path": "MOD13A3.A2024306.h08v05.061.2024338120432.hdf",
+      "bytes": 17724065,
+      "sha256": "7c45887c9a452d5e9db7f7aae19126782cb4ca083de8b18e6a3ba56d77ed1751"
+    },
+    {
+      "path": "MOD13A3.A2024306.h09v05.061.2024338114510.hdf",
+      "bytes": 21550099,
+      "sha256": "db421b38476e748435b243973cc0ce3e093c41515eec26cd0c184782ad6a6623"
+    },
+    {
+      "path": "MOD13A3.A2024336.h08v05.061.2025004001259.hdf",
+      "bytes": 17746577,
+      "sha256": "ed56086c03b2abe735de483746e4ac3f47b13289f0ccfe007d2f6b005edcf486"
+    },
+    {
+      "path": "MOD13A3.A2024336.h09v05.061.2025003235652.hdf",
+      "bytes": 21721866,
+      "sha256": "e6080bc18e2af25466d61d828658cb23d00ed7997328d2f0d6e35ffd9e49a49f"
+    }
+  ],
+  "sanityCheck": "NDVI (DN*0.0001), pixels in bbox with MODLAND QA bits 0-1 <= 1: 2024-01 (n=173299 good/marginal px in box): median 0.212, p5-p95 0.131-0.521; 2024-07: median 0.226, p5-p95 0.129-0.567"
+}

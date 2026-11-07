@@ -70,9 +70,12 @@ class Source:
     @property
     def files_id(self) -> str:
         h = hashlib.sha1()
+        root = Path(settings.prepared_data_dir)
         for f in self.files:
             st = f.stat()
-            h.update(f"{f.name}:{st.st_size}:{int(st.st_mtime)}".encode())
+            # Files in layer subdirectories share names (arizona.parquet), so include the folder.
+            name = f.name if f.parent == root else f"{f.parent.name}/{f.name}"
+            h.update(f"{name}:{st.st_size}:{int(st.st_mtime)}".encode())
         h.update(self.key_column.encode())
         return h.hexdigest()[:16]
 
@@ -237,6 +240,59 @@ def point_values(files: tuple[Path, ...], key_column: str, columns: list[str], c
                     out[c] = None if v is None or (isinstance(v, float) and v != v) else v
                 return out
     return {c: None for c in columns}
+
+
+def descendant_range(cell: int, res: int = SIM_RES) -> tuple[int, int]:
+    """Smallest and largest possible resolution-`res` descendant of `cell`.
+
+    H3 indexes sort by resolution, base cell, then digit by digit, so every resolution-6 key between
+    the two bounds is a descendant: a coarse cell's children are one contiguous slice of a sorted file.
+    """
+    r = (cell >> 52) & 0xF
+    lo = hi = (cell & ~(0xF << 52)) | (res << 52)
+    for k in range(r + 1, res + 1):
+        shift = 3 * (15 - k)
+        lo &= ~(7 << shift)
+        hi = (hi & ~(7 << shift)) | (6 << shift)
+    return lo, hi
+
+
+def range_values(files: tuple[Path, ...], key_column: str, columns: list[str], lo: int, hi: int) -> dict[str, np.ndarray]:
+    """All resolution-6 values with keys in [lo, hi] (a coarse cell's descendants), per column.
+
+    Reads only the row groups whose key statistics overlap the range; NaN marks missing values.
+    """
+    parts: dict[str, list[np.ndarray]] = {c: [] for c in columns}
+    for f in files:
+        ranges = _row_group_ranges(str(f), key_column, f.stat().st_mtime)
+        pf = None
+        for i, (rlo, rhi) in enumerate(ranges):
+            if rhi < lo or rlo > hi:
+                continue
+            pf = pf or pq.ParquetFile(f)
+            t = pf.read_row_group(i, columns=[key_column, *columns])
+            keys = t.column(0).to_numpy(zero_copy_only=False).astype(np.int64).view(np.uint64)
+            a = int(np.searchsorted(keys, np.uint64(lo), side="left"))
+            b = int(np.searchsorted(keys, np.uint64(hi), side="right"))
+            if b <= a:
+                continue
+            for c in columns:
+                col = t.column(c).slice(a, b - a).to_numpy(zero_copy_only=False)
+                parts[c].append(np.asarray(col, dtype=np.float64))
+    return {c: (np.concatenate(p) if p else np.zeros(0)) for c, p in parts.items()}
+
+
+def combine(vals: np.ndarray, agg: str) -> tuple[float | None, int]:
+    """Aggregate children exactly as the display levels do: only children with data count."""
+    v = vals[~np.isnan(vals)]
+    if v.size == 0:
+        return None, 0
+    if agg == "sum":
+        return float(v.sum()), int(v.size)
+    if agg == "mode":
+        uniq, counts = np.unique(v, return_counts=True)
+        return float(uniq[np.argmax(counts)]), int(v.size)  # ties → smallest code, as in _aggregate
+    return float(v.mean()), int(v.size)
 
 
 def quantiles(src: Source, qs: tuple[float, ...], density_area_km2: float | None = None) -> list[float] | None:

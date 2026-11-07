@@ -1,0 +1,35 @@
+{
+  "layer": "pace_chlor_a_uk",
+  "sourceId": "OCEAN-01",
+  "provider": "NASA Ocean Biology Processing Group / Ocean Biology DAAC (OB.DAAC)",
+  "product": "PACE OCI Level-3 Global Mapped Ocean Biogeochemical Properties (chlor_a), monthly, 4 km",
+  "version": "3.2 (V3_2 in file names)",
+  "licence": "NASA open data",
+  "licenceUrl": "https://earthdata.nasa.gov/earth-observation-data/data-use-policy",
+  "attribution": "NASA Ocean Biology Processing Group (2025). PACE OCI Level-3 Global Mapped Ocean Biogeochemical Properties Data, version 3.2. NASA Ocean Biology Distributed Active Archive Center. https://doi.org/10.5067/PACE/OCI/L3M/OC_BGC/3.2",
+  "evidenceType": "satellite retrieval",
+  "retrievedAt": "2026-11-07",
+  "method": "Mean of valid pixels whose centres fall in each res-6 cell inside the region box. PACE OCI L3 mapped monthly chlorophyll-a (OCI algorithm), 4 km; one column per month.",
+  "nativeResolution": "4 km (1/24°)",
+  "sampling": "mean of pixel centres in cell",
+  "period": "Jun-Aug 2025, monthly",
+  "h3Resolution": 6,
+  "units": {
+    "chl_*": "mg/m³"
+  },
+  "region": "uk",
+  "regionBbox": [
+    -8.7,
+    49.8,
+    1.9,
+    60.9
+  ],
+  "inputFiles": [
+    "PACE_OCI.20250601_20250630.L3m.MO.BGC.V3_2.4km_uk.nc",
+    "PACE_OCI.20250701_20250731.L3m.MO.BGC.V3_2.4km_uk.nc",
+    "PACE_OCI.20250801_20250831.L3m.MO.BGC.V3_2.4km_uk.nc"
+  ],
+  "rowCount": 17688,
+  "generatedAt": "2026-11-07T16:46:26+00:00",
+  "script": "scripts/prepare_observation_h3.py"
+}

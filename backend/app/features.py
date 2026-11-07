@@ -101,7 +101,10 @@ class PointLayer:
             (self.lat >= min(lats) - 0.01) & (self.lat <= max(lats) + 0.01)
             & (self.lon >= min(lons) - 0.01) & (self.lon <= max(lons) + 0.01)
         )
-        return np.array([i for i in cand if h3.latlng_to_cell(self.lat[i], self.lon[i], 6) == h3_id], dtype=int)
+        res = h3.get_resolution(h3_id)
+        if max(lons) - min(lons) > 180:  # antimeridian-crossing cell: the bbox prefilter can't be used
+            cand = np.arange(len(self.lat))
+        return np.array([i for i in cand if h3.latlng_to_cell(self.lat[i], self.lon[i], res) == h3_id], dtype=int)
 
 
 class ShapeLayer:

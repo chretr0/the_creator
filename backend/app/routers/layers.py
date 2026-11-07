@@ -147,10 +147,32 @@ def layer_domain(layer_id: str, slice: str | None = None):
     return {"layer": layer.id, "slice": s.id, "domain": _domain(layer.id, s.id), "units": layers.slice_units(layer, s)}
 
 
+def _slice_values(layer: LayerDef, files: tuple, slices: list[Slice], cell: int, res: int) -> dict[str, tuple]:
+    """(value in stored units, children with data) per slice id, for a cell at any resolution ≤ 6."""
+    cols = sorted({s.column for s in slices})
+    if res == h3store.SIM_RES:
+        got = h3store.point_values(files, layer.key_column, cols, cell)
+        return {s.id: (got.get(s.column), None) for s in slices}
+    lo, hi = h3store.descendant_range(cell)
+    got = h3store.range_values(files, layer.key_column, cols, lo, hi)
+    return {s.id: h3store.combine(got[s.column], s.agg or layer.agg) for s in slices}
+
+
+def _attributes(layer: LayerDef, files: tuple, cell: int, res: int) -> list[dict]:
+    """Descriptive columns of a single simulation cell (e.g. Aqueduct's category label)."""
+    if not layer.attributes or res != h3store.SIM_RES:
+        return []
+    got = h3store.point_values(files, layer.key_column, [c for c, _ in layer.attributes], cell)
+    return [{"key": c, "label": label, "value": got[c]} for c, label in layer.attributes if got.get(c) is not None]
+
+
 @lru_cache(maxsize=256)
 def _profile(h3_id: str) -> dict:
     cell = int(h3_id, 16)
+    res = h3.get_resolution(h3_id)
     area = h3.cell_area(h3_id, unit="km^2")
+    lat, lon = h3.cell_to_latlng(h3_id)
+    region = layers.region_at(lat, lon)
     out = []
     for layer in LAYERS:
         by_files: dict[tuple, list[Slice]] = {}
@@ -162,10 +184,9 @@ def _profile(h3_id: str) -> dict:
             continue
         values = []
         for files, slices in by_files.items():
-            cols = sorted({s.column for s in slices})
-            got = h3store.point_values(files, layer.key_column, cols, cell)
+            got = _slice_values(layer, files, slices, cell, res)
             for s in slices:
-                v = got.get(s.column)
+                v, n = got[s.id]
                 if v is not None:
                     v = float(v) / (s.scale or layer.scale)
                 shown = None if v is None else float(_transform(layer, s, np.array([v]), area)[0])
@@ -177,29 +198,47 @@ def _profile(h3_id: str) -> dict:
                     "display": _sig(shown) if shown is not None else None,
                     "units": layers.slice_units(layer, s),
                     "rawUnits": s.units or layer.units or None,
+                    "cellsWithData": n,
+                    "categorical": layers.is_categorical(layer, s),
                 })
         order = {s.id: i for i, s in enumerate(layer.slices)}
         values.sort(key=lambda x: order[x["slice"]])
-        if all(v["value"] is None for v in values) and layer.coverage == "regions":
+        attributes = _attributes(layer, next(iter(by_files)), cell, res)
+        if all(v["value"] is None for v in values) and not attributes and layer.coverage == "regions":
             continue  # outside the prepared regions: say nothing rather than "no data"
         out.append({
             "layer": layer.id,
             "name": layer.name,
             "category": layer.category,
+            "coverage": layer.coverage,
             "categorical": bool(layer.categories),
             "categories": layer.categories,
             "values": values,
+            "attributes": attributes,
+            "source": layers.cell_source(layer, region),
         })
-    return {"h3Id": h3_id, "areaKm2": area, "layers": out}
+    return {
+        "h3Id": h3_id,
+        "resolution": res,
+        "region": region,
+        "areaKm2": area,
+        "simulationCells": h3.cell_to_children_size(h3_id, h3store.SIM_RES),
+        "layers": out,
+    }
 
 
 @router.get("/cells/{h3_id}/profile")
 def cell_profile(h3_id: str):
-    """Every prepared H3 layer's values for one resolution-6 cell (all slices, e.g. monthly series)."""
+    """Every prepared H3 layer's values for one cell (all slices, e.g. monthly series).
+
+    A resolution-6 cell returns its own values. A coarser cell (a zoomed-out display hexagon) returns
+    the same aggregate the map colours it by: the mean, sum or most common class of its resolution-6
+    descendants that have data, with `cellsWithData` saying how many that was.
+    """
     try:
         h3_id = geo.validate_cell(h3_id)
     except geo.InvalidCell as exc:
         raise HTTPException(404, str(exc)) from exc
-    if h3.get_resolution(h3_id) != h3store.SIM_RES:
-        raise HTTPException(422, "Profiles are defined for resolution-6 simulation cells.")
+    if h3.get_resolution(h3_id) > h3store.SIM_RES:
+        raise HTTPException(422, "Profiles are defined for cells of resolution 0 to 6.")
     return _profile(h3_id)

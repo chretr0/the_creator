@@ -1,0 +1,139 @@
+{
+  "id": "OCEAN-01-uk-20261107",
+  "catalogueSourceId": "OCEAN-01",
+  "provider": "NASA Ocean Biology Processing Group / Ocean Biology DAAC (OB.DAAC)",
+  "product": "PACE OCI Level-3 Global Mapped Ocean Biogeochemical Properties (chlor_a), monthly, 4 km",
+  "collection": {
+    "shortName": "PACE_OCI_L3M_BGC",
+    "version": "3.2",
+    "conceptId": "C4184125847-OB_CLOUD"
+  },
+  "version": "3.2 (V3_2 in file names)",
+  "doi": "10.5067/PACE/OCI/L3M/OC_BGC/3.2",
+  "documentationUrl": "https://doi.org/10.5067/PACE/OCI/L3M/OC_BGC/3.2",
+  "accessUrl": "https://obdaac-tea.earthdatacloud.nasa.gov/ob-cumulus-prod-public/",
+  "accessMethod": "earthaccess (NASA Earthdata Cloud HTTPS, Earthdata Login)",
+  "evidenceType": "satellite retrieval",
+  "retrievedAt": "2026-11-07",
+  "licence": {
+    "name": "NASA open data",
+    "url": "https://earthdata.nasa.gov/earth-observation-data/data-use-policy",
+    "attribution": "NASA Ocean Biology Processing Group (2025). PACE OCI Level-3 Global Mapped Ocean Biogeochemical Properties Data, version 3.2. NASA Ocean Biology Distributed Active Archive Center. https://doi.org/10.5067/PACE/OCI/L3M/OC_BGC/3.2",
+    "reviewedAt": "2026-11-07",
+    "notes": "NASA Earth science data are openly shared without restriction on use; cite the collection DOI and acknowledge the DAAC."
+  },
+  "region": "uk",
+  "dataScope": "regional subset (data/README.md 'Data scope')",
+  "query": {
+    "regionBboxWGS84": [
+      -8.7,
+      49.8,
+      1.9,
+      60.9
+    ],
+    "temporal": "2025-06/2025-08 monthly composites",
+    "fileFilter": "L3m.MO, 4km (0p1deg, 8-day and daily skipped)",
+    "variable": "chlor_a"
+  },
+  "processing": "Each global ~130-145 MB file was downloaded to data/raw/_global_tmp/OCEAN-01/, subset to chlor_a and the UK box with xarray .sel on the native 4 km equirectangular grid (lat descending), written to NetCDF4 (zlib) with the original variable/global attributes, and the global file deleted. No resampling or gap filling. Land, cloud and no-retrieval pixels stay NaN (_FillValue -32767), never 0. Arizona is not processed (inland).",
+  "semantics": {
+    "chlor_a": "near-surface chlorophyll-a concentration, mg m^-3, OCI standard algorithm (OCx/CI blend); monthly composite of daily retrievals. Optically complex coastal/estuarine waters (e.g. Thames, Severn) can be biased high by sediment/CDOM. Not fish stock or harvestable biomass."
+  },
+  "granules": [
+    {
+      "granuleId": "PACE_OCI.20250601_20250630.L3m.MO.BGC.V3_2.4km.nc",
+      "start": "2025-06-01T00:00:00Z",
+      "end": "2025-06-30T23:59:59Z",
+      "accessUrl": "https://obdaac-tea.earthdatacloud.nasa.gov/ob-cumulus-prod-public/PACE_OCI.20250601_20250630.L3m.MO.BGC.V3_2.4km.nc",
+      "globalFile": {
+        "name": "PACE_OCI.20250601_20250630.L3m.MO.BGC.V3_2.4km.nc",
+        "bytes": 133410345,
+        "sha256": "9b4432706c2860f1b7f05bd8e54c8188c59cd6819958c6a247e444d390b7b863",
+        "status": "deleted after clipping"
+      },
+      "summary": {
+        "grid": "267 lat x 255 lon",
+        "validPixels": 43265,
+        "nanFraction": 0.365,
+        "chlor_a_mg_m3": {
+          "min": 0.152,
+          "p5": 0.414,
+          "p50": 1.146,
+          "p95": 3.742,
+          "max": 81.002
+        },
+        "outerThamesEstuary_51.3-51.7N_0.8-1.9E_median_mg_m3": 4.421
+      }
+    },
+    {
+      "granuleId": "PACE_OCI.20250701_20250731.L3m.MO.BGC.V3_2.4km.nc",
+      "start": "2025-07-01T00:00:00Z",
+      "end": "2025-07-31T23:59:59Z",
+      "accessUrl": "https://obdaac-tea.earthdatacloud.nasa.gov/ob-cumulus-prod-public/PACE_OCI.20250701_20250731.L3m.MO.BGC.V3_2.4km.nc",
+      "globalFile": {
+        "name": "PACE_OCI.20250701_20250731.L3m.MO.BGC.V3_2.4km.nc",
+        "bytes": 140671814,
+        "sha256": "7ba6ffd4bbe48afb651c01197aedc9ccf44ad436fd20617a43b37a328d91f2e2",
+        "status": "deleted after clipping"
+      },
+      "summary": {
+        "grid": "267 lat x 255 lon",
+        "validPixels": 44235,
+        "nanFraction": 0.35,
+        "chlor_a_mg_m3": {
+          "min": 0.234,
+          "p5": 0.374,
+          "p50": 0.829,
+          "p95": 3.729,
+          "max": 97.42
+        },
+        "outerThamesEstuary_51.3-51.7N_0.8-1.9E_median_mg_m3": 3.57
+      }
+    },
+    {
+      "granuleId": "PACE_OCI.20250801_20250831.L3m.MO.BGC.V3_2.4km.nc",
+      "start": "2025-08-01T00:00:00Z",
+      "end": "2025-08-31T23:59:59Z",
+      "accessUrl": "https://obdaac-tea.earthdatacloud.nasa.gov/ob-cumulus-prod-public/PACE_OCI.20250801_20250831.L3m.MO.BGC.V3_2.4km.nc",
+      "globalFile": {
+        "name": "PACE_OCI.20250801_20250831.L3m.MO.BGC.V3_2.4km.nc",
+        "bytes": 152100211,
+        "sha256": "68b2c2819a39075067412f55598f75ccd7f474671099d5d94bad8883fd6c0fc8",
+        "status": "deleted after clipping"
+      },
+      "summary": {
+        "grid": "267 lat x 255 lon",
+        "validPixels": 44044,
+        "nanFraction": 0.353,
+        "chlor_a_mg_m3": {
+          "min": 0.194,
+          "p5": 0.393,
+          "p50": 0.874,
+          "p95": 3.379,
+          "max": 95.11
+        },
+        "outerThamesEstuary_51.3-51.7N_0.8-1.9E_median_mg_m3": 4.71
+      }
+    }
+  ],
+  "files": [
+    {
+      "path": "PACE_OCI.20250601_20250630.L3m.MO.BGC.V3_2.4km_uk.nc",
+      "bytes": 170534,
+      "sha256": "4b34bde1756e365c84ce427aa249f3f82e7616642daf5606e99128bc803f1767",
+      "granuleId": "PACE_OCI.20250601_20250630.L3m.MO.BGC.V3_2.4km.nc"
+    },
+    {
+      "path": "PACE_OCI.20250701_20250731.L3m.MO.BGC.V3_2.4km_uk.nc",
+      "bytes": 172783,
+      "sha256": "b750402d4ed1ee8ab3b26eeb2c4989643703e70192e24888d06f5260206eeec7",
+      "granuleId": "PACE_OCI.20250701_20250731.L3m.MO.BGC.V3_2.4km.nc"
+    },
+    {
+      "path": "PACE_OCI.20250801_20250831.L3m.MO.BGC.V3_2.4km_uk.nc",
+      "bytes": 171809,
+      "sha256": "80e156427684dfbf54f59982263c84f75ea8578f8fabdd5e61a23e60d6332dd0",
+      "granuleId": "PACE_OCI.20250801_20250831.L3m.MO.BGC.V3_2.4km.nc"
+    }
+  ]
+}
