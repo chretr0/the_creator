@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import {
   IMAGERY_PRODUCTS,
   searchImageryDays,
@@ -20,34 +20,28 @@ type Props = {
   quakes: Hazard<unknown> | null;
   fires: Hazard<unknown> | null;
   fireHint: string | null;
-  imagery: ImageryState | null;
-  onImagery: (s: ImageryState | null) => void;
-  defaultImageryDate: string;
-  view: MapView | null;
 };
 
-const BOUNDARY_LABEL: Record<BoundaryLayerId, [string, string]> = {
-  countries: ["Countries", "all zooms"],
-  admin1: ["States / provinces", "zoom ≥ 3"],
-  us_counties: ["US counties", "zoom ≥ 5"],
+const BOUNDARY_LABEL: Record<BoundaryLayerId, string> = {
+  countries: "Countries",
+  admin1: "States / provinces",
+  us_counties: "US counties",
 };
 
-function StatusNote({ s }: { s?: { loading: boolean; error: string | null } }) {
-  if (!s) return null;
-  if (s.loading) return <span className="muted small right">loading…</span>;
-  if (s.error) return <span className="warn small right" title={s.error}>failed</span>;
+function Note({ s, count }: { s?: { loading: boolean; error: string | null }; count?: number | null }) {
+  if (s?.loading) return <span className="muted small right">Loading…</span>;
+  if (s?.error) return <span className="warn small right" title={s.error}>Unavailable</span>;
+  if (count != null) return <span className="muted small right num">{count.toLocaleString()}</span>;
   return null;
 }
 
-const fmtTime = (iso?: string) => (iso ? iso.replace("T", " ").replace("+00:00", "Z") : "");
-
-export default function ContextPanel(props: Props) {
-  const { toggles, onToggles, status } = props;
+export default function ContextPanel({ toggles, onToggles, status, quakes, fires, fireHint }: Props) {
   const set = (patch: Partial<ContextToggles>) => onToggles({ ...toggles, ...patch });
+  const fireNote = toggles.fires ? (fireHint ?? (fires?.source.available === false ? fires.source.reason : null)) : null;
 
   return (
     <section className="panel">
-      <h2>Context layers</h2>
+      <h2>Context</h2>
 
       <h3>Boundaries</h3>
       {(Object.keys(BOUNDARY_LABEL) as BoundaryLayerId[]).map((id) => (
@@ -57,59 +51,41 @@ export default function ContextPanel(props: Props) {
             checked={toggles.boundaries[id]}
             onChange={() => set({ boundaries: { ...toggles.boundaries, [id]: !toggles.boundaries[id] } })}
           />
-          <span>{BOUNDARY_LABEL[id][0]}</span>
-          <StatusNote s={status[`boundaries:${id}`]} />
-          <span className="muted small right">{BOUNDARY_LABEL[id][1]}</span>
+          <span>{BOUNDARY_LABEL[id]}</span>
+          <Note s={status[`boundaries:${id}`]} />
         </label>
       ))}
 
-      <h3>Connectivity</h3>
+      <h3>Connectivity &amp; hazards</h3>
       <label className="toggle">
         <input type="checkbox" checked={toggles.cables} onChange={() => set({ cables: !toggles.cables })} />
-        <span>Submarine cables & landing points</span>
-        <StatusNote s={status.cables} />
+        <span>Submarine cables</span>
+        <Note s={status.cables} />
       </label>
-      {toggles.cables && (
-        <p className="warn small">
-          © TeleGeography, CC BY-NC-SA 3.0: non-commercial use only. Remove this layer before any commercial
-          use. Owners and capacity are not in the public data.
-        </p>
-      )}
-
-      <h3>Hazards</h3>
       <label className="toggle">
         <input type="checkbox" checked={toggles.earthquakes} onChange={() => set({ earthquakes: !toggles.earthquakes })} />
-        <span>Earthquakes M2.5+, last 7 days</span>
-        <StatusNote s={status.earthquakes} />
+        <span>Earthquakes, last 7 days</span>
+        <Note s={status.earthquakes} count={toggles.earthquakes ? quakes?.records.length : null} />
       </label>
-      {toggles.earthquakes && props.quakes && (
-        <p className="muted small">
-          {props.quakes.records.length} events · USGS · retrieved {fmtTime(props.quakes.source.retrievedAt)}
-          {props.quakes.source.stale && <span className="warn"> · cached copy (USGS unreachable)</span>}
-        </p>
-      )}
       <label className="toggle">
         <input type="checkbox" checked={toggles.fires} onChange={() => set({ fires: !toggles.fires })} />
-        <span>Active fires (VIIRS, 24 h)</span>
-        <StatusNote s={status.fires} />
+        <span>Active fires, last 24 h</span>
+        <Note s={status.fires} count={toggles.fires && fires?.source.available !== false ? fires?.records.length : null} />
       </label>
-      {toggles.fires && (
-        <p className="muted small">
-          {props.fireHint ??
-            (props.fires?.source.available === false
-              ? props.fires.source.reason
-              : props.fires
-                ? `${props.fires.records.length} detections in view · NASA FIRMS · retrieved ${fmtTime(props.fires.source.retrievedAt)}${props.fires.source.stale ? " (cached)" : ""}`
-                : "")}
-        </p>
-      )}
-
-      <ImageryControls {...props} />
+      {fireNote && <p className="muted small sub">{fireNote}</p>}
     </section>
   );
 }
 
-function ImageryControls({ imagery, onImagery, defaultImageryDate, view }: Props) {
+type ImageryProps = {
+  imagery: ImageryState | null;
+  onImagery: (s: ImageryState | null) => void;
+  defaultImageryDate: string;
+  view: MapView | null;
+  children?: ReactNode;
+};
+
+export function ImageryPanel({ imagery, onImagery, defaultImageryDate, view, children }: ImageryProps) {
   const [days, setDays] = useState<ImageryDay[] | null>(null);
   const [searching, setSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -131,18 +107,18 @@ function ImageryControls({ imagery, onImagery, defaultImageryDate, view }: Props
   }
 
   return (
-    <>
-      <h3>Satellite imagery</h3>
+    <section className="panel">
+      <h2>Satellite imagery</h2>
       <label className="toggle">
         <input
           type="checkbox"
           checked={!!imagery}
           onChange={() => onImagery(imagery ? null : { product: "VIIRS", date: defaultImageryDate, opacity: 0.9 })}
         />
-        <span>NASA GIBS true colour</span>
+        <span>True-colour imagery</span>
       </label>
       {imagery && (
-        <>
+        <div className="sub">
           <div className="row">
             <label className="field">
               <span>Product</span>
@@ -161,12 +137,17 @@ function ImageryControls({ imagery, onImagery, defaultImageryDate, view }: Props
               </select>
             </label>
             <label className="field">
-              <span>Date (UTC)</span>
-              <input type="date" value={imagery.date} max={defaultImageryDate} onChange={(e) => onImagery({ ...imagery, date: e.target.value })} />
+              <span>Date</span>
+              <input
+                type="date"
+                value={imagery.date}
+                max={defaultImageryDate}
+                onChange={(e) => onImagery({ ...imagery, date: e.target.value })}
+              />
             </label>
           </div>
           <label className="field">
-            <span>Opacity {Math.round(imagery.opacity * 100)}%</span>
+            <span>Opacity</span>
             <input
               type="range"
               min={0.1}
@@ -176,47 +157,36 @@ function ImageryControls({ imagery, onImagery, defaultImageryDate, view }: Props
               onChange={(e) => onImagery({ ...imagery, opacity: Number(e.target.value) })}
             />
           </label>
-          <p className="muted small">
-            {spec.sensor} · {spec.resolution}.{" "}
-            {spec.cmr
-              ? "Sentinel-2/Landsat only cover a place every few days; blank tiles mean no scene that day."
-              : "Daily global mosaic with swath gaps and clouds."}{" "}
-            Visual context only: nothing here is classified or detected.
-          </p>
           {spec.cmr && (
             <div className="actions">
               <button disabled={!canSearch || searching} onClick={findDays}>
-                {searching ? "Searching…" : "Find dates over this view (30 days)"}
+                {searching ? "Searching…" : "Find clear dates here"}
               </button>
-              {!canSearch && <span className="muted small">zoom to ≥ 6 first</span>}
+              {!canSearch && <span className="muted small" style={{ alignSelf: "center" }}>Zoom in first</span>}
             </div>
           )}
           {error && <p className="warn small">{error}</p>}
           {days && (
-            <ul className="list day-list">
-              {days.length === 0 && <li className="muted small">No {spec.label} scenes over this view in 30 days.</li>}
+            <ul className="list" style={{ marginTop: 8, maxHeight: 220, overflowY: "auto" }}>
+              {days.length === 0 && <li className="muted small">No scenes here in the last 30 days.</li>}
               {days.map((d) => (
                 <li key={d.date}>
                   <button
                     className={`link ${d.date === imagery.date ? "selected" : ""}`}
                     onClick={() => onImagery({ ...imagery, date: d.date })}
                   >
-                    <span className="mono">{d.date}</span>
+                    <span className="num">{d.date}</span>
                     <span className="muted small right">
-                      {d.granules} scene{d.granules > 1 ? "s" : ""} ·{" "}
-                      {d.cloudMin === null
-                        ? "cloud unknown"
-                        : d.cloudMin === d.cloudMax
-                          ? `${Math.round(d.cloudMin)}% cloud`
-                          : `${Math.round(d.cloudMin)}–${Math.round(d.cloudMax!)}% cloud`}
+                      {d.cloudMin === null ? "cloud unknown" : `${Math.round(d.cloudMin)}% cloud`}
                     </span>
                   </button>
                 </li>
               ))}
             </ul>
           )}
-        </>
+        </div>
       )}
-    </>
+      {children}
+    </section>
   );
 }

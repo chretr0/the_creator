@@ -1,0 +1,43 @@
+{
+  "generatedAt": "2026-11-07T14:45:45+00:00",
+  "scenes": [
+    {
+      "id": "S2C_MSIL2A_20250423T175931_R041_T12SWC_20250423T232413",
+      "name": "Sentinel-2 L2A true colour, 2025-04-23 (Globe–Miami)",
+      "file": "S2C_MSIL2A_20250423T175931_R041_T12SWC_20250423T232413.png",
+      "bounds": [
+        -111.05017,
+        33.351092,
+        -110.749362,
+        33.500368
+      ],
+      "acquired": "2025-04-23",
+      "sourceId": "OBS-02",
+      "attribution": "Contains modified Copernicus Sentinel data 2025",
+      "licence": "Copernicus Sentinel data legal notice",
+      "crs": "EPSG:4326",
+      "width": 2400,
+      "height": 1191,
+      "stretch": "linear 1595–3107 DN (2–98th percentile, shared by R,G,B), gamma 0.77; display only"
+    },
+    {
+      "id": "LC08_L2SP_036037_20250628_02_T1",
+      "name": "Landsat 8 L2 true colour, 2025-06-28 (Globe–Miami)",
+      "file": "LC08_L2SP_036037_20250628_02_T1.png",
+      "bounds": [
+        -111.050116,
+        33.300112,
+        -110.699505,
+        33.500593
+      ],
+      "acquired": "2025-06-28",
+      "sourceId": "OBS-04",
+      "attribution": "Landsat imagery courtesy of the U.S. Geological Survey",
+      "licence": "U.S. public domain (USGS)",
+      "crs": "EPSG:4326",
+      "width": 1142,
+      "height": 653,
+      "stretch": "linear 9201–16433 DN (2–98th percentile, shared by R,G,B), gamma 0.77; display only"
+    }
+  ]
+}

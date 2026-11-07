@@ -5,6 +5,7 @@ from pathlib import Path
 
 from fastapi import APIRouter
 
+from app import features, layers
 from app.config import settings
 
 router = APIRouter(prefix="/api", tags=["sources"])
@@ -54,4 +55,44 @@ def sources():
             "layers": layers, "limitations": m.get("limitations", []), "commercialUse": m.get("commercialUse", True),
             "url": m.get("licenceUrl"),
         })
-    return out + LIVE_SOURCES
+    return out + LIVE_SOURCES + _data_layer_sources()
+
+
+def _data_layer_sources() -> list[dict]:
+    """One credit per acquired dataset: H3 layers grouped by source ID, then vector layers."""
+    by_source: dict[str, dict] = {}
+    for layer in layers.LAYERS:
+        if not any(layers.slice_files(s) for s in layer.slices):
+            continue
+        p = layers.provenance(layer)
+        entry = by_source.setdefault(layer.source_id, {
+            "id": f"data-{layer.source_id}",
+            "name": f"{p.get('product') or layer.name} ({layer.source_id})",
+            "provider": p.get("provider"),
+            "licence": p.get("licence") or "see source record",
+            "attribution": p.get("attribution") or p.get("provider") or "",
+            "evidenceType": p.get("evidenceType") or "model_output",
+            "retrievedAt": p.get("retrievedAt"),
+            "url": p.get("licenceUrl") or p.get("documentationUrl"),
+            "layers": [],
+            "limitations": [],
+        })
+        entry["layers"].append(f"h3:{layer.id}")
+        entry["limitations"] += [x for x in layer.limitations if x not in entry["limitations"]]
+    out = list(by_source.values())
+    for m in features.manifest()["layers"]:
+        if not features.available(m):
+            continue
+        out.append({
+            "id": f"features-{m['id']}",
+            "name": f"{m.get('product') or m['name']} ({m.get('sourceId')})",
+            "provider": m.get("provider"),
+            "licence": m.get("licence") or "see source record",
+            "attribution": m.get("attribution") or "",
+            "evidenceType": m.get("evidenceType") or "reported_record",
+            "retrievedAt": m.get("retrievedAt"),
+            "url": m.get("url"),
+            "layers": [f"features:{m['id']}"],
+            "limitations": m.get("limitations", []),
+        })
+    return out

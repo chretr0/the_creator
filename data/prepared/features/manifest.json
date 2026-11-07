@@ -1,0 +1,975 @@
+{
+  "generatedAt": "2026-11-07T14:44:47+00:00",
+  "layers": [
+    {
+      "id": "mrds",
+      "name": "Mineral sites (USGS MRDS)",
+      "sourceId": "GEO-06",
+      "geometry": "point",
+      "file": "mrds.parquet",
+      "regions": [
+        "global"
+      ],
+      "count": 304613,
+      "bbox": [
+        -178.8205,
+        -72.99718,
+        179.1318,
+        80.00096
+      ],
+      "nameField": "name",
+      "categoryField": "devStatus",
+      "categories": [
+        "Past Producer",
+        "Occurrence",
+        "Producer",
+        "Prospect",
+        "Unknown",
+        "Plant"
+      ],
+      "valueField": null,
+      "valueUnits": null,
+      "fields": [
+        {
+          "key": "commodities",
+          "label": "Commodities (primary, secondary, tertiary)",
+          "units": null
+        },
+        {
+          "key": "primaryCommodities",
+          "label": "Primary commodities",
+          "units": null
+        },
+        {
+          "key": "commodityType",
+          "label": "Commodity type",
+          "units": null
+        },
+        {
+          "key": "devStatus",
+          "label": "Development status (as reported)",
+          "units": null
+        },
+        {
+          "key": "operType",
+          "label": "Operation type",
+          "units": null
+        },
+        {
+          "key": "depositType",
+          "label": "Deposit type",
+          "units": null
+        },
+        {
+          "key": "model",
+          "label": "Deposit model",
+          "units": null
+        },
+        {
+          "key": "workType",
+          "label": "Workings",
+          "units": null
+        },
+        {
+          "key": "productionSize",
+          "label": "Production size (as reported)",
+          "units": null
+        },
+        {
+          "key": "country",
+          "label": "Country",
+          "units": null
+        },
+        {
+          "key": "state",
+          "label": "State / province",
+          "units": null
+        },
+        {
+          "key": "county",
+          "label": "County",
+          "units": null
+        },
+        {
+          "key": "recordUrl",
+          "label": "USGS record",
+          "units": null
+        }
+      ],
+      "provider": "U.S. Geological Survey",
+      "product": "Mineral Resources Data System (MRDS)",
+      "licence": "U.S. public domain (USGS)",
+      "attribution": "U.S. Geological Survey, Mineral Resources Data System",
+      "evidenceType": "reported_record",
+      "retrievedAt": "2026-11-07",
+      "url": "https://mrdata.usgs.gov/mrds/",
+      "limitations": [
+        "MRDS is a legacy compilation; USGS stopped systematic updates in 2011 (extract dated 2016-03-15).",
+        "Development status, ownership and production describe the source reports, not current operations.",
+        "No reserves or resource estimates are implied; a 'Producer' may have closed long ago.",
+        "Coverage is thorough for the United States and incomplete elsewhere.",
+        "19 records without valid coordinates were dropped."
+      ]
+    },
+    {
+      "id": "tri_facilities",
+      "name": "Toxics Release Inventory facilities",
+      "sourceId": "IND-02",
+      "geometry": "point",
+      "file": "tri_facilities.parquet",
+      "regions": [
+        "arizona"
+      ],
+      "count": 327,
+      "bbox": [
+        -114.70791,
+        31.35464,
+        -109.27556,
+        36.03343
+      ],
+      "nameField": "name",
+      "categoryField": "industrySector",
+      "categories": [
+        "Nonmetallic Mineral Product",
+        "Fabricated Metals",
+        "Chemicals",
+        "Computers and Electronic Products",
+        "Petroleum Bulk Terminals",
+        "Other",
+        "Primary Metals",
+        "Food",
+        "Plastics and Rubber",
+        "Petroleum",
+        "Transportation Equipment",
+        "Metal Mining"
+      ],
+      "valueField": "totalReleasesLb",
+      "valueUnits": "lb/year",
+      "fields": [
+        {
+          "key": "industrySector",
+          "label": "Industry sector",
+          "units": null
+        },
+        {
+          "key": "year",
+          "label": "Reporting year",
+          "units": null
+        },
+        {
+          "key": "totalReleasesLb",
+          "label": "Total releases",
+          "units": "lb/year"
+        },
+        {
+          "key": "onSiteReleasesLb",
+          "label": "On-site releases",
+          "units": "lb/year"
+        },
+        {
+          "key": "chemicalCount",
+          "label": "Chemicals reported",
+          "units": "count"
+        },
+        {
+          "key": "carcinogenChemicals",
+          "label": "Carcinogens reported (OSHA list)",
+          "units": "count"
+        },
+        {
+          "key": "parentCompany",
+          "label": "Parent company",
+          "units": null
+        },
+        {
+          "key": "city",
+          "label": "City",
+          "units": null
+        },
+        {
+          "key": "county",
+          "label": "County",
+          "units": null
+        }
+      ],
+      "provider": "U.S. EPA",
+      "product": "TRI basic data files (regional folders: state files, e.g. AZ; top level: all-US files from the first run)",
+      "licence": "U.S. public domain (EPA)",
+      "attribution": "U.S. EPA Toxics Release Inventory",
+      "evidenceType": "reported_record",
+      "retrievedAt": "2026-11-07",
+      "url": "https://www.epa.gov/toxics-release-inventory-tri-program/tri-basic-data-files-calendar-years-1987-present",
+      "limitations": [
+        "Self-reported by facilities to US EPA; reporting years 2023–2024, latest year kept per facility.",
+        "Only facilities above TRI thresholds in covered sectors report; absence is not evidence of no releases.",
+        "Totals sum all chemicals regardless of toxicity; a large total is not the same as a large hazard.",
+        "14 chemical rows reported in grams (dioxins) were converted to pounds before summing.",
+        "Covers the whole state of Arizona (state file), which is larger than the Arizona region box."
+      ]
+    },
+    {
+      "id": "wqp_sites",
+      "name": "Water quality monitoring sites (nitrate, arsenic, TDS)",
+      "sourceId": "WATER-04",
+      "geometry": "point",
+      "file": "wqp_sites.parquet",
+      "regions": [
+        "arizona"
+      ],
+      "count": 1071,
+      "bbox": [
+        -113.11117,
+        31.33387,
+        -109.00619,
+        34.49843
+      ],
+      "nameField": "name",
+      "categoryField": "siteType",
+      "categories": [
+        "River/Stream",
+        "Well",
+        "Lake",
+        "Stream",
+        "Other-Surface Water",
+        "River/Stream Intermittent",
+        "River/Stream Ephemeral",
+        "Spring",
+        "River/Stream Perennial",
+        "Reservoir",
+        "Constructed Wetland",
+        "Ditch"
+      ],
+      "valueField": "arsenicMax",
+      "valueUnits": "µg/L",
+      "fields": [
+        {
+          "key": "siteType",
+          "label": "Site type",
+          "units": null
+        },
+        {
+          "key": "organization",
+          "label": "Organization",
+          "units": null
+        },
+        {
+          "key": "measured",
+          "label": "Characteristics measured",
+          "units": null
+        },
+        {
+          "key": "nitrateMax",
+          "label": "Nitrate (as N) max",
+          "units": "mg/L as N"
+        },
+        {
+          "key": "nitrateLatest",
+          "label": "Nitrate (as N) latest",
+          "units": "mg/L as N"
+        },
+        {
+          "key": "nitrateLatestDate",
+          "label": "Nitrate (as N) latest date",
+          "units": null
+        },
+        {
+          "key": "nitrateCount",
+          "label": "Nitrate (as N) results",
+          "units": "count"
+        },
+        {
+          "key": "nitrateUnits",
+          "label": "Nitrate (as N) units",
+          "units": null
+        },
+        {
+          "key": "arsenicMax",
+          "label": "Arsenic max",
+          "units": "µg/L"
+        },
+        {
+          "key": "arsenicLatest",
+          "label": "Arsenic latest",
+          "units": "µg/L"
+        },
+        {
+          "key": "arsenicLatestDate",
+          "label": "Arsenic latest date",
+          "units": null
+        },
+        {
+          "key": "arsenicCount",
+          "label": "Arsenic results",
+          "units": "count"
+        },
+        {
+          "key": "arsenicUnits",
+          "label": "Arsenic units",
+          "units": null
+        },
+        {
+          "key": "tdsMax",
+          "label": "Total dissolved solids max",
+          "units": "mg/L"
+        },
+        {
+          "key": "tdsLatest",
+          "label": "Total dissolved solids latest",
+          "units": "mg/L"
+        },
+        {
+          "key": "tdsLatestDate",
+          "label": "Total dissolved solids latest date",
+          "units": null
+        },
+        {
+          "key": "tdsCount",
+          "label": "Total dissolved solids results",
+          "units": "count"
+        },
+        {
+          "key": "tdsUnits",
+          "label": "Total dissolved solids units",
+          "units": null
+        }
+      ],
+      "provider": "USGS / EPA / NWQMC",
+      "product": "Water Quality Portal WQX3 results (Nitrate, Arsenic, TDS since 2020)",
+      "licence": "U.S. public domain for USGS/EPA outputs; contributor terms apply",
+      "attribution": "Water Quality Portal. National Water Quality Monitoring Council, USGS, EPA. https://doi.org/10.5066/P9QRKUVJ",
+      "evidenceType": "in_situ_observation",
+      "retrievedAt": "2026-11-07",
+      "url": "https://www.waterqualitydata.us/webservices_documentation/",
+      "limitations": [
+        "Results submitted by many organizations to the Water Quality Portal since 2020; methods, fractions (total vs dissolved) and sampling purposes differ.",
+        "Max and latest pool all fractions and media subdivisions (surface water, groundwater) for a site.",
+        "Values were converted to one unit per characteristic: arsenic µg/L, nitrate mg/L as N (NO3 values × 0.2259), TDS mg/L (ppm treated as mg/L).",
+        "Skipped results with incompatible or unknown units/speciation: nitrate 7, arsenic 0, TDS 0.",
+        "Results without a numeric value (mostly non-detects) are not counted: nitrate 297, arsenic 878, TDS 7.",
+        "Some maxima look like unit-entry errors at source (e.g. 4,600 µg/L arsenic at a lake reported as 4.6 mg/L); values are kept as reported.",
+        "A single high value may be a contaminated-site investigation sample, not drinking water; compare with the US EPA arsenic MCL of 10 µg/L and nitrate MCL of 10 mg/L as N only as context."
+      ]
+    },
+    {
+      "id": "nsta_wellbores",
+      "name": "UK offshore wellbores (NSTA)",
+      "sourceId": "IND-04",
+      "geometry": "point",
+      "file": "nsta_wellbores.parquet",
+      "regions": [
+        "uk"
+      ],
+      "count": 13389,
+      "bbox": [
+        -9.84545,
+        48.52442,
+        3.35291,
+        62.65628
+      ],
+      "nameField": "name",
+      "categoryField": "status",
+      "categories": [
+        "Decommissioned",
+        "Suspended",
+        "Constructed",
+        "Constructing"
+      ],
+      "valueField": "totalDepthMdM",
+      "valueUnits": "m",
+      "fields": [
+        {
+          "key": "status",
+          "label": "Well operational status",
+          "units": null
+        },
+        {
+          "key": "completionStatus",
+          "label": "Completion status",
+          "units": null
+        },
+        {
+          "key": "intent",
+          "label": "Current intent",
+          "units": null
+        },
+        {
+          "key": "operator",
+          "label": "Responsible operator",
+          "units": null
+        },
+        {
+          "key": "operatorGroup",
+          "label": "Operator group",
+          "units": null
+        },
+        {
+          "key": "field",
+          "label": "Target field",
+          "units": null
+        },
+        {
+          "key": "fluidTypes",
+          "label": "Fluids encountered",
+          "units": null
+        },
+        {
+          "key": "spudDate",
+          "label": "Spud date",
+          "units": null
+        },
+        {
+          "key": "completionDate",
+          "label": "Completion date",
+          "units": null
+        },
+        {
+          "key": "totalDepthMdM",
+          "label": "Total depth (measured)",
+          "units": "m"
+        },
+        {
+          "key": "totalDepthTvdssM",
+          "label": "Total depth (true vertical, below sea level)",
+          "units": "m"
+        },
+        {
+          "key": "waterDepthM",
+          "label": "Water depth",
+          "units": "m"
+        },
+        {
+          "key": "deviation",
+          "label": "Trajectory",
+          "units": null
+        },
+        {
+          "key": "originStatus",
+          "label": "Well origin status",
+          "units": null
+        },
+        {
+          "key": "wellRegNo",
+          "label": "Registration number",
+          "units": null
+        }
+      ],
+      "provider": "North Sea Transition Authority (NSTA, formerly Oil and Gas Authority)",
+      "product": "UKCS offshore wellbores top holes (WGS84) (ArcGIS item b5752e9f56a949e3ad44a08144e621a8)",
+      "licence": "Open Government Licence v3.0 per data.gov.uk listing; current NSTA layer may be under the NSTA Open User Licence — confirm before public export",
+      "attribution": "Contains information provided by the North Sea Transition Authority and/or other third parties, licensed under the Open Government Licence v3.0.",
+      "evidenceType": "reported_record",
+      "retrievedAt": "2026-11-07",
+      "url": "https://www.data.gov.uk/dataset/37538d3f-c320-4153-ad72-3768a2f6be12/oga-wells-wgs84",
+      "limitations": [
+        "Licence unresolved: the data.gov.uk OGL links return 403 and the live NSTA service references the 'NSTA Open User Licence'; confirm before any public export.",
+        "Points are top-hole (seabed) locations of offshore wellbores on the UK continental shelf; onshore wells are not included.",
+        "Status describes the wellbore (e.g. suspended, decommissioned), not whether a field is producing; it is not evidence of reserves.",
+        "Snapshot of a live service taken 2026-11-07; 'Decomissioned' was corrected to 'Decommissioned'.",
+        "Coverage extends far beyond the UK region box (whole UKCS).",
+        "939 implausible depth values (0 m, negative true vertical depth, or > 13 km) were set to null."
+      ]
+    },
+    {
+      "id": "aqueduct_baseline",
+      "name": "Aqueduct 4.0 baseline water risk",
+      "sourceId": "WATER-06",
+      "geometry": "polygon",
+      "file": "aqueduct_baseline.geojson",
+      "regions": [
+        "arizona",
+        "uk"
+      ],
+      "count": 519,
+      "bbox": [
+        -114.72881,
+        29.83625,
+        11.15511,
+        60.84542
+      ],
+      "nameField": "name",
+      "categoryField": "bwsLabel",
+      "categories": [
+        "Low (<10%)",
+        "No Data",
+        "Low - Medium (10-20%)",
+        "Extremely High (>80%)",
+        "Arid and Low Water Use",
+        "Medium - High (20-40%)",
+        "High (40-80%)"
+      ],
+      "valueField": "bwsScore",
+      "valueUnits": "0–5 score",
+      "fields": [
+        {
+          "key": "bwsLabel",
+          "label": "Baseline water stress",
+          "units": null
+        },
+        {
+          "key": "bwsScore",
+          "label": "Baseline water stress score",
+          "units": "0–5 score"
+        },
+        {
+          "key": "bwdLabel",
+          "label": "Baseline water depletion",
+          "units": null
+        },
+        {
+          "key": "bwdScore",
+          "label": "Baseline water depletion score",
+          "units": "0–5 score"
+        },
+        {
+          "key": "iavLabel",
+          "label": "Interannual variability",
+          "units": null
+        },
+        {
+          "key": "iavScore",
+          "label": "Interannual variability score",
+          "units": "0–5 score"
+        },
+        {
+          "key": "sevLabel",
+          "label": "Seasonal variability",
+          "units": null
+        },
+        {
+          "key": "sevScore",
+          "label": "Seasonal variability score",
+          "units": "0–5 score"
+        },
+        {
+          "key": "gtdLabel",
+          "label": "Groundwater table decline",
+          "units": null
+        },
+        {
+          "key": "gtdScore",
+          "label": "Groundwater table decline score",
+          "units": "0–5 score"
+        },
+        {
+          "key": "rfrLabel",
+          "label": "Riverine flood risk",
+          "units": null
+        },
+        {
+          "key": "rfrScore",
+          "label": "Riverine flood risk score",
+          "units": "0–5 score"
+        },
+        {
+          "key": "cfrLabel",
+          "label": "Coastal flood risk",
+          "units": null
+        },
+        {
+          "key": "cfrScore",
+          "label": "Coastal flood risk score",
+          "units": "0–5 score"
+        },
+        {
+          "key": "drrLabel",
+          "label": "Drought risk",
+          "units": null
+        },
+        {
+          "key": "drrScore",
+          "label": "Drought risk score",
+          "units": "0–5 score"
+        },
+        {
+          "key": "country",
+          "label": "Country",
+          "units": null
+        },
+        {
+          "key": "admin1",
+          "label": "State / region",
+          "units": null
+        },
+        {
+          "key": "areaKm2",
+          "label": "Area",
+          "units": "km²"
+        },
+        {
+          "key": "pfafId",
+          "label": "HydroBASINS level-6 Pfafstetter id",
+          "units": null
+        },
+        {
+          "key": "aqid",
+          "label": "Aquifer id",
+          "units": null
+        }
+      ],
+      "provider": "World Resources Institute",
+      "product": "Aqueduct 4.0 water risk data",
+      "licence": "CC BY 4.0",
+      "attribution": "Kuzma, S. et al. 2023. Aqueduct 4.0: Updated decision-relevant global water risk indicators. WRI. (verify citation on download page)",
+      "evidenceType": "model_output",
+      "retrievedAt": "2026-11-07",
+      "url": "https://www.wri.org/data/aqueduct-global-maps-40-data",
+      "limitations": [
+        "Modelled indicators (Aqueduct 4.0, baseline 1979–2019) on basin × state × aquifer units, not measurements.",
+        "Scores are null where Aqueduct marks 'Arid and low water use' (scored 5 by Aqueduct, category -1) or uses the -9999 sentinel ('No Data', groundwater 'Insignificant Trend'); the label is kept.",
+        "Polygons are whole units touching the region boxes, merged across regions and simplified (~500 m) with shared borders preserved.",
+        "A basin-level score cannot show local wells, transfers (e.g. the Central Arizona Project) or water rights."
+      ]
+    },
+    {
+      "id": "aqueduct_future",
+      "name": "Aqueduct 4.0 projected water stress",
+      "sourceId": "WATER-06",
+      "geometry": "polygon",
+      "file": "aqueduct_future.geojson",
+      "regions": [
+        "arizona",
+        "uk"
+      ],
+      "count": 76,
+      "bbox": [
+        -115.33369,
+        29.50473,
+        3.5125,
+        60.8465
+      ],
+      "nameField": "name",
+      "categoryField": "bws2050BauLabel",
+      "categories": [
+        "Low (<10%)",
+        "Extremely high (>80%)",
+        "Low-medium (10-20%)",
+        "Arid and low water use",
+        "Medium-high (20-40%)",
+        "High (40-80%)"
+      ],
+      "valueField": "bws2050BauScore",
+      "valueUnits": "0–5 score",
+      "fields": [
+        {
+          "key": "bws2030BauLabel",
+          "label": "Water stress 2030 (business as usual, SSP3 RCP7.0)",
+          "units": null
+        },
+        {
+          "key": "bws2030BauScore",
+          "label": "Water stress score 2030 (business as usual, SSP3 RCP7.0)",
+          "units": "0–5 score"
+        },
+        {
+          "key": "bws2030OptLabel",
+          "label": "Water stress 2030 (optimistic, SSP1 RCP2.6)",
+          "units": null
+        },
+        {
+          "key": "bws2030OptScore",
+          "label": "Water stress score 2030 (optimistic, SSP1 RCP2.6)",
+          "units": "0–5 score"
+        },
+        {
+          "key": "bws2030PesLabel",
+          "label": "Water stress 2030 (pessimistic, SSP5 RCP8.5)",
+          "units": null
+        },
+        {
+          "key": "bws2030PesScore",
+          "label": "Water stress score 2030 (pessimistic, SSP5 RCP8.5)",
+          "units": "0–5 score"
+        },
+        {
+          "key": "bws2050BauLabel",
+          "label": "Water stress 2050 (business as usual, SSP3 RCP7.0)",
+          "units": null
+        },
+        {
+          "key": "bws2050BauScore",
+          "label": "Water stress score 2050 (business as usual, SSP3 RCP7.0)",
+          "units": "0–5 score"
+        },
+        {
+          "key": "bws2050OptLabel",
+          "label": "Water stress 2050 (optimistic, SSP1 RCP2.6)",
+          "units": null
+        },
+        {
+          "key": "bws2050OptScore",
+          "label": "Water stress score 2050 (optimistic, SSP1 RCP2.6)",
+          "units": "0–5 score"
+        },
+        {
+          "key": "bws2050PesLabel",
+          "label": "Water stress 2050 (pessimistic, SSP5 RCP8.5)",
+          "units": null
+        },
+        {
+          "key": "bws2050PesScore",
+          "label": "Water stress score 2050 (pessimistic, SSP5 RCP8.5)",
+          "units": "0–5 score"
+        },
+        {
+          "key": "bws2080BauLabel",
+          "label": "Water stress 2080 (business as usual, SSP3 RCP7.0)",
+          "units": null
+        },
+        {
+          "key": "bws2080BauScore",
+          "label": "Water stress score 2080 (business as usual, SSP3 RCP7.0)",
+          "units": "0–5 score"
+        },
+        {
+          "key": "bws2080OptLabel",
+          "label": "Water stress 2080 (optimistic, SSP1 RCP2.6)",
+          "units": null
+        },
+        {
+          "key": "bws2080OptScore",
+          "label": "Water stress score 2080 (optimistic, SSP1 RCP2.6)",
+          "units": "0–5 score"
+        },
+        {
+          "key": "bws2080PesLabel",
+          "label": "Water stress 2080 (pessimistic, SSP5 RCP8.5)",
+          "units": null
+        },
+        {
+          "key": "bws2080PesScore",
+          "label": "Water stress score 2080 (pessimistic, SSP5 RCP8.5)",
+          "units": "0–5 score"
+        },
+        {
+          "key": "pfafId",
+          "label": "HydroBASINS level-6 Pfafstetter id",
+          "units": null
+        }
+      ],
+      "provider": "World Resources Institute",
+      "product": "Aqueduct 4.0 water risk data",
+      "licence": "CC BY 4.0",
+      "attribution": "Kuzma, S. et al. 2023. Aqueduct 4.0: Updated decision-relevant global water risk indicators. WRI. (verify citation on download page)",
+      "evidenceType": "model_output",
+      "retrievedAt": "2026-11-07",
+      "url": "https://www.wri.org/data/aqueduct-global-maps-40-data",
+      "limitations": [
+        "Model projections for 2030/2050/2080 under three scenario pairs; not forecasts of what will happen.",
+        "Projections use HydroBASINS level-6 basins (coarser than the baseline units).",
+        "Scores are null where Aqueduct marks 'Arid and low water use' (scored 5 by Aqueduct, category -1); the label is kept.",
+        "Labels use Aqueduct's future-layer wording, which differs in capitalisation from the baseline labels."
+      ]
+    },
+    {
+      "id": "hydrorivers",
+      "name": "Rivers (HydroRIVERS)",
+      "sourceId": "NET-01",
+      "geometry": "line",
+      "file": "hydrorivers.geojson",
+      "regions": [
+        "arizona",
+        "uk"
+      ],
+      "count": 35567,
+      "bbox": [
+        -119.13542,
+        27.81042,
+        1.94375,
+        59.03125
+      ],
+      "nameField": null,
+      "categoryField": null,
+      "categories": null,
+      "valueField": "disAvCms",
+      "valueUnits": "m³/s",
+      "fields": [
+        {
+          "key": "disAvCms",
+          "label": "Long-term average discharge",
+          "units": "m³/s"
+        },
+        {
+          "key": "ordStra",
+          "label": "Strahler order",
+          "units": null
+        },
+        {
+          "key": "lengthKm",
+          "label": "Reach length",
+          "units": "km"
+        },
+        {
+          "key": "uplandSkm",
+          "label": "Upstream area",
+          "units": "km²"
+        },
+        {
+          "key": "hyrivId",
+          "label": "HydroRIVERS id",
+          "units": null
+        },
+        {
+          "key": "mainRivId",
+          "label": "Main river id (outlet reach)",
+          "units": null
+        },
+        {
+          "key": "nextDown",
+          "label": "Next downstream reach id",
+          "units": null
+        }
+      ],
+      "provider": "WWF / HydroSHEDS",
+      "product": "HydroRIVERS v1.0 (global) + HydroBASINS v1c (all 8 regions, levels 1-12)",
+      "licence": "HydroSHEDS licence agreement",
+      "attribution": "Lehner, B., Grill G. (2013) Hydrol. Process. 27(15): 2171-2186. Data at www.hydrosheds.org",
+      "evidenceType": "model_output",
+      "retrievedAt": "2026-11-07",
+      "url": "https://www.hydrosheds.org/products",
+      "limitations": [
+        "Modelled river network derived from a 15 arc-second DEM; discharge is a long-term (1971–2000) model average, not a gauge reading.",
+        "Small streams were filtered out: only reaches with Strahler order >= 3 or mean discharge >= 1 m³/s are kept.",
+        "Covers the wider hydro boxes (Colorado/Gila/Sonora basins; Great Britain plus all of Ireland), not just the region boxes.",
+        "Lines simplified with a 0.001° (~100 m) tolerance; reach end points are kept so the network stays connected.",
+        "nextDown is null at a river mouth or sink; a downstream reach may be absent if it was filtered out."
+      ]
+    },
+    {
+      "id": "hydrobasins_l6",
+      "name": "River basins, level 6 (HydroBASINS)",
+      "sourceId": "NET-01",
+      "geometry": "polygon",
+      "file": "hydrobasins_l6.geojson",
+      "regions": [
+        "arizona",
+        "uk"
+      ],
+      "count": 314,
+      "bbox": [
+        -120.68715,
+        22.87027,
+        3.5125,
+        60.8465
+      ],
+      "nameField": null,
+      "categoryField": null,
+      "categories": null,
+      "valueField": null,
+      "valueUnits": null,
+      "fields": [
+        {
+          "key": "subArea",
+          "label": "Basin area",
+          "units": "km²"
+        },
+        {
+          "key": "upArea",
+          "label": "Upstream area incl. this basin",
+          "units": "km²"
+        },
+        {
+          "key": "hybasId",
+          "label": "HydroBASINS id",
+          "units": null
+        },
+        {
+          "key": "nextDown",
+          "label": "Next downstream basin id",
+          "units": null
+        },
+        {
+          "key": "pfafId",
+          "label": "Pfafstetter code",
+          "units": null
+        },
+        {
+          "key": "endorheic",
+          "label": "Endorheic (inland sink)",
+          "units": null
+        },
+        {
+          "key": "coastal",
+          "label": "Coastal basin",
+          "units": null
+        }
+      ],
+      "provider": "WWF / HydroSHEDS",
+      "product": "HydroRIVERS v1.0 (global) + HydroBASINS v1c (all 8 regions, levels 1-12)",
+      "licence": "HydroSHEDS licence agreement",
+      "attribution": "Lehner, B., Grill G. (2013) Hydrol. Process. 27(15): 2171-2186. Data at www.hydrosheds.org",
+      "evidenceType": "model_output",
+      "retrievedAt": "2026-11-07",
+      "url": "https://www.hydrosheds.org/products",
+      "limitations": [
+        "Modelled basin boundaries derived from a 15 arc-second DEM; level 6 basins are a few thousand km² each.",
+        "Whole basins touching the hydro boxes are kept, so the layer extends beyond the region boxes.",
+        "Simplified (~500 m) with shared borders preserved; not suitable for parcel-scale decisions."
+      ]
+    },
+    {
+      "id": "neso_carbon_intensity",
+      "name": "GB grid carbon intensity by region (NESO)",
+      "sourceId": "IND-07",
+      "geometry": "table",
+      "file": "neso_carbon_intensity.json",
+      "regions": [
+        "uk"
+      ],
+      "count": 18,
+      "bbox": [
+        -8.65,
+        49.86,
+        1.77,
+        60.86
+      ],
+      "nameField": "shortname",
+      "categoryField": "index",
+      "categories": [
+        "very high",
+        "very low",
+        "moderate",
+        "low",
+        "high"
+      ],
+      "valueField": "forecast",
+      "valueUnits": "gCO2/kWh",
+      "fields": [
+        {
+          "key": "forecast",
+          "label": "Carbon intensity (forecast)",
+          "units": "gCO2/kWh"
+        },
+        {
+          "key": "index",
+          "label": "Intensity band",
+          "units": null
+        },
+        {
+          "key": "generationMix",
+          "label": "Generation mix",
+          "units": "%"
+        },
+        {
+          "key": "dnoregion",
+          "label": "Distribution network operator",
+          "units": null
+        }
+      ],
+      "provider": "National Energy System Operator (NESO)",
+      "product": "Carbon Intensity API (regional snapshot, national intensity + generation mix 1-14 Oct 2025)",
+      "licence": "CC BY 4.0",
+      "attribution": "Carbon Intensity API, National Energy System Operator (NESO), CC BY 4.0",
+      "evidenceType": "model_output",
+      "retrievedAt": "2026-11-07",
+      "url": "https://api.carbonintensity.org.uk/",
+      "limitations": [
+        "One half-hour regional snapshot (2026-11-07T13:30Z to 2026-11-07T14:00Z); values change every 30 minutes.",
+        "Regional values are NESO forecasts (no regional actuals), modelled from the generation mix and flows.",
+        "Great Britain only: Northern Ireland is a separate grid and is not covered.",
+        "Regions 15-18 (England, Scotland, Wales, GB) are aggregates of the 14 DNO regions (aggregate: true).",
+        "The 'national' block is a 1–14 Oct 2025 half-hourly series, not the same period as the snapshot.",
+        "Regions are DNO licence areas; there are no polygons in this file, so join by regionId or shortname."
+      ]
+    }
+  ]
+}

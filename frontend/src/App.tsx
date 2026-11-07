@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import WorldMap, { type MapFocus, type MapView, type Picked } from "./components/WorldMap";
-import ContextPanel from "./components/ContextPanel";
+import ContextPanel, { ImageryPanel } from "./components/ContextPanel";
 import ContextInspector from "./components/ContextInspector";
 import SearchPanel from "./components/SearchPanel";
-import CreditsPanel from "./components/CreditsPanel";
 import PlaceSearch from "./components/PlaceSearch";
 import { CONTEXT_LAYER_IDS, useContextData } from "./lib/useContextData";
 import type { CablePath, Earthquake, Fire, LandingPoint, PowerFeature } from "./lib/context";
@@ -19,9 +18,12 @@ import {
 } from "./lib/query";
 import CellInspector, { type CellSelection } from "./components/CellInspector";
 import ProjectEditor from "./components/ProjectEditor";
-import ScenarioPanel from "./components/ScenarioPanel";
+import ScenarioPanel, { ScenarioSelect } from "./components/ScenarioPanel";
 import LayerPanel from "./components/LayerPanel";
 import FacilityInspector from "./components/FacilityInspector";
+import DataPanel, { RecordsPanel, PreparedScenes } from "./components/DataPanel";
+import { FieldList } from "./components/BaselineBlock";
+import { useDataLayers } from "./lib/useDataLayers";
 import {
   COLOURED_COMPANIES,
   LAYER_META,
@@ -36,8 +38,11 @@ import {
   type InfraManifest,
 } from "./lib/infrastructure";
 import { api, type Project, type ProjectInput, type ProjectType, type Scenario, type ScenarioSummary } from "./lib/api";
-import { normaliseLongitude, simulationCell, SIMULATION_RESOLUTION } from "./lib/h3grid";
+import { normaliseLongitude, simulationCell } from "./lib/h3grid";
 import { PROJECT_TYPES } from "./lib/projectTypes";
+
+type Tab = "details" | "layers" | "search" | "projects";
+const TAB_LABEL: Record<Tab, string> = { details: "Details", layers: "Layers", search: "Search", projects: "Projects" };
 
 type Mode = { kind: "inspect" } | { kind: "place"; type: ProjectType } | { kind: "move"; projectId: string };
 
@@ -79,7 +84,12 @@ export default function App() {
   const [mode, setMode] = useState<Mode>({ kind: "inspect" });
   const [selection, setSelection] = useState<CellSelection | null>(null);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
-  const [grid, setGrid] = useState({ resolution: 0, count: 0, overview: true });
+  const [grid, setGrid] = useState<{ resolution: number; count: number; overview: boolean; cells: string[] }>({
+    resolution: 0,
+    count: 0,
+    overview: true,
+    cells: [],
+  });
   const [focus, setFocus] = useState<MapFocus | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [manifest, setManifest] = useState<InfraManifest | null>(null);
@@ -90,9 +100,10 @@ export default function App() {
   const [selectedFacilityId, setSelectedFacilityId] = useState<string | null>(null);
   const [tilted, setTilted] = useState(false);
   const [view, setView] = useState<MapView | null>(null);
-  const [sideTab, setSideTab] = useState<"layers" | "search" | "sources">("layers");
+  const [sideTab, setSideTab] = useState<Tab>("details");
   const [query, setQuery] = useState<Query>({ dataset: "datacenters", sort: "metric" });
   const ctx = useContextData(view, { country: query.country, admin1: query.admin1 });
+  const data = useDataLayers(view, grid.cells);
 
   const report = useCallback((e: unknown) => setError(e instanceof Error ? e.message : String(e)), []);
 
@@ -171,6 +182,7 @@ export default function App() {
 
   const selectProject = (p: Project) => {
     setSelectedProjectId(p.id);
+    setSideTab("details");
     setSelection({ h3Id: p.h3Id, latitude: p.latitude, longitude: p.longitude });
   };
 
@@ -180,7 +192,10 @@ export default function App() {
       picked?.layerId === "infra-points" || picked?.layerId === "infra-footprints" ? (picked.object as Facility) : null;
     const pickedContext =
       picked && Object.values(CONTEXT_LAYER_IDS).includes(picked.layerId as never) ? picked : null;
+    const pickedMeta = picked ? data.featureMetaForLayer(picked.layerId) : null;
+    const pickedObject = picked?.object;
     setError(null);
+    setSideTab("details");
     const longitude = normaliseLongitude(rawLongitude);
     try {
       if (mode.kind === "place" && scenario) {
@@ -205,10 +220,18 @@ export default function App() {
         const p = pickedFacility.properties;
         setSelectedFacilityId(pickedFacility.id);
         ctx.setSelection(null);
+        data.setPicked(null);
         setSelection({ h3Id: p.h3Id, latitude: p.lat, longitude: p.lon });
         return;
       }
       setSelectedFacilityId(null);
+      if (pickedMeta) {
+        ctx.setSelection(null);
+        data.setPicked({ meta: pickedMeta, feature: data.asFeature(pickedObject) });
+        setSelection({ h3Id: simulationCell(latitude, longitude), latitude, longitude });
+        return;
+      }
+      data.setPicked(null);
       if (pickedContext) {
         ctx.setSelection(pickedContext);
         setSelection({ h3Id: simulationCell(latitude, longitude), latitude, longitude });
@@ -344,6 +367,7 @@ export default function App() {
 
   function pickRecord(r: QueryRecord) {
     setSelectedProjectId(null);
+    setSideTab("details");
     if (r.dataset === "datacenters" || r.dataset === "dams") {
       const f = r.ref as Facility;
       setSelectedFacilityId(f.id);
@@ -357,10 +381,13 @@ export default function App() {
     setFocus({ latitude: r.lat, longitude: r.lon, zoom: 11, nonce: Date.now() });
   }
 
+  const featureTooltip = data.featureTooltip;
   const contextTooltip = useCallback((layerId: string, object: unknown): string | null => {
+    const ft = featureTooltip(layerId, object);
+    if (ft) return ft;
     switch (layerId) {
       case CONTEXT_LAYER_IDS.cables:
-        return `${(object as CablePath).cable.name}\nSubmarine cable · © TeleGeography`;
+        return `${(object as CablePath).cable.name}\nSubmarine cable`;
       case CONTEXT_LAYER_IDS.landing:
         return `${(object as LandingPoint).properties.name}\nCable landing point`;
       case CONTEXT_LAYER_IDS.quakes: {
@@ -383,21 +410,20 @@ export default function App() {
       default:
         return null;
     }
-  }, []);
+  }, [featureTooltip]);
 
-  const activeLayers = useMemo(() => {
-    const a = new Set<string>(["basemap"]);
-    if (tilted) a.add("buildings3d");
-    if (visibleLayers.datacenters) a.add("datacenters");
-    if (visibleLayers.dams) a.add("dams");
-    if (Object.values(ctx.toggles.boundaries).some(Boolean)) a.add("boundaries");
-    if (ctx.toggles.cables) a.add("cables");
-    if (ctx.toggles.earthquakes) a.add("earthquakes");
-    if (ctx.toggles.fires) a.add("fires");
-    if (ctx.imagery) a.add("imagery");
-    if (ctx.power) a.add("power");
-    return a;
-  }, [tilted, visibleLayers, ctx.toggles, ctx.imagery, ctx.power]);
+  const mapLayers = useMemo(() => [...data.featureLayers, ...ctx.layers], [data.featureLayers, ctx.layers]);
+
+  const fitBBox = (bbox: [number, number, number, number] | null, maxZoom = 9) =>
+    setFocus(
+      bbox
+        ? { latitude: (bbox[1] + bbox[3]) / 2, longitude: (bbox[0] + bbox[2]) / 2, bbox, zoom: maxZoom, nonce: Date.now() }
+        : { latitude: 20, longitude: 0, bbox: [-160, -55, 170, 72], zoom: 2, nonce: Date.now() },
+    );
+
+
+  const placingLabel = mode.kind === "place" ? PROJECT_TYPES.find((t) => t.type === mode.type)?.label : null;
+  const hasDetail = !!(selectedProject || selectedFacility || data.picked || ctx.selection || selection);
 
   return (
     <div className="app">
@@ -414,202 +440,235 @@ export default function App() {
           selectedFacilityId={selectedFacilityId}
           tilted={tilted}
           onGridChange={setGrid}
-          contextLayers={ctx.layers}
+          contextLayers={mapLayers}
+          cellFill={data.cellFill}
+          cellTooltip={data.cellTooltip}
+          scene={data.scene}
           contextTooltip={contextTooltip}
           imagery={ctx.rasterImagery}
           onViewChange={setView}
         />
 
-
-
-        {ctx.attributions.length > 0 && <div className="map-credits">{ctx.attributions.join(" · ")}</div>}
-
         <div className="map-top">
-        <div className="toolbar" role="toolbar" aria-label="Map tools">
-          <button className={mode.kind === "inspect" ? "active" : ""} onClick={() => setMode({ kind: "inspect" })}>
-            Inspect
-          </button>
-          <span className="sep" />
-          {PROJECT_TYPES.map((t) => (
-            <button
-              key={t.type}
-              disabled={!scenario}
-              className={mode.kind === "place" && mode.type === t.type ? "active" : ""}
-              onClick={() => setMode({ kind: "place", type: t.type })}
-            >
-              <span className="dot" style={{ background: `rgb(${t.colour})` }} />
-              {t.label}
-            </button>
-          ))}
-        </div>
-        <PlaceSearch
-          index={ctx.searchIndex}
-          onFocus={ctx.ensureSearchIndex}
-          onGo={(h) =>
-            setFocus({
-              latitude: h.lat,
-              longitude: h.lon,
-              zoom: h.bbox ? 12 : 11,
-              bbox: h.bbox,
-              nonce: Date.now(),
-            })
-          }
-        />
-        </div>
-        {crosshair && (
-          <div className="hint">
-            {mode.kind === "place" ? "Click the map to place the project" : "Click the new location"} · Esc to
-            cancel
-          </div>
-        )}
-
-        <div className="status">
-          Display res {grid.resolution}
-          {grid.overview ? " (global overview)" : ""} · {grid.count.toLocaleString()} cells · simulation res{" "}
-          {SIMULATION_RESOLUTION} · Web Mercator: latitudes beyond ±85° not shown
-        </div>
-      </main>
-
-      <aside className="sidebar">
-        <header className="brand">
-          <h1>New Worlds</h1>
-          <p className="muted small">Explore the world that exists, then experiment with worlds that could exist.</p>
-        </header>
-        {error && (
-          <div className="error" role="alert">
-            {error}
-            <button className="ghost" onClick={() => setError(null)} aria-label="Dismiss">
-              ✕
-            </button>
-          </div>
-        )}
-
-        <ScenarioPanel
-          scenarios={scenarios}
-          scenario={scenario}
-          selectedProjectId={selectedProjectId}
-          onSelectProject={(p) => {
-            selectProject(p);
-            setFocus({ latitude: p.latitude, longitude: p.longitude, nonce: Date.now() });
-          }}
-          {...scenarioActions}
-        />
-
-        {selectedFacility && (
-          <FacilityInspector
-            facility={selectedFacility}
-            manifest={manifest}
-            canModel={!!scenario}
-            onModel={modelFacility}
-            onShowCompany={(key) => setCompanyFilter(key)}
-            onZoomTo={() =>
+          <PlaceSearch
+            index={ctx.searchIndex}
+            onFocus={ctx.ensureSearchIndex}
+            onGo={(h) =>
               setFocus({
-                latitude: selectedFacility.properties.lat,
-                longitude: selectedFacility.properties.lon,
-                zoom: 16,
+                latitude: h.lat,
+                longitude: h.lon,
+                zoom: h.bbox ? 12 : 11,
+                bbox: h.bbox,
                 nonce: Date.now(),
               })
             }
-            onClose={() => setSelectedFacilityId(null)}
           />
-        )}
+          <div className="toolbar" role="toolbar" aria-label="Map tools">
+            <span className="label">Add</span>
+            {PROJECT_TYPES.map((t) => {
+              const on = mode.kind === "place" && mode.type === t.type;
+              return (
+                <button
+                  key={t.type}
+                  disabled={!scenario}
+                  className={on ? "active" : ""}
+                  aria-pressed={on}
+                  onClick={() => setMode(on ? { kind: "inspect" } : { kind: "place", type: t.type })}
+                >
+                  <span className="dot" style={{ background: `rgb(${t.colour})` }} />
+                  {t.label}
+                </button>
+              );
+            })}
+            <span className="sep" />
+            <button className={tilted ? "active" : ""} aria-pressed={tilted} onClick={() => setTilted((t) => !t)} title="Tilt the map and show 3D buildings when zoomed in">
+              3D
+            </button>
+          </div>
+        </div>
 
-        {ctx.selection && (
-          <ContextInspector
-            selection={ctx.selection}
-            quakeSource={ctx.quakes?.source ?? null}
-            fireSource={ctx.fires?.source ?? null}
-            powerSource={ctx.power?.source ?? null}
-            onClose={() => ctx.setSelection(null)}
-          />
+        {crosshair && (
+          <div className="hint" role="status">
+            {mode.kind === "place" ? `Click where the ${placingLabel?.toLowerCase()} project should go` : "Click the new location"}
+            <button onClick={() => setMode({ kind: "inspect" })}>Cancel</button>
+          </div>
         )}
+      </main>
 
-        {selectedProject && (
-          <ProjectEditor
-            project={selectedProject}
-            moving={mode.kind === "move"}
-            onSave={saveProject}
-            onMove={() =>
-              setMode(mode.kind === "move" ? { kind: "inspect" } : { kind: "move", projectId: selectedProject.id })
-            }
-            onDelete={deleteProject}
-            onClose={() => setSelectedProjectId(null)}
-          />
-        )}
-
-        {selection ? (
-          <CellInspector
-            selection={selection}
-            projectsInCell={projectsInCell}
-            onSelectProject={(id) => {
-              const p = projects.find((x) => x.id === id);
-              if (p) selectProject(p);
-            }}
-            facilities={allFacilities}
-            power={ctx.power}
-            powerStatus={ctx.status.power}
-            onLoadPower={(lat, lon) => ctx.requestPower(lat, lon)}
-            onClearPower={() => ctx.setPower(null)}
-            onFilterRegion={(country, admin1) => {
-              setQuery((q) => ({ ...q, dataset: "datacenters", country, admin1, sort: "metric" }));
-              setSideTab("search");
-            }}
-          />
-        ) : (
-          <section className="panel">
-            <p className="muted small">Click anywhere on the map to inspect its resolution-6 H3 cell.</p>
-          </section>
-        )}
+      <aside className="sidebar">
+        <header className="side-header">
+          <h1>New Worlds</h1>
+          <ScenarioSelect scenarios={scenarios} scenario={scenario} onSwitch={scenarioActions.onSwitch} />
+        </header>
 
         <nav className="tabs" role="tablist">
-          {(["layers", "search", "sources"] as const).map((t) => (
-            <button key={t} role="tab" aria-selected={sideTab === t} className={sideTab === t ? "active" : ""} onClick={() => setSideTab(t)}>
-              {{ layers: "Layers", search: "Search & rank", sources: "Data sources" }[t]}
+          {(Object.keys(TAB_LABEL) as Tab[]).map((t) => (
+            <button key={t} role="tab" aria-selected={sideTab === t} onClick={() => setSideTab(t)}>
+              {TAB_LABEL[t]}
             </button>
           ))}
         </nav>
 
-        {sideTab === "layers" && (
-          <>
-        <LayerPanel
-          manifest={manifest}
-          loadError={infraError}
-          visible={visibleLayers}
-          onToggle={(id) => setVisibleLayers((v) => ({ ...v, [id]: !v[id] }))}
-          companies={companies}
-          companyFilter={companyFilter}
-          onCompanyFilter={setCompanyFilter}
-          shownCount={facilities.length}
-          tilted={tilted}
-          onTilt={() => setTilted((t) => !t)}
-        />
-            <ContextPanel
-              toggles={ctx.toggles}
-              onToggles={ctx.setToggles}
-              status={ctx.status}
-              quakes={ctx.quakes}
-              fires={ctx.fires}
-              fireHint={ctx.fireHint}
-              imagery={ctx.imagery}
-              onImagery={ctx.setImagery}
-              defaultImageryDate={ctx.defaultImageryDate}
-              view={view}
+        <div className="side-body">
+          {error && (
+            <div className="error" role="alert" style={{ marginTop: 12 }}>
+              {error}
+              <button className="ghost" onClick={() => setError(null)} aria-label="Dismiss">
+                ✕
+              </button>
+            </div>
+          )}
+
+          {sideTab === "details" && (
+            <>
+              {!hasDetail && (
+                <div className="empty">
+                  <strong>Nothing selected</strong>
+                  Click anywhere on the map to see what's there.
+                </div>
+              )}
+
+              {selectedProject && (
+                <ProjectEditor
+                  project={selectedProject}
+                  moving={mode.kind === "move"}
+                  onSave={saveProject}
+                  onMove={() =>
+                    setMode(mode.kind === "move" ? { kind: "inspect" } : { kind: "move", projectId: selectedProject.id })
+                  }
+                  onDelete={deleteProject}
+                  onClose={() => setSelectedProjectId(null)}
+                />
+              )}
+
+              {selectedFacility && (
+                <FacilityInspector
+                  facility={selectedFacility}
+                  canModel={!!scenario}
+                  onModel={modelFacility}
+                  onShowCompany={(key) => {
+                    setCompanyFilter(key);
+                    setSideTab("layers");
+                  }}
+                  onZoomTo={() =>
+                    setFocus({
+                      latitude: selectedFacility.properties.lat,
+                      longitude: selectedFacility.properties.lon,
+                      zoom: 16,
+                      nonce: Date.now(),
+                    })
+                  }
+                  onClose={() => setSelectedFacilityId(null)}
+                />
+              )}
+
+              {data.picked && (
+                <section className="panel">
+                  <div className="panel-head">
+                    <h2>
+                      {String(
+                        (data.picked.meta.nameField && data.picked.feature.properties[data.picked.meta.nameField]) ||
+                          data.picked.feature.properties.id ||
+                          "Unnamed",
+                      )}
+                    </h2>
+                    <button className="ghost" onClick={() => data.setPicked(null)} aria-label="Close">
+                      ✕
+                    </button>
+                  </div>
+                  <p className="subtitle">{data.picked.meta.name}</p>
+                  <FieldList props={data.picked.feature.properties} meta={data.picked.meta} />
+                </section>
+              )}
+
+              {ctx.selection && <ContextInspector selection={ctx.selection} onClose={() => ctx.setSelection(null)} />}
+
+              {selection && (
+                <CellInspector
+                  selection={selection}
+                  projectsInCell={projectsInCell}
+                  onSelectProject={(id) => {
+                    const p = projects.find((x) => x.id === id);
+                    if (p) selectProject(p);
+                  }}
+                  facilities={allFacilities}
+                  power={ctx.power}
+                  powerStatus={ctx.status.power}
+                  onLoadPower={(lat, lon) => ctx.requestPower(lat, lon)}
+                  onClearPower={() => ctx.setPower(null)}
+                  featureManifest={data.manifest}
+                  onShowLayer={(layerId, sliceId) => {
+                    const l = data.catalogue.find((x) => x.id === layerId);
+                    if (l) data.setActive({ layerId, sliceId: sliceId ?? l.defaultSlice });
+                    setSideTab("layers");
+                  }}
+                  onGoTo={(lat, lon) => setFocus({ latitude: lat, longitude: lon, zoom: 11, nonce: Date.now() })}
+                  onFilterRegion={(country, admin1) => {
+                    setQuery((q) => ({ ...q, dataset: "datacenters", country, admin1, sort: "metric" }));
+                    setSideTab("search");
+                  }}
+                />
+              )}
+            </>
+          )}
+
+          {sideTab === "layers" && (
+            <>
+              <DataPanel data={data} onFitBBox={fitBBox} />
+              <LayerPanel
+                manifest={manifest}
+                loadError={infraError}
+                visible={visibleLayers}
+                onToggle={(id) => setVisibleLayers((v) => ({ ...v, [id]: !v[id] }))}
+                companies={companies}
+                companyFilter={companyFilter}
+                onCompanyFilter={setCompanyFilter}
+                shownCount={facilities.length}
+              />
+              <RecordsPanel data={data} />
+              <ContextPanel
+                toggles={ctx.toggles}
+                onToggles={ctx.setToggles}
+                status={ctx.status}
+                quakes={ctx.quakes}
+                fires={ctx.fires}
+                fireHint={ctx.fireHint}
+              />
+              <ImageryPanel
+                imagery={ctx.imagery}
+                onImagery={ctx.setImagery}
+                defaultImageryDate={ctx.defaultImageryDate}
+                view={view}
+              >
+                <PreparedScenes data={data} onFitBBox={fitBBox} />
+              </ImageryPanel>
+            </>
+          )}
+
+          {sideTab === "search" && (
+            <SearchPanel
+              records={searchRecords}
+              available={datasetAvailable}
+              query={query}
+              onQuery={setQuery}
+              near={view?.centre ?? null}
+              onPick={pickRecord}
             />
-          </>
-        )}
+          )}
 
-        {sideTab === "search" && (
-          <SearchPanel
-            records={searchRecords}
-            available={datasetAvailable}
-            query={query}
-            onQuery={setQuery}
-            near={view?.centre ?? null}
-            onPick={pickRecord}
-          />
-        )}
-
-        {sideTab === "sources" && <CreditsPanel sources={ctx.sources} activeLayers={activeLayers} />}
+          {sideTab === "projects" && (
+            <ScenarioPanel
+              scenarios={scenarios}
+              scenario={scenario}
+              selectedProjectId={selectedProjectId}
+              onSelectProject={(p) => {
+                selectProject(p);
+                setFocus({ latitude: p.latitude, longitude: p.longitude, nonce: Date.now() });
+              }}
+              {...scenarioActions}
+            />
+          )}
+        </div>
       </aside>
     </div>
   );

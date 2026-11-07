@@ -5,13 +5,12 @@ for product intent and [CLAUDE-World-Mapping.md](./CLAUDE-World-Mapping.md) for 
 
 ## What works now
 
-- World map (MapLibre GL JS + OpenFreeMap basemap, attribution visible) with an H3 hex grid
+- World map (MapLibre GL JS + OpenFreeMap basemap) with an H3 hex grid
   drawn by deck.gl's `H3HexagonLayer`.
 - Display resolution is picked from an estimated on-screen cell budget (~5,000): a cached global
   overview at res 0–2, then viewport-bounded cells up to res 6. The full world is never enumerated
   at fine resolution, and views that cross the date line are split at ±180°.
-- Click anywhere to inspect its **resolution-6 simulation cell** (ID, centre, area, pentagon/neighbours).
-  The backend independently computes the cell and the inspector confirms both sides agree.
+- Click anywhere to inspect its **resolution-6 simulation cell**: place name, coordinates, area and baseline values.
 - Scenarios: create, rename, delete, and **branch** (copies projects onto the same baseline revision).
 - Projects (data centre, solar, greenhouse): place at the exact clicked coordinate, edit
   name, type, coordinates and assumption parameters, move by clicking the map, and delete.
@@ -27,8 +26,7 @@ for product intent and [CLAUDE-World-Mapping.md](./CLAUDE-World-Mapping.md) for 
   data-centre project" places it in the scenario with blank assumptions. The 3D toggle tilts
   the map so OpenFreeMap's building extrusions show (zoom ≥ 14).
 
-- **Context layers** (also adapted from gods-eye-view), in the sidebar's Layers / Search & rank /
-  Data sources tabs:
+- **Context layers** (also adapted from gods-eye-view), in the sidebar's Layers and Search tabs:
   - *Boundaries:* Natural Earth countries and states/provinces, and US Census counties. All are
     public domain and simplified. The cell inspector shows each cell's region and counts of mapped
     datacenters and dams there.
@@ -45,12 +43,28 @@ for product intent and [CLAUDE-World-Mapping.md](./CLAUDE-World-Mapping.md) for 
     only, not a resource assessment.
   - *Place search:* coordinates and bundled region names resolve without a network call. Other
     names fall back to Photon only when you ask for more results.
-  - *Search & rank:* filters and ranks loaded records by dataset, region, operator, name and
+  - *Search:* filters and ranks loaded records by dataset, region, operator, name and
     value. Unknown values sort last.
-  - *Data sources:* licence, attribution, evidence type and limitations for every source.
-    Attribution for active layers stays visible on the map.
+  - *Data sources:* licence and attribution for every source are served by `GET /api/sources`
+    (not shown in the UI).
 
-Not built yet: measured baseline layers, the resource model, connections, and the comparison view.
+- **Baseline data** (sidebar *Layers* tab, built from `data/prepared/`; see [data/STATUS.md](./data/STATUS.md)):
+  - *Colour cells by* one H3 layer: NASA POWER solar (all-sky and clear-sky GHI), temperature, precipitation and
+    wind (long-term monthly climatology and each month of 2024); GHSL and WorldPop population density; GHSL
+    built-up share; VIIRS 2024 fire detections; SoilGrids pH, organic carbon, clay, sand, nitrogen and bulk
+    density at two depths (global). Copernicus DEM elevation/slope and ESA WorldCover land cover are prepared
+    for the Arizona and UK regions only. Zoomed-out hexagons show the mean (or density of the total, or most
+    common class) of the resolution-6 cells inside them. Grey cells are unknown, never zero.
+  - *Mapped records*: USGS MRDS mineral sites (global, filter by status and text such as a commodity), EPA TRI
+    facilities and Water Quality Portal sites (Arizona), NSTA offshore wellbores (UK), Aqueduct 4.0 baseline and
+    projected water stress, HydroRIVERS and HydroBASINS level 6 (both regions), and the NESO regional carbon
+    intensity table (Great Britain).
+  - Clicking a cell now lists every layer's value for that cell (with monthly charts), the water-risk basin
+    it sits in, rivers crossing it, and the nearest records from each point layer.
+
+Not built yet: the resource model, connections, and the comparison view. Manual-download sources
+([data/MANUAL-DOWNLOADS.md](./data/MANUAL-DOWNLOADS.md)) appear once they are prepared: add a `LayerDef` in
+`backend/app/layers.py` for an H3 layer, or a manifest entry in `data/prepared/features/manifest.json` for records.
 
 ### Refreshing infrastructure data
 
@@ -68,6 +82,30 @@ cd backend && uv run python ../scripts/prepare_reference.py ../../gods-eye-view
 This writes `data/prepared/boundaries/` (public domain) and `data/prepared/cables/` (CC BY-NC-SA 3.0).
 Live-source responses (USGS, FIRMS, Overpass) are cached under `data/cache/` (gitignored), and a stale
 copy is served, marked as stale, when the upstream source is down.
+
+### Preparing the baseline data
+
+Regional H3 layers (DEM, WorldCover, GHSL built-up), record layers and scene PNGs are built from `data/raw/`:
+
+```bash
+uv run --no-project --with rasterio --with duckdb --with pyarrow --with numpy python -I scripts/prepare_regional_h3.py
+```
+
+```bash
+uv run --no-project --with geopandas --with pyogrio --with shapely --with pyarrow --with numpy python -I scripts/prepare_feature_layers.py
+```
+
+```bash
+uv run --no-project --with rasterio --with numpy --with pillow python -I scripts/prepare_imagery.py
+```
+
+`GET /api/imagery` lists the prepared Globe–Miami scene clips (Sentinel-2, Landsat 8), drawn from the Data tab.
+
+### Baseline layer cache
+
+The first request for a layer slice reads its Parquet column once and writes memory-mapped arrays (resolution 6
+plus aggregated levels 0–5) to `data/cache/h3/`. Later requests are lookups. The backend warms the default
+solar layer at start-up. Delete `data/cache/h3/` to rebuild; it is regenerated from `data/prepared/`.
 
 ## Layout
 
@@ -133,6 +171,11 @@ The backend API tests need the Docker database running.
 | `GET /api/hazards/earthquakes`, `GET /api/hazards/fires?west&south&east&north` | USGS / FIRMS (cached) |
 | `GET /api/osm/power?latitude&longitude&radiusKm` | OSM plants, substations, lines (Overpass, cached) |
 | `GET /api/sources` | Data credits registry |
+| `GET /api/layers` | H3 baseline layers: slices, units, colour hints, availability, provenance |
+| `POST /api/layers/{id}/values` `{slice, cells}` | Values for display cells (res 0–6), aligned with the request; `null` = no data |
+| `GET /api/cells/{h3Id}/profile` | Every H3 layer's values (all slices) for one res-6 cell |
+| `GET /api/features`, `GET /api/features/{id}?west&south&east&north&category&q&limit` | Record layers (points, lines, polygons, tables) |
+| `GET /api/cells/{h3Id}/features` | Containing polygons, crossing rivers, and nearest records for one res-6 cell |
 | `POST /api/scenarios/{id}/projects` | Place a project (server computes the res-6 `h3Id`) |
 | `PATCH/DELETE /api/projects/{id}` | Edit / move / remove a project |
 
