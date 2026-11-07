@@ -1,0 +1,30 @@
+{
+  "id": "CTX-04-uk-20261107",
+  "catalogueSourceId": "CTX-04",
+  "provider": "WorldPop, University of Southampton",
+  "product": "Global2 R2025A population counts 2025, 1 km constrained (regional clip)",
+  "version": "R2025A v1",
+  "documentationUrl": "https://hub.worldpop.org/",
+  "accessUrl": "https://data.worldpop.org/GIS/Population/Global_2015_2030/R2025A/2025/0_Mosaicked/v1/1km/constrained/",
+  "accessMethod": "download",
+  "evidenceType": "modelled",
+  "licence": {
+    "name": "CC BY 4.0",
+    "url": "https://creativecommons.org/licenses/by/4.0/",
+    "attribution": "WorldPop (www.worldpop.org), University of Southampton. Global2 R2025A. doi:10.5258/SOTON/WP00845",
+    "reviewedAt": "2026-11-07",
+    "notes": "Auto-generated from catalogue; confirm against the release's own licence before publishing."
+  },
+  "region": "uk",
+  "query": "region=uk; bbox W,S,E,N=-8.7,49.8,1.9,60.9",
+  "dataScope": "regional subset (data/README.md 'Data scope')",
+  "processing": "Clipped from the provider's global file by scripts/clip_to_bbox.py (vectors: whole features intersecting the box; rasters: native grid window; points: inside the box).",
+  "retrievedAt": "2026-11-07",
+  "files": [
+    {
+      "path": "worldpop_2025_1km_uk.tif",
+      "bytes": 1863465,
+      "sha256": "2d03558038f7aeba47efbd6bde3f1238d63a885e769b19b3a470911e51ee6202"
+    }
+  ]
+}

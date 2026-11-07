@@ -1,7 +1,7 @@
 # CLAUDE.data-sources.md — Data integration catalogue
 
 Last reviewed against public provider documentation: **2026-11-07**.  
-Companions: [project overview](./CLAUDE.md), [mapping plan](./CLAUDE.mapping.md).
+Companions: [project overview](./CLAUDE-Project-Overview.md), [mapping plan](./CLAUDE-World-Mapping.md).
 
 ## Purpose and status
 
@@ -531,6 +531,7 @@ These are future source-selection tasks, not hidden integrations. Do not fabrica
 - Rate-limit by provider, use bounded requests, handle 429/temporary errors with documented retry behaviour, and cache permitted results by product/version/region/time.
 - Never download a whole global high-resolution archive merely to populate the visible map. Subset tiles, windows, dates and variables before processing.
 - Freeze a small, licence-compatible demo snapshot. Store its retrieval date; do not describe cached values as live.
+- Big datasets (global file > ~100 MB) are kept for the project regions only (`arizona`, `uk`), never globally: fetch tiles/windows/API boxes for the region, or clip a global-only file and delete the global copy. Hydrology uses a wider upstream box per region. See data/README.md §0.1.
 
 ### Numerical ingestion
 

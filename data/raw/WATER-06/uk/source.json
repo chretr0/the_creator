@@ -1,0 +1,30 @@
+{
+  "id": "WATER-06-uk-20261107",
+  "catalogueSourceId": "WATER-06",
+  "provider": "World Resources Institute",
+  "product": "Aqueduct 4.0 water risk data",
+  "version": "4.0",
+  "documentationUrl": "https://www.wri.org/data/aqueduct-global-maps-40-data",
+  "accessUrl": "https://files.wri.org/aqueduct/aqueduct-4-0-water-risk-data.zip",
+  "accessMethod": "download",
+  "evidenceType": "modelled",
+  "licence": {
+    "name": "CC BY 4.0",
+    "url": "https://creativecommons.org/licenses/by/4.0/",
+    "attribution": "Kuzma, S. et al. 2023. Aqueduct 4.0: Updated decision-relevant global water risk indicators. WRI. (verify citation on download page)",
+    "reviewedAt": "2026-11-07",
+    "notes": "Auto-generated from catalogue; confirm against the release's own licence before publishing."
+  },
+  "region": "uk",
+  "query": "region=uk; bbox W,S,E,N=-8.7,49.8,1.9,60.9",
+  "dataScope": "regional subset (data/README.md 'Data scope')",
+  "processing": "Clipped from the provider's global file by scripts/clip_to_bbox.py (vectors: whole features intersecting the box; rasters: native grid window; points: inside the box).",
+  "retrievedAt": "2026-11-07",
+  "files": [
+    {
+      "path": "aqueduct40_uk.gpkg",
+      "bytes": 5042176,
+      "sha256": "dd2d1794055609e724bfd1970cf64c0af8b572d37c50a3d56869cea74022acae"
+    }
+  ]
+}

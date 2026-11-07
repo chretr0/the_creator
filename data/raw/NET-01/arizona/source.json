@@ -1,0 +1,90 @@
+{
+  "id": "NET-01-arizona-20261107",
+  "catalogueSourceId": "NET-01",
+  "provider": "WWF / HydroSHEDS",
+  "product": "HydroRIVERS v1.0 (global) + HydroBASINS v1c (all 8 regions, levels 1-12)",
+  "version": "HydroRIVERS 1.0; HydroBASINS 1c",
+  "documentationUrl": "https://www.hydrosheds.org/products",
+  "accessUrl": "https://data.hydrosheds.org/file/",
+  "accessMethod": "download",
+  "evidenceType": "modelled",
+  "licence": {
+    "name": "HydroSHEDS licence agreement",
+    "url": "https://www.hydrosheds.org/faq",
+    "attribution": "Lehner, B., Grill G. (2013) Hydrol. Process. 27(15): 2171-2186. Data at www.hydrosheds.org",
+    "reviewedAt": "2026-11-07",
+    "notes": "Auto-generated from catalogue; confirm against the release's own licence before publishing."
+  },
+  "region": "arizona",
+  "query": "region=arizona; bbox W,S,E,N=-119.0,28.0,-105.0,44.0 (hydro box: wider than the region so upstream links stay intact)",
+  "dataScope": "regional subset (data/README.md 'Data scope')",
+  "processing": "Clipped from the provider's global file by scripts/clip_to_bbox.py (vectors: whole features intersecting the box; rasters: native grid window; points: inside the box).",
+  "retrievedAt": "2026-11-07",
+  "files": [
+    {
+      "path": "HydroRIVERS_v10_arizona_hydrobox.gpkg",
+      "bytes": 32669696,
+      "sha256": "7febf6218b7e25111b4eb495706e510e5f24ce5a24221ba9bd1ccc4cbfb57253"
+    },
+    {
+      "path": "hybas_na_lev01_v1c_arizona_hydrobox.gpkg",
+      "bytes": 4575232,
+      "sha256": "5a41e5a8017bdc27f0d1d64fefed5fbebf4d80676d12415d445f61a09e5fd182"
+    },
+    {
+      "path": "hybas_na_lev02_v1c_arizona_hydrobox.gpkg",
+      "bytes": 2834432,
+      "sha256": "6ef823675d8aef70cb978fcf76e6c0450b57bc719a41e24f321121ab7e192a9c"
+    },
+    {
+      "path": "hybas_na_lev03_v1c_arizona_hydrobox.gpkg",
+      "bytes": 1675264,
+      "sha256": "4a36069b1baefa8ba702e818f4c689d02903ea5ee661a7f7942551c62a6a0915"
+    },
+    {
+      "path": "hybas_na_lev04_v1c_arizona_hydrobox.gpkg",
+      "bytes": 1818624,
+      "sha256": "658d4fa9d6fec3905ffef89f5ce0f00584e30bdfbbc63e8c72bbd3a52e5e3f76"
+    },
+    {
+      "path": "hybas_na_lev05_v1c_arizona_hydrobox.gpkg",
+      "bytes": 2412544,
+      "sha256": "aa6a85a862b9b13a3e2feb6671cfc86f8241489c6ad32965c9c112532c646f65"
+    },
+    {
+      "path": "hybas_na_lev06_v1c_arizona_hydrobox.gpkg",
+      "bytes": 3375104,
+      "sha256": "6ac3457e285e06a283cd22388ec3f41d7fe34e4e9df75f420d5e7e8e66dfaf44"
+    },
+    {
+      "path": "hybas_na_lev07_v1c_arizona_hydrobox.gpkg",
+      "bytes": 5746688,
+      "sha256": "906615f144680db99b42f01a3c4942cdeafe9a229b618b43122dd4a3654bc496"
+    },
+    {
+      "path": "hybas_na_lev08_v1c_arizona_hydrobox.gpkg",
+      "bytes": 10436608,
+      "sha256": "52ffed6951fb73245cba873952c394ea096a2e4fd09b4bb497ba908b03ea2d50"
+    },
+    {
+      "path": "hybas_na_lev09_v1c_arizona_hydrobox.gpkg",
+      "bytes": 18284544,
+      "sha256": "d94bd91a401a7a6152b14dee343ff0eeb434bb2f5a938a06748bbc1dc482714f"
+    },
+    {
+      "path": "hybas_na_lev10_v1c_arizona_hydrobox.gpkg",
+      "bytes": 24780800,
+      "sha256": "b27a00cd4afb4c87c928dc74597c3f58f28e3d099556dce2ab72a9127fedcb14"
+    },
+    {
+      "path": "hybas_na_lev11_v1c_arizona_hydrobox.gpkg",
+      "bytes": 26144768,
+      "sha256": "2eb84afe439bfa9ce5637c9dec0874bd5643ae10a5dcc6644dd289b5c1b41249"
+    },
+    {
+      "path": "hybas_na_lev12_v1c_arizona_hydrobox.gpkg",
+      "bytes": 26189824,
+      "sha256": "f936791f55715f4841c4212d26923c9a6cc9e8d29bd0b6e63440a37bd9404046"
+    }
+  ]
+}

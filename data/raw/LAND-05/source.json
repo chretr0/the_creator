@@ -1,0 +1,40 @@
+{
+  "id": "LAND-05-archive-2024",
+  "catalogueSourceId": "LAND-05",
+  "provider": "NASA LANCE / FIRMS (ESDIS)",
+  "product": "FIRMS annual country archive 2024, all countries: VIIRS S-NPP 375 m (VNP14IMG) and MODIS (MCD14ML) active fire / thermal anomalies",
+  "version": "collection version field = 2 (VIIRS, standard/archive quality); files dated 2025-06-19..23 inside zips",
+  "doi": "",
+  "documentationUrl": "https://firms.modaps.eosdis.nasa.gov/country/",
+  "accessUrl": [
+    "https://firms.modaps.eosdis.nasa.gov/data/country/zips/viirs-snpp_2024_all_countries.zip",
+    "https://firms.modaps.eosdis.nasa.gov/data/country/zips/modis_2024_all_countries.zip"
+  ],
+  "accessMethod": "download (no MAP_KEY required)",
+  "evidenceType": "satellite_retrieval",
+  "retrievedAt": "2026-11-07",
+  "files": [
+    {
+      "name": "viirs-snpp_2024_all_countries.zip",
+      "bytes": 371870408,
+      "sha256": "a38653b029d03b48868272ab2cade671d8e2df4cbcbda205ba9fdeae023e66ae"
+    },
+    {
+      "name": "modis_2024_all_countries.zip",
+      "bytes": 84548676,
+      "sha256": "034f357da2022202fec7c4a2916e4128f29536cc1578aef9b04bbf7fd6901389"
+    }
+  ],
+  "derived": {
+    "unzipped/": "per-country CSVs extracted from the zips (218 VIIRS, 206 MODIS) + AttributesReadme.txt",
+    "../../../prepared/firms_viirs_snpp_2024_h3r6.parquet": "scripts/aggregate_firms_h3.py (VIIRS only; H3 r6; exact-duplicate rows removed)"
+  },
+  "licence": {
+    "name": "NASA open data (Earth Science Data and Information Policy); no restrictions on reuse",
+    "url": "https://www.earthdata.nasa.gov/engage/open-data-services-software-policies/data-use-guidance",
+    "attribution": "We acknowledge the use of data and/or imagery from NASA's Fire Information for Resource Management System (FIRMS) (https://earthdata.nasa.gov/firms), part of NASA's Earth Science Data and Information System (ESDIS).",
+    "notes": "AttributesReadme.txt asks redistributors to replicate or link the LANCE/FIRMS disclaimer: https://www.earthdata.nasa.gov/data/tools/firms"
+  },
+  "query": "calendar year 2024, all countries (detections assigned to country files by location)",
+  "semantics": "Each row is a thermal anomaly detection in a 375 m (VIIRS) / 1 km (MODIS) pixel, not a fire perimeter or burned area. type: 0 presumed vegetation fire, 1 active volcano, 2 other static land source (industrial, gas flares, smelters), 3 offshore. frp in MW. confidence VIIRS h/n/l; MODIS 0-100."
+}

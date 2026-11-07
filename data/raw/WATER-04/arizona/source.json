@@ -1,0 +1,39 @@
+{
+  "id": "WATER-04-arizona-20261107",
+  "catalogueSourceId": "WATER-04",
+  "provider": "USGS / EPA / NWQMC",
+  "product": "Water Quality Portal WQX3 results (Nitrate, Arsenic, TDS since 2020)",
+  "version": "WQX 3.0 beta services",
+  "documentationUrl": "https://www.waterqualitydata.us/webservices_documentation/",
+  "accessUrl": "https://www.waterqualitydata.us/wqx3/Result/search",
+  "accessMethod": "api",
+  "evidenceType": "in_situ",
+  "licence": {
+    "name": "U.S. public domain for USGS/EPA outputs; contributor terms apply",
+    "url": "https://www.waterqualitydata.us/",
+    "attribution": "Water Quality Portal. National Water Quality Monitoring Council, USGS, EPA. https://doi.org/10.5066/P9QRKUVJ",
+    "reviewedAt": "2026-11-07",
+    "notes": "Auto-generated from catalogue; confirm against the release's own licence before publishing."
+  },
+  "region": "arizona",
+  "query": "region=arizona; bbox W,S,E,N=-113.5,31.3,-109.0,34.5",
+  "dataScope": "regional subset (data/README.md 'Data scope')",
+  "retrievedAt": "2026-11-07",
+  "files": [
+    {
+      "path": "wqx3_arsenic_2020plus.csv",
+      "bytes": 2684871,
+      "sha256": "bd55fe302bf2dd1af8b247fb68f4549517d959ff5ab6e1228b807308ddc1db75"
+    },
+    {
+      "path": "wqx3_nitrate_2020plus.csv",
+      "bytes": 718391,
+      "sha256": "2b549d630d6b52e1c7e568a26cef44e02ecd4bfcd896f267bcc4f2b282383f06"
+    },
+    {
+      "path": "wqx3_total_dissolved_solids_2020plus.csv",
+      "bytes": 3093533,
+      "sha256": "e0ef7d411e5a6ab3eb26d3c1b2df8d2acf368f3a3252910ff89bc4e33ecf1b82"
+    }
+  ]
+}

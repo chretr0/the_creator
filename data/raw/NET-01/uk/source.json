@@ -1,0 +1,90 @@
+{
+  "id": "NET-01-uk-20261107",
+  "catalogueSourceId": "NET-01",
+  "provider": "WWF / HydroSHEDS",
+  "product": "HydroRIVERS v1.0 (global) + HydroBASINS v1c (all 8 regions, levels 1-12)",
+  "version": "HydroRIVERS 1.0; HydroBASINS 1c",
+  "documentationUrl": "https://www.hydrosheds.org/products",
+  "accessUrl": "https://data.hydrosheds.org/file/",
+  "accessMethod": "download",
+  "evidenceType": "modelled",
+  "licence": {
+    "name": "HydroSHEDS licence agreement",
+    "url": "https://www.hydrosheds.org/faq",
+    "attribution": "Lehner, B., Grill G. (2013) Hydrol. Process. 27(15): 2171-2186. Data at www.hydrosheds.org",
+    "reviewedAt": "2026-11-07",
+    "notes": "Auto-generated from catalogue; confirm against the release's own licence before publishing."
+  },
+  "region": "uk",
+  "query": "region=uk; bbox W,S,E,N=-10.7,49.8,1.9,60.9 (hydro box: wider than the region so upstream links stay intact)",
+  "dataScope": "regional subset (data/README.md 'Data scope')",
+  "processing": "Clipped from the provider's global file by scripts/clip_to_bbox.py (vectors: whole features intersecting the box; rasters: native grid window; points: inside the box).",
+  "retrievedAt": "2026-11-07",
+  "files": [
+    {
+      "path": "HydroRIVERS_v10_uk_hydrobox.gpkg",
+      "bytes": 8536064,
+      "sha256": "a6fbacfdd6e3ff07af655b10a9cbd4622042b19add900ab229e0e53cbef13198"
+    },
+    {
+      "path": "hybas_eu_lev01_v1c_uk_hydrobox.gpkg",
+      "bytes": 4931584,
+      "sha256": "09f6d4c1ead02f5338a0522082b268013bda8e30253c88501e3597da809ac75e"
+    },
+    {
+      "path": "hybas_eu_lev02_v1c_uk_hydrobox.gpkg",
+      "bytes": 1003520,
+      "sha256": "7d058471bc0a4c738deb5cb61798274496d75ab771564e8278f7f9e9d97e802e"
+    },
+    {
+      "path": "hybas_eu_lev03_v1c_uk_hydrobox.gpkg",
+      "bytes": 876544,
+      "sha256": "2a899fd08643948ecdf0c66e49d82c249ca3ac5bc10befe84adcf2c3e7eab0da"
+    },
+    {
+      "path": "hybas_eu_lev04_v1c_uk_hydrobox.gpkg",
+      "bytes": 659456,
+      "sha256": "06cdf6e80b13853ea5db44c2ac34e18817dba98ca6e9d2045688beaa0760b0e4"
+    },
+    {
+      "path": "hybas_eu_lev05_v1c_uk_hydrobox.gpkg",
+      "bytes": 729088,
+      "sha256": "ea3e652ce131d41af3f21569f4cc2ed38e8795f2597018bb72a4eed8705d3756"
+    },
+    {
+      "path": "hybas_eu_lev06_v1c_uk_hydrobox.gpkg",
+      "bytes": 1007616,
+      "sha256": "3e60cc24f2d896c5671f52b2e0be51fb0ea754b8a18f557e5e01a1761055379f"
+    },
+    {
+      "path": "hybas_eu_lev07_v1c_uk_hydrobox.gpkg",
+      "bytes": 1527808,
+      "sha256": "6c6e3c9b99b7b686d7c7a1f60a3fd56a444ec79cb87ae34066c89e725efd1e3b"
+    },
+    {
+      "path": "hybas_eu_lev08_v1c_uk_hydrobox.gpkg",
+      "bytes": 2383872,
+      "sha256": "84bfbe0e8c0590486abd9a0f1e566b828cfe9c7f2d93350815b332402d895b26"
+    },
+    {
+      "path": "hybas_eu_lev09_v1c_uk_hydrobox.gpkg",
+      "bytes": 3772416,
+      "sha256": "a0f9826fa517bd5de41d759e3afdc215c28beea65985627b4bd715a3e4e7c2ac"
+    },
+    {
+      "path": "hybas_eu_lev10_v1c_uk_hydrobox.gpkg",
+      "bytes": 4800512,
+      "sha256": "da53e5a631e58cb5770f56c2a194f713e25db062c0d90284ad366d339abbdee5"
+    },
+    {
+      "path": "hybas_eu_lev11_v1c_uk_hydrobox.gpkg",
+      "bytes": 4923392,
+      "sha256": "4025da9ff784f988c948014dea3821725a0aa18e9ea5d094fcfea9d985c68e81"
+    },
+    {
+      "path": "hybas_eu_lev12_v1c_uk_hydrobox.gpkg",
+      "bytes": 4927488,
+      "sha256": "c28ba1626b98a67290ecb7a380ee115f00778e78fdba277c20ca6decd3e77375"
+    }
+  ]
+}
