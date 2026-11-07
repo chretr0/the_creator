@@ -1,0 +1,144 @@
+{
+  "id": "SOIL-01-uk-20261107",
+  "catalogueSourceId": "SOIL-01",
+  "provider": "ISRIC",
+  "product": "SoilGrids 2.0 (250 m), 6 variables x 2 depths, mean + uncertainty",
+  "version": "latest (2.0)",
+  "documentationUrl": "https://docs.isric.org/globaldata/soilgrids/",
+  "accessUrl": "https://files.isric.org/soilgrids/latest/data/",
+  "accessMethod": "download",
+  "evidenceType": "modelled",
+  "licence": {
+    "name": "CC BY 4.0",
+    "url": "https://creativecommons.org/licenses/by/4.0/",
+    "attribution": "Poggio, L. et al. (2021) SoilGrids 2.0. SOIL 7, 217-240. ISRIC - World Soil Information",
+    "reviewedAt": "2026-11-07",
+    "notes": "Auto-generated from catalogue; confirm against the release's own licence before publishing."
+  },
+  "region": "uk",
+  "query": "region=uk; bbox W,S,E,N=-8.7,49.8,1.9,60.9",
+  "dataScope": "regional subset (data/README.md 'Data scope')",
+  "retrievedAt": "2026-11-07",
+  "files": [
+    {
+      "path": "soilgrids_v2/bdod_0-5cm_mean.tif",
+      "bytes": 3829406,
+      "sha256": "6745f6134508d11cf83dcda53bf487c305f788b601ce5067b9348136dc4f1780"
+    },
+    {
+      "path": "soilgrids_v2/bdod_0-5cm_uncertainty.tif",
+      "bytes": 2160007,
+      "sha256": "6e6237371bf5cbe9dd1d8ff106fc4b267ca0012ac434cdebb9046b10f09a066a"
+    },
+    {
+      "path": "soilgrids_v2/bdod_15-30cm_mean.tif",
+      "bytes": 3568229,
+      "sha256": "03d856319449159b1f617921c047c8f50b8cb1138863efbfcf9940937dead2f3"
+    },
+    {
+      "path": "soilgrids_v2/bdod_15-30cm_uncertainty.tif",
+      "bytes": 2147467,
+      "sha256": "064fee02a183b2b7dc9bdae6b24bab5998db931e9e77888b81c6b877c8bb902f"
+    },
+    {
+      "path": "soilgrids_v2/clay_0-5cm_mean.tif",
+      "bytes": 6106481,
+      "sha256": "2f079191e30301d2ed622036fe9191026aa803a9da74a4b49ee81b6bf34fbda3"
+    },
+    {
+      "path": "soilgrids_v2/clay_0-5cm_uncertainty.tif",
+      "bytes": 4580909,
+      "sha256": "81a931a3e5f59edf7f8cf4bf75a374074fca070404a801061f0455f04f602b70"
+    },
+    {
+      "path": "soilgrids_v2/clay_15-30cm_mean.tif",
+      "bytes": 6164942,
+      "sha256": "0d17cfdaccecfb66e9b3678a49d61948ad975eb5711b8c25dedcbffb5a0eb2f2"
+    },
+    {
+      "path": "soilgrids_v2/clay_15-30cm_uncertainty.tif",
+      "bytes": 4611204,
+      "sha256": "49d008321082d95237c555c04d1d668a061e0ee62c62ec812557ee07553bf191"
+    },
+    {
+      "path": "soilgrids_v2/nitrogen_0-5cm_mean.tif",
+      "bytes": 7804607,
+      "sha256": "bb71c1670c234536ab8c2a0b95706329c37261038b0728067e44ab1ee794001b"
+    },
+    {
+      "path": "soilgrids_v2/nitrogen_0-5cm_uncertainty.tif",
+      "bytes": 4083824,
+      "sha256": "f784ae9bdfe0c3d1a713676948c8654916893a2cc814423d7e1956bc901e4665"
+    },
+    {
+      "path": "soilgrids_v2/nitrogen_15-30cm_mean.tif",
+      "bytes": 7836974,
+      "sha256": "9a140da15ad05137e78d3be1ee6e5ffa0237493e8d6dffc28428b4742897fc97"
+    },
+    {
+      "path": "soilgrids_v2/nitrogen_15-30cm_uncertainty.tif",
+      "bytes": 5634382,
+      "sha256": "c155a341fa5db0caba040c63ef007ca9e6c1f72ff654fc53a0ed9dec0be23f2e"
+    },
+    {
+      "path": "soilgrids_v2/phh2o_0-5cm_mean.tif",
+      "bytes": 2942557,
+      "sha256": "c34984b23706e543132be56ab35710e7d351e86b1929e9776ce7516313a9ed87"
+    },
+    {
+      "path": "soilgrids_v2/phh2o_0-5cm_uncertainty.tif",
+      "bytes": 1600616,
+      "sha256": "67f94247d50f56e6df3d98f6841febf044e713edbbad5bfcf60cc592bbd52479"
+    },
+    {
+      "path": "soilgrids_v2/phh2o_15-30cm_mean.tif",
+      "bytes": 2989092,
+      "sha256": "1085f81f17c50f11f6b795e81520803a9df0ee86679f0172e981e9eba1d51a70"
+    },
+    {
+      "path": "soilgrids_v2/phh2o_15-30cm_uncertainty.tif",
+      "bytes": 1743857,
+      "sha256": "983b7199825d4380043f79a96c9832328f06edc5b70600f7ec08ff1f6bc47d3c"
+    },
+    {
+      "path": "soilgrids_v2/sand_0-5cm_mean.tif",
+      "bytes": 6535793,
+      "sha256": "4294b9a8e509c8f5f1fd995a612fa55f53adf5a176778dd9d0a3b3b98e3e5a22"
+    },
+    {
+      "path": "soilgrids_v2/sand_0-5cm_uncertainty.tif",
+      "bytes": 2799933,
+      "sha256": "cbc95ac761a29b874b2febba853fea6ce355644f184b2af19e1a57a2d24cf940"
+    },
+    {
+      "path": "soilgrids_v2/sand_15-30cm_mean.tif",
+      "bytes": 6575184,
+      "sha256": "69a20308940155170c043e6eb816ada6c4da0e78ad756b728c8448ea36daf047"
+    },
+    {
+      "path": "soilgrids_v2/sand_15-30cm_uncertainty.tif",
+      "bytes": 2842031,
+      "sha256": "de20c515da9e50b400c7568862cdcf8982766a93c5317906365a2182b2a01f1d"
+    },
+    {
+      "path": "soilgrids_v2/soc_0-5cm_mean.tif",
+      "bytes": 8678235,
+      "sha256": "456db2e80a549a195ba8040137e783e4a6f4967ef38fbc0f65f0ab9796ab3e57"
+    },
+    {
+      "path": "soilgrids_v2/soc_0-5cm_uncertainty.tif",
+      "bytes": 5078272,
+      "sha256": "869b7e629aedb715091bb3fd9108bfdf9111872fefd7520aced57af74e94f0e3"
+    },
+    {
+      "path": "soilgrids_v2/soc_15-30cm_mean.tif",
+      "bytes": 8306880,
+      "sha256": "0500cff00a52cf6806430fdd35daa86ccade2a39e0bdd1f42d31a729ff41add3"
+    },
+    {
+      "path": "soilgrids_v2/soc_15-30cm_uncertainty.tif",
+      "bytes": 6210966,
+      "sha256": "8cbcc77306e6ac5b5f52099f3173e5cadf30e4a1a72da418bb795eb2c753c7fc"
+    }
+  ]
+}

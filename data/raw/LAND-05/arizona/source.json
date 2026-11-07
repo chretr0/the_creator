@@ -1,0 +1,35 @@
+{
+  "id": "LAND-05-arizona-20261107",
+  "catalogueSourceId": "LAND-05",
+  "provider": "NASA FIRMS",
+  "product": "VIIRS S-NPP 375 m active fire detections, 2024 annual country archive (regional clip)",
+  "version": "Collection 2 (version field 2)",
+  "documentationUrl": "https://firms.modaps.eosdis.nasa.gov/country/",
+  "accessUrl": "https://firms.modaps.eosdis.nasa.gov/data/country/viirs-snpp/2024/",
+  "accessMethod": "download",
+  "evidenceType": "satellite_retrieval",
+  "licence": {
+    "name": "NASA open data",
+    "url": "https://www.earthdata.nasa.gov/engage/open-data-services-software-policies",
+    "attribution": "We acknowledge the use of data and/or imagery from NASA's Fire Information for Resource Management System (FIRMS) (https://earthdata.nasa.gov/firms), part of NASA's Earth Science Data and Information System (ESDIS).",
+    "reviewedAt": "2026-11-07",
+    "notes": "Auto-generated from catalogue; confirm against the release's own licence before publishing."
+  },
+  "region": "arizona",
+  "query": "region=arizona; bbox W,S,E,N=-113.5,31.3,-109.0,34.5",
+  "dataScope": "regional subset (data/README.md 'Data scope')",
+  "processing": "Clipped from the provider's global file by scripts/clip_to_bbox.py (vectors: whole features intersecting the box; rasters: native grid window; points: inside the box).",
+  "retrievedAt": "2026-11-07",
+  "files": [
+    {
+      "path": "viirs-snpp_2024_Mexico_arizona.csv",
+      "bytes": 7423,
+      "sha256": "c4202a14f0041b137032c093ccc0cef47bc422c1d34060c1a33bf62750b1d2d9"
+    },
+    {
+      "path": "viirs-snpp_2024_United_States_arizona.csv",
+      "bytes": 464139,
+      "sha256": "3415f42b7bd60931bc6234ab5b7ddd22f717f20dc82959caa1921bf87e405ab7"
+    }
+  ]
+}

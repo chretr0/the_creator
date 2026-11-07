@@ -1,0 +1,35 @@
+{
+  "id": "CTX-05-uk-20261107",
+  "catalogueSourceId": "CTX-05",
+  "provider": "European Commission JRC",
+  "product": "GHSL GHS-POP and GHS-BUILT-S, epoch 2025, 30 arcsec, WGS84",
+  "version": "R2023A V1-0",
+  "documentationUrl": "https://human-settlement.emergency.copernicus.eu/download.php",
+  "accessUrl": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/",
+  "accessMethod": "download",
+  "evidenceType": "modelled",
+  "licence": {
+    "name": "CC BY 4.0",
+    "url": "https://creativecommons.org/licenses/by/4.0/",
+    "attribution": "Schiavina M. et al. GHS-POP R2023A; Pesaresi M., Politis P. GHS-BUILT-S R2023A. European Commission, JRC (cite product DOIs)",
+    "reviewedAt": "2026-11-07",
+    "notes": "Auto-generated from catalogue; confirm against the release's own licence before publishing."
+  },
+  "region": "uk",
+  "query": "region=uk; bbox W,S,E,N=-8.7,49.8,1.9,60.9",
+  "dataScope": "regional subset (data/README.md 'Data scope')",
+  "processing": "Clipped from the provider's global file by scripts/clip_to_bbox.py (vectors: whole features intersecting the box; rasters: native grid window; points: inside the box).",
+  "retrievedAt": "2026-11-07",
+  "files": [
+    {
+      "path": "GHS_BUILT_S_E2025_GLOBE_R2023A_4326_30ss_V1_0_uk.tif",
+      "bytes": 1226660,
+      "sha256": "a9cab584e41f8f4db3336654598a5e0be4a735f42f7727798faad4f45be4b8e7"
+    },
+    {
+      "path": "GHS_POP_E2025_GLOBE_R2023A_4326_30ss_V1_0_uk.tif",
+      "bytes": 3167772,
+      "sha256": "ccbc5db3b61d6170123a668613e4fe4fb862535e27943bcbc2aad2501820f508"
+    }
+  ]
+}

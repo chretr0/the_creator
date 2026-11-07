@@ -1,0 +1,124 @@
+{
+  "id": "CTX-03-arizona-20261107",
+  "catalogueSourceId": "CTX-03",
+  "provider": "ESA / Airbus (Copernicus)",
+  "product": "Copernicus DEM GLO-90 (COG, AWS open data)",
+  "version": "as published on copernicus-dem-90m bucket",
+  "documentationUrl": "https://dataspace.copernicus.eu/explore-data/data-collections/copernicus-contributing-missions/collections-description/COP-DEM",
+  "accessUrl": "https://copernicus-dem-90m.s3.amazonaws.com/",
+  "accessMethod": "download",
+  "evidenceType": "satellite_retrieval",
+  "licence": {
+    "name": "Copernicus DEM GLO-90 licence",
+    "url": "https://dataspace.copernicus.eu/sites/default/files/media/files/2025-06/copernicus_contributing_mission_data_access_v2_cop_dem_licenses.pdf",
+    "attribution": "\u00a9 DLR e.V. 2010-2014 and \u00a9 Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved (verify exact text)",
+    "reviewedAt": "2026-11-07",
+    "notes": "Auto-generated from catalogue; confirm against the release's own licence before publishing."
+  },
+  "region": "arizona",
+  "query": "region=arizona; bbox W,S,E,N=-113.5,31.3,-109.0,34.5",
+  "dataScope": "regional subset (data/README.md 'Data scope')",
+  "retrievedAt": "2026-11-07",
+  "files": [
+    {
+      "path": "glo90/Copernicus_DSM_COG_30_N31_00_W110_00_DEM.tif",
+      "bytes": 4743479,
+      "sha256": "923dd24daf60354aff8c1eb149d4878746558099d62b26d8397d33f64078d35d"
+    },
+    {
+      "path": "glo90/Copernicus_DSM_COG_30_N31_00_W111_00_DEM.tif",
+      "bytes": 4824893,
+      "sha256": "f5fd759328b4884690b2023b95352b2fd1da9c0a17364c8107201bedd71aa9d8"
+    },
+    {
+      "path": "glo90/Copernicus_DSM_COG_30_N31_00_W112_00_DEM.tif",
+      "bytes": 4831896,
+      "sha256": "c2438d34949138a3f36639b80af59ec451830f6d138d9ebba63ab268cd0a7b93"
+    },
+    {
+      "path": "glo90/Copernicus_DSM_COG_30_N31_00_W113_00_DEM.tif",
+      "bytes": 4753263,
+      "sha256": "3ed02d9b6fde54b1b1dbd8d9f493360dfb1ff5769026dfee941569bc886c3f70"
+    },
+    {
+      "path": "glo90/Copernicus_DSM_COG_30_N31_00_W114_00_DEM.tif",
+      "bytes": 3520021,
+      "sha256": "ef4756fa6b662c6f17395a9fd3b7dd3076cf9eef2fbc3c2538d7b43042950438"
+    },
+    {
+      "path": "glo90/Copernicus_DSM_COG_30_N32_00_W110_00_DEM.tif",
+      "bytes": 4633582,
+      "sha256": "61562db214c4790c36024258ab45925d50b4d7058264cf4ac5e1c80f0033b2ee"
+    },
+    {
+      "path": "glo90/Copernicus_DSM_COG_30_N32_00_W111_00_DEM.tif",
+      "bytes": 4981827,
+      "sha256": "1fb85baf58dfcd020b3362673252fa81145e2fd0aa0ffeffdd613fa53f820fed"
+    },
+    {
+      "path": "glo90/Copernicus_DSM_COG_30_N32_00_W112_00_DEM.tif",
+      "bytes": 4515879,
+      "sha256": "e453f39d99b47697c284f00d52de7c8504e6fb170c4bc338bd45a83fae4a3b12"
+    },
+    {
+      "path": "glo90/Copernicus_DSM_COG_30_N32_00_W113_00_DEM.tif",
+      "bytes": 4769577,
+      "sha256": "4260237c765f9a601e5c21ebaddffc2b10adf5c32455566621ead1e184018794"
+    },
+    {
+      "path": "glo90/Copernicus_DSM_COG_30_N32_00_W114_00_DEM.tif",
+      "bytes": 4808451,
+      "sha256": "62c65a60fda977ccd17074ac7ec70cefd56f0d99d7de9d71d16e091748e9ca05"
+    },
+    {
+      "path": "glo90/Copernicus_DSM_COG_30_N33_00_W110_00_DEM.tif",
+      "bytes": 4995917,
+      "sha256": "1d65834e0d5a5835d37f6acad0555c75dcc4c09249e644b2a7c1d5a72e9e0bc7"
+    },
+    {
+      "path": "glo90/Copernicus_DSM_COG_30_N33_00_W111_00_DEM.tif",
+      "bytes": 5133561,
+      "sha256": "f2569b071cd95d79fbe4285ee01d0ed1fefa5a7fb364f7f73fdb52920cf33a83"
+    },
+    {
+      "path": "glo90/Copernicus_DSM_COG_30_N33_00_W112_00_DEM.tif",
+      "bytes": 4982977,
+      "sha256": "1084f63791546f3a50c167115a81e30f4bf8f7ca30a9bb75c9f4d79db3f66ac0"
+    },
+    {
+      "path": "glo90/Copernicus_DSM_COG_30_N33_00_W113_00_DEM.tif",
+      "bytes": 4825828,
+      "sha256": "96a64f1919be39313b4e72e51d758b205bab477370f73e669195c0e1b36b350d"
+    },
+    {
+      "path": "glo90/Copernicus_DSM_COG_30_N33_00_W114_00_DEM.tif",
+      "bytes": 4830415,
+      "sha256": "90bc50aa8dbe2fe5fa61ac29837e0e4966bdbf1ed6ab5890eb1114089d61ff64"
+    },
+    {
+      "path": "glo90/Copernicus_DSM_COG_30_N34_00_W110_00_DEM.tif",
+      "bytes": 4483379,
+      "sha256": "904c9ec42dbd576c39a49d5ede711d914f39ddfbecefe8de02d53e2617392bb3"
+    },
+    {
+      "path": "glo90/Copernicus_DSM_COG_30_N34_00_W111_00_DEM.tif",
+      "bytes": 4660669,
+      "sha256": "4f0e78fc2a659562c0db6ab97f94ec7f981dd4abb02830a7be6ab09633072690"
+    },
+    {
+      "path": "glo90/Copernicus_DSM_COG_30_N34_00_W112_00_DEM.tif",
+      "bytes": 4967178,
+      "sha256": "e17894130671fb626446dd8fa5893631ce71a386b578a7dc9f95a840b56d243e"
+    },
+    {
+      "path": "glo90/Copernicus_DSM_COG_30_N34_00_W113_00_DEM.tif",
+      "bytes": 4994184,
+      "sha256": "9a12b91e853f4653c9b1cc944eebab6a626c6a0119bea02d37e6420fa957a830"
+    },
+    {
+      "path": "glo90/Copernicus_DSM_COG_30_N34_00_W114_00_DEM.tif",
+      "bytes": 5084055,
+      "sha256": "f760661e97e0d1f2e27af5db4efbf72c4e7215f25a38d42227032bda4fa6d83c"
+    }
+  ]
+}

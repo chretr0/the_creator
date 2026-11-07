@@ -1,0 +1,30 @@
+{
+  "id": "LAND-05-uk-20261107",
+  "catalogueSourceId": "LAND-05",
+  "provider": "NASA FIRMS",
+  "product": "VIIRS S-NPP 375 m active fire detections, 2024 annual country archive (regional clip)",
+  "version": "Collection 2 (version field 2)",
+  "documentationUrl": "https://firms.modaps.eosdis.nasa.gov/country/",
+  "accessUrl": "https://firms.modaps.eosdis.nasa.gov/data/country/viirs-snpp/2024/",
+  "accessMethod": "download",
+  "evidenceType": "satellite_retrieval",
+  "licence": {
+    "name": "NASA open data",
+    "url": "https://www.earthdata.nasa.gov/engage/open-data-services-software-policies",
+    "attribution": "We acknowledge the use of data and/or imagery from NASA's Fire Information for Resource Management System (FIRMS) (https://earthdata.nasa.gov/firms), part of NASA's Earth Science Data and Information System (ESDIS).",
+    "reviewedAt": "2026-11-07",
+    "notes": "Auto-generated from catalogue; confirm against the release's own licence before publishing."
+  },
+  "region": "uk",
+  "query": "region=uk; bbox W,S,E,N=-8.7,49.8,1.9,60.9",
+  "dataScope": "regional subset (data/README.md 'Data scope')",
+  "processing": "Clipped from the provider's global file by scripts/clip_to_bbox.py (vectors: whole features intersecting the box; rasters: native grid window; points: inside the box).",
+  "retrievedAt": "2026-11-07",
+  "files": [
+    {
+      "path": "viirs-snpp_2024_United_Kingdom_uk.csv",
+      "bytes": 272847,
+      "sha256": "ab7a9f32ffe1608cfd5143c79276ef03991bfd48e3fa0f56bc3b0670ee5ce64f"
+    }
+  ]
+}

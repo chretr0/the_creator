@@ -1,0 +1,54 @@
+{
+  "id": "SOIL-01-soilgrids2-1km-mean-2026-11-07",
+  "catalogueSourceId": "SOIL-01",
+  "provider": "ISRIC - World Soil Information",
+  "product": "SoilGrids 2.0 global soil property maps, 1 km aggregated layers (data_aggregated/1000m), mean predictions",
+  "version": "SoilGrids 2.0 (files tagged Code_version v2.0.0, Outputs_version RUN05, WoSIS data stream 7); server Last-Modified 2022-06-02",
+  "doi": "10.5194/soil-7-217-2021",
+  "documentationUrl": "https://docs.isric.org/globaldata/soilgrids/",
+  "accessUrl": "https://files.isric.org/soilgrids/latest/data_aggregated/1000m/<var>/<var>_<depth>_mean_1000.tif",
+  "accessMethod": "download (HTTPS/WebDAV, no account); scripts/fetch_global_1km.py",
+  "evidenceType": "model_output",
+  "retrievedAt": "2026-11-07",
+  "release": "soilgrids_1km/",
+  "files": [
+    {"name": "soilgrids_1km/phh2o_0-5cm_mean_1000.tif", "url": "https://files.isric.org/soilgrids/latest/data_aggregated/1000m/phh2o/phh2o_0-5cm_mean_1000.tif", "bytes": 78793346, "sha256": "d49a413ffe3d483ed41359855fd548509decfb5930368dcee7cfc3eff55d2d97"},
+    {"name": "soilgrids_1km/phh2o_15-30cm_mean_1000.tif", "url": "https://files.isric.org/soilgrids/latest/data_aggregated/1000m/phh2o/phh2o_15-30cm_mean_1000.tif", "bytes": 78972879, "sha256": "053dfe17ff71e7eb5e686cda1dd9b5e61f982c3b65443161534b2e3ac54c2a0e"},
+    {"name": "soilgrids_1km/soc_0-5cm_mean_1000.tif", "url": "https://files.isric.org/soilgrids/latest/data_aggregated/1000m/soc/soc_0-5cm_mean_1000.tif", "bytes": 224589956, "sha256": "1873108c25b569fc936853f9578d271b92142d40998c9922a7145c9486bd5344"},
+    {"name": "soilgrids_1km/soc_15-30cm_mean_1000.tif", "url": "https://files.isric.org/soilgrids/latest/data_aggregated/1000m/soc/soc_15-30cm_mean_1000.tif", "bytes": 207177268, "sha256": "09b83990d9229359cd895bedf9470a215e75ef6cdb4a8375de5d1ab8cbfdf669"},
+    {"name": "soilgrids_1km/clay_0-5cm_mean_1000.tif", "url": "https://files.isric.org/soilgrids/latest/data_aggregated/1000m/clay/clay_0-5cm_mean_1000.tif", "bytes": 191530251, "sha256": "20f699cc64686bb5696e395f709232e5957ea3c6a4b39f6676517a502033f424"},
+    {"name": "soilgrids_1km/clay_15-30cm_mean_1000.tif", "url": "https://files.isric.org/soilgrids/latest/data_aggregated/1000m/clay/clay_15-30cm_mean_1000.tif", "bytes": 193957642, "sha256": "ff3c3fc8075c668e4861b655310d03c4e33139a45e4bf2bae308b30a7162be7a"},
+    {"name": "soilgrids_1km/sand_0-5cm_mean_1000.tif", "url": "https://files.isric.org/soilgrids/latest/data_aggregated/1000m/sand/sand_0-5cm_mean_1000.tif", "bytes": 198827692, "sha256": "fab9afdd9e576d816499142914c259e83409640f5d91a6aef000126de8cafdd0"},
+    {"name": "soilgrids_1km/sand_15-30cm_mean_1000.tif", "url": "https://files.isric.org/soilgrids/latest/data_aggregated/1000m/sand/sand_15-30cm_mean_1000.tif", "bytes": 199362307, "sha256": "69d56d1577c29e111d9bb5748d3e154fc367c87ee610c0c4f6bed6841c154305"},
+    {"name": "soilgrids_1km/nitrogen_0-5cm_mean_1000.tif", "url": "https://files.isric.org/soilgrids/latest/data_aggregated/1000m/nitrogen/nitrogen_0-5cm_mean_1000.tif", "bytes": 208586750, "sha256": "a7c484c3da23032ed2657093ee728193e35484464e532a215692ef2be17d22de"},
+    {"name": "soilgrids_1km/nitrogen_15-30cm_mean_1000.tif", "url": "https://files.isric.org/soilgrids/latest/data_aggregated/1000m/nitrogen/nitrogen_15-30cm_mean_1000.tif", "bytes": 191671233, "sha256": "e9a90afb0dc711f70d55aee27398e6d9eac7ffca9c7b990cc625384ce105e4de"},
+    {"name": "soilgrids_1km/bdod_0-5cm_mean_1000.tif", "url": "https://files.isric.org/soilgrids/latest/data_aggregated/1000m/bdod/bdod_0-5cm_mean_1000.tif", "bytes": 114696796, "sha256": "05d76fc4ced9b47a132bd58e98a4c58e318801b977223381a54c5823907044ee"},
+    {"name": "soilgrids_1km/bdod_15-30cm_mean_1000.tif", "url": "https://files.isric.org/soilgrids/latest/data_aggregated/1000m/bdod/bdod_15-30cm_mean_1000.tif", "bytes": 108464241, "sha256": "d29bdd372ba05d7811359531bbbf9933d6ac19a47ce0ae90cbb29e73b8347099"}
+  ],
+  "checksumVerification": "All 12 sha256 values match ISRIC's published <var>/checksum.sha256.txt.",
+  "nativeGrid": "Interrupted Goode Homolosine (custom WKT 'Homolosine', WGS84 datum; ~ESRI:54052), 1000 m pixels, 39812 x 14509, int16, nodata -32768, origin (-19949750, 8361000)",
+  "units": {
+    "note": "Values are stored as integers in 'mapped units'. Divide by conversionFactor to get conventional units (ISRIC SoilGrids FAQ table, https://docs.isric.org/globaldata/soilgrids/SoilGrids_faqs_01.html, checked 2026-11-07). The prepared Parquet files keep the mapped units unchanged.",
+    "phh2o":    {"meaning": "Soil pH in water (H2O)", "mappedUnits": "pH x 10", "conversionFactor": 10, "conventionalUnits": "pH"},
+    "soc":      {"meaning": "Soil organic carbon content (fine earth fraction)", "mappedUnits": "dg/kg", "conversionFactor": 10, "conventionalUnits": "g/kg"},
+    "clay":     {"meaning": "Clay (<0.002 mm) content of fine earth fraction", "mappedUnits": "g/kg", "conversionFactor": 10, "conventionalUnits": "g/100g (%)"},
+    "sand":     {"meaning": "Sand (>0.05 mm) content of fine earth fraction", "mappedUnits": "g/kg", "conversionFactor": 10, "conventionalUnits": "g/100g (%)"},
+    "nitrogen": {"meaning": "Total nitrogen", "mappedUnits": "cg/kg", "conversionFactor": 100, "conventionalUnits": "g/kg"},
+    "bdod":     {"meaning": "Bulk density of the fine earth fraction", "mappedUnits": "cg/cm3", "conversionFactor": 100, "conventionalUnits": "kg/dm3"}
+  },
+  "depths": ["0-5cm", "15-30cm"],
+  "uncertainty": "No uncertainty (or Q0.05/Q0.95) layers are published in data_aggregated/1000m (directory listing checked 2026-11-07: mean only; nitrogen also has a 5000 m mean). Uncertainty at 250 m exists under https://files.isric.org/soilgrids/latest/data/ and as regional clips in soilgrids_v2/.",
+  "masking": "SoilGrids leaves urban/built-up areas, water bodies and permanent ice as nodata (e.g. central Phoenix is nodata). Nodata stays null in all derived products.",
+  "derived": {
+    "reprojected": "soilgrids_1km/epsg4326/<var>_<depth>_mean_4326.tif via scripts/reproject_to_4326.py: GDAL WarpedVRT, nearest neighbour, EPSG:4326, 1/120 deg (43200 x 21600, -180..180, -90..90), int16, nodata -32768 preserved. Intermediate files, regenerable.",
+    "h3": "data/prepared/soilgrids_<var>_<depth>_mean_h3r6.parquet via scripts/aggregate_raster_to_h3.py --agg mean (pixel-centre assignment to H3 res 6, unweighted mean of valid pixels; columns h3 uint64, value float32 in mapped units, n_valid)."
+  },
+  "licence": {
+    "name": "CC BY 4.0",
+    "url": "https://creativecommons.org/licenses/by/4.0/",
+    "attribution": "Poggio, L. et al. (2021) SoilGrids 2.0: producing soil information for the globe with quantified spatial uncertainty. SOIL 7, 217–240. https://doi.org/10.5194/soil-7-217-2021. Data: ISRIC - World Soil Information, SoilGrids 2.0 (CC BY 4.0).",
+    "notes": "Indicate modification when displaying derived H3 values (reprojected to EPSG:4326 and averaged to H3 resolution 6). Modelled predictions, not measurements.",
+    "reviewedAt": "2026-11-07"
+  },
+  "query": "global; variables phh2o, soc, clay, sand, nitrogen, bdod; depths 0-5cm and 15-30cm; statistic mean; 1000 m aggregated product"
+}

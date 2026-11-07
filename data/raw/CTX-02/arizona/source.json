@@ -1,0 +1,224 @@
+{
+  "id": "CTX-02-arizona-20261107",
+  "catalogueSourceId": "CTX-02",
+  "provider": "NASA Langley POWER",
+  "product": "POWER API climatology + monthly 2024 point series (RE community)",
+  "version": "API v2.x (see header in each JSON)",
+  "documentationUrl": "https://power.larc.nasa.gov/docs/services/api/",
+  "accessUrl": "https://power.larc.nasa.gov/api/temporal/",
+  "accessMethod": "api",
+  "evidenceType": "modelled",
+  "licence": {
+    "name": "NASA open data (verify POWER acknowledgement)",
+    "url": "https://power.larc.nasa.gov/",
+    "attribution": "These data were obtained from the NASA Langley Research Center (LaRC) POWER Project funded through the NASA Earth Science/Applied Science Program.",
+    "reviewedAt": "2026-11-07",
+    "notes": "Auto-generated from catalogue; confirm against the release's own licence before publishing."
+  },
+  "region": "arizona",
+  "query": "region=arizona; bbox W,S,E,N=-113.5,31.3,-109.0,34.5",
+  "dataScope": "regional subset (data/README.md 'Data scope')",
+  "retrievedAt": "2026-11-07",
+  "files": [
+    {
+      "path": "monthly_2024/31.5_-109.5.json",
+      "bytes": 1286,
+      "sha256": "537101a227c2455bcfa25f8f79633746d8f19032800c29aa8878fe8a2968c6cc"
+    },
+    {
+      "path": "monthly_2024/31.5_-110.5.json",
+      "bytes": 1286,
+      "sha256": "a79838c96d81de3ecb651bcc8423fa35abde1b49f12784417b73a5fc651298b3"
+    },
+    {
+      "path": "monthly_2024/31.5_-111.5.json",
+      "bytes": 1283,
+      "sha256": "09c4176e2c8b26f3f00675df0cb4d5d11be58351d197cc598e8e8676f9cf9f10"
+    },
+    {
+      "path": "monthly_2024/31.5_-112.5.json",
+      "bytes": 1285,
+      "sha256": "be9fc4d5edfc1e4b49949c9635d87031d50d93b171b1e35b00b031599c6b947a"
+    },
+    {
+      "path": "monthly_2024/31.5_-113.5.json",
+      "bytes": 1283,
+      "sha256": "77f31580eeba70c6e24644e4a759bec394beacb1ba75d15856577367ea01cbe3"
+    },
+    {
+      "path": "monthly_2024/32.5_-109.5.json",
+      "bytes": 1285,
+      "sha256": "551f2b9657249e2d29b769217edb23226865178f9189a8be749859fbcea81c05"
+    },
+    {
+      "path": "monthly_2024/32.5_-110.5.json",
+      "bytes": 1285,
+      "sha256": "e9d3f5866e94306e027251b6784af8c4455c788f9bafb0bb5ce7a19f70ff80f8"
+    },
+    {
+      "path": "monthly_2024/32.5_-111.5.json",
+      "bytes": 1286,
+      "sha256": "eccdbfae97224bbe1788d4775d4984f05b9e0d130d88608add82843e504ed774"
+    },
+    {
+      "path": "monthly_2024/32.5_-112.5.json",
+      "bytes": 1287,
+      "sha256": "ab9425bdd4cbdc3c2f0f38768c7aed4d326fcc40b1f87d979334897a4d5c28d7"
+    },
+    {
+      "path": "monthly_2024/32.5_-113.5.json",
+      "bytes": 1280,
+      "sha256": "008218d3cf3de0709b1892712eeb92e8b886775a2f6ffe41303fc346bf2d94ac"
+    },
+    {
+      "path": "monthly_2024/33.5_-109.5.json",
+      "bytes": 1286,
+      "sha256": "03659358dd2116c5c3996e8889db9934b13e91d72015cb00848889b305ef1e76"
+    },
+    {
+      "path": "monthly_2024/33.5_-110.5.json",
+      "bytes": 1284,
+      "sha256": "85bb604a85e86ff4462eca6785ecbd5334072b6e683e46eb9a69afef676c4439"
+    },
+    {
+      "path": "monthly_2024/33.5_-111.5.json",
+      "bytes": 1285,
+      "sha256": "65bac0001146c7e5e5f99e37cd70c0100a0053336f89fa20a5e7fddd4c89062d"
+    },
+    {
+      "path": "monthly_2024/33.5_-112.5.json",
+      "bytes": 1285,
+      "sha256": "f8c01ff37b36ab272f6d610eb2a64fa8d90193013495685e4c69acde411b71e0"
+    },
+    {
+      "path": "monthly_2024/33.5_-113.5.json",
+      "bytes": 1287,
+      "sha256": "69bbd84fa037b1b076071da27983fa78c5ebe170623fb7578544923c1ced6cd1"
+    },
+    {
+      "path": "monthly_2024/34.5_-109.5.json",
+      "bytes": 1284,
+      "sha256": "1ba13e8f54a5fd780e3945de81c5d6985dddd524034ee0f086d7de1ab7c4ed1b"
+    },
+    {
+      "path": "monthly_2024/34.5_-110.5.json",
+      "bytes": 1283,
+      "sha256": "2681e560610152b1a7d64bc42e4a297eb509cf851b966d7cfca7aa4e87a89982"
+    },
+    {
+      "path": "monthly_2024/34.5_-111.5.json",
+      "bytes": 1283,
+      "sha256": "4f47fbf9768b6cc26ead744f40a79ded30eb3a57baf0a81adf50e73e75778e99"
+    },
+    {
+      "path": "monthly_2024/34.5_-112.5.json",
+      "bytes": 1276,
+      "sha256": "86c2e32bfdc4a995a245ce9591b8920213da00ed8e26ff5157cf32a4216d8666"
+    },
+    {
+      "path": "monthly_2024/34.5_-113.5.json",
+      "bytes": 1286,
+      "sha256": "0beb5e5bee6567fe746d2c25e477a06634d38669f134bb8a56016d7ffc4e8118"
+    },
+    {
+      "path": "climatology/31.5_-109.5.json",
+      "bytes": 2101,
+      "sha256": "4b032e9cb2b5f4327bb58a419fc2116d78753951ffede0e04e46349d2aae4b6b"
+    },
+    {
+      "path": "climatology/31.5_-110.5.json",
+      "bytes": 2100,
+      "sha256": "510ef458b812ad20e89d6f18a1c9c13aeb826d0404e9afefc0f8622a226233a2"
+    },
+    {
+      "path": "climatology/31.5_-111.5.json",
+      "bytes": 2102,
+      "sha256": "a711d0e97295b46dc6d4b9410e0a077cf2b4efd942ee031277d91b0d8f330c85"
+    },
+    {
+      "path": "climatology/31.5_-112.5.json",
+      "bytes": 2103,
+      "sha256": "f375bf537050829a6a2e5091b197fabe62aa57e885304181853c848e0cb336dd"
+    },
+    {
+      "path": "climatology/31.5_-113.5.json",
+      "bytes": 2105,
+      "sha256": "c10b8769c494700200aa5f691fed66b1ef99cc46e9cac5c1426a5cb32461acbd"
+    },
+    {
+      "path": "climatology/32.5_-109.5.json",
+      "bytes": 2104,
+      "sha256": "13192e4c5e0253e1d24d9d0f8a59b254eeb43065c5fe3b41669fcca2e52da817"
+    },
+    {
+      "path": "climatology/32.5_-110.5.json",
+      "bytes": 2102,
+      "sha256": "0cfb25b49ef6e84db333d260a761889d1678e1429ea79cba3ef83bebdc6ab92d"
+    },
+    {
+      "path": "climatology/32.5_-111.5.json",
+      "bytes": 2106,
+      "sha256": "36e0a18a492a1cea13defdaa13625ef13628250a28b08eff947bdc2f130429d6"
+    },
+    {
+      "path": "climatology/32.5_-112.5.json",
+      "bytes": 2103,
+      "sha256": "56b6464dd8cc5257819310340fc260153f8e5e906ddc35ad89512f122fe6aba5"
+    },
+    {
+      "path": "climatology/32.5_-113.5.json",
+      "bytes": 2111,
+      "sha256": "674689e8dfb9fe592f424f8f60b06a77b9d64977ce5e6426354d60494903c731"
+    },
+    {
+      "path": "climatology/33.5_-109.5.json",
+      "bytes": 2098,
+      "sha256": "1c48c2d4316ec09a41a8d92d6d9edb3b800bf2dc8aae70b46971d26401c12525"
+    },
+    {
+      "path": "climatology/33.5_-110.5.json",
+      "bytes": 2106,
+      "sha256": "89b8751ee6d9f0417a9c388045ee3e76f5d7f5827f0919585886067414e3948d"
+    },
+    {
+      "path": "climatology/33.5_-111.5.json",
+      "bytes": 2102,
+      "sha256": "14548a09f31c357fcf3951c4f6e2099649493d473311799728bd3bddd7dd452d"
+    },
+    {
+      "path": "climatology/33.5_-112.5.json",
+      "bytes": 2106,
+      "sha256": "5a4f0060a825b9aaf5379fa457bd55239cbe92501387c0531679df39867d2f54"
+    },
+    {
+      "path": "climatology/33.5_-113.5.json",
+      "bytes": 2102,
+      "sha256": "d7872e7060c2e9f24d325a27e21e4eceb7521fb7a93699d58fab1829cbad7327"
+    },
+    {
+      "path": "climatology/34.5_-109.5.json",
+      "bytes": 2100,
+      "sha256": "333d8a98048493aefa3770a5e7074a22bf155c52dca4cfe7a5123bf44b33a539"
+    },
+    {
+      "path": "climatology/34.5_-110.5.json",
+      "bytes": 2098,
+      "sha256": "c88e18fa8d541e3989cd9e2ef68b73901de43ceb95f2c7eb27de9c7d5492c399"
+    },
+    {
+      "path": "climatology/34.5_-111.5.json",
+      "bytes": 2098,
+      "sha256": "9c6bb66e94c110686578cf4f5d6791d846a2123b1b3bd7a8d9a4331c47ddba95"
+    },
+    {
+      "path": "climatology/34.5_-112.5.json",
+      "bytes": 2101,
+      "sha256": "d42b064a564a4c193a88623d3d3ef95cd77c52ef837996e08f28477311117225"
+    },
+    {
+      "path": "climatology/34.5_-113.5.json",
+      "bytes": 2102,
+      "sha256": "9f6fed04ed124865efe569bfb39e326a07b6ee845e12cfcd5d3f3e166fd9be97"
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "id": "WATER-06-global-20261107",
+  "catalogueSourceId": "WATER-06",
+  "provider": "World Resources Institute",
+  "product": "Aqueduct 4.0 water risk data",
+  "version": "4.0",
+  "documentationUrl": "https://www.wri.org/data/aqueduct-global-maps-40-data",
+  "accessUrl": "https://files.wri.org/aqueduct/aqueduct-4-0-water-risk-data.zip",
+  "accessMethod": "download",
+  "evidenceType": "modelled",
+  "licence": {
+    "name": "CC BY 4.0",
+    "url": "https://creativecommons.org/licenses/by/4.0/",
+    "attribution": "Kuzma, S. et al. 2023. Aqueduct 4.0: Updated decision-relevant global water risk indicators. WRI. (verify citation on download page)",
+    "reviewedAt": "2026-11-07",
+    "notes": "Auto-generated from catalogue; confirm against the release's own licence before publishing."
+  },
+  "region": "global",
+  "query": "global",
+  "dataScope": "global copy kept from the first download run; new runs fetch regional subsets only",
+  "retrievedAt": "2026-11-07",
+  "files": [
+    {
+      "path": "aqueduct40/aqueduct-4-0-water-risk-data.zip",
+      "bytes": 261527511,
+      "sha256": "bd3ed2bce88d6ff1b89191632ad134a2436e1e1d49599382f23a04d513624fc3"
+    }
+  ]
+}

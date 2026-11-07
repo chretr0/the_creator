@@ -1,0 +1,44 @@
+{
+  "id": "LAND-02-arizona-20261107",
+  "catalogueSourceId": "LAND-02",
+  "provider": "ESA",
+  "product": "WorldCover 10 m 2021",
+  "version": "v200",
+  "documentationUrl": "https://esa-worldcover.org/en/data-access",
+  "accessUrl": "https://esa-worldcover.s3.eu-central-1.amazonaws.com/v200/2021/map/",
+  "accessMethod": "download",
+  "evidenceType": "satellite_retrieval",
+  "licence": {
+    "name": "CC BY 4.0",
+    "url": "https://creativecommons.org/licenses/by/4.0/",
+    "attribution": "\u00a9 ESA WorldCover project 2021 / Contains modified Copernicus Sentinel data (2021) processed by ESA WorldCover consortium",
+    "reviewedAt": "2026-11-07",
+    "notes": "Auto-generated from catalogue; confirm against the release's own licence before publishing."
+  },
+  "region": "arizona",
+  "query": "region=arizona; bbox W,S,E,N=-113.5,31.3,-109.0,34.5",
+  "dataScope": "regional subset (data/README.md 'Data scope')",
+  "retrievedAt": "2026-11-07",
+  "files": [
+    {
+      "path": "v200_2021/ESA_WorldCover_10m_2021_v200_N30W111_Map.tif",
+      "bytes": 120639410,
+      "sha256": "e33a16a1b9b6ed6aacd95a03a187db89f3f6b7c381b5d348356bd47f6399b849"
+    },
+    {
+      "path": "v200_2021/ESA_WorldCover_10m_2021_v200_N30W114_Map.tif",
+      "bytes": 82225875,
+      "sha256": "5614b24a5b227de5c6eb8788e3640db07f8ef90cc6e56e1f3e43f16355ec9956"
+    },
+    {
+      "path": "v200_2021/ESA_WorldCover_10m_2021_v200_N33W111_Map.tif",
+      "bytes": 109287105,
+      "sha256": "17bf110dc6844799e54ca14257c64fe4cd5c1ae41b996fe3c97d31ad4a15bca1"
+    },
+    {
+      "path": "v200_2021/ESA_WorldCover_10m_2021_v200_N33W114_Map.tif",
+      "bytes": 120157309,
+      "sha256": "8499d64226784344486b3255cf368f1d62f8e33bf2a99ba3e7d2b89f3b96a93d"
+    }
+  ]
+}

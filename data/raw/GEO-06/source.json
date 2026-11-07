@@ -1,0 +1,29 @@
+{
+  "id": "GEO-06-global-20261107",
+  "catalogueSourceId": "GEO-06",
+  "provider": "U.S. Geological Survey",
+  "product": "Mineral Resources Data System (MRDS)",
+  "version": "as downloaded (legacy, not maintained)",
+  "documentationUrl": "https://mrdata.usgs.gov/mrds/",
+  "accessUrl": "https://mrdata.usgs.gov/mrds/mrds-csv.zip",
+  "accessMethod": "download",
+  "evidenceType": "reported",
+  "licence": {
+    "name": "U.S. public domain (USGS)",
+    "url": "https://www.usgs.gov/information-policies-and-instructions/copyrights-and-credits",
+    "attribution": "U.S. Geological Survey, Mineral Resources Data System",
+    "reviewedAt": "2026-11-07",
+    "notes": "Auto-generated from catalogue; confirm against the release's own licence before publishing."
+  },
+  "region": "global",
+  "query": "global",
+  "dataScope": "small global file (< ~100 MB), kept whole",
+  "retrievedAt": "2026-11-07",
+  "files": [
+    {
+      "path": "mrds/mrds-csv.zip",
+      "bytes": 25791223,
+      "sha256": "31be4baaa86b082787bc74989146183db21badf7157db39b3f0a6fe0b38a5477"
+    }
+  ]
+}

@@ -4,7 +4,7 @@ Last reviewed: 2026-11-07
 Working project name: **New Worlds** (placeholder; no final brand has been chosen).  
 Stage: planning a two-person, 24-hour hackathon build. This document is a specification, not a statement that features or integrations already exist.
 
-Read [CLAUDE.mapping.md](./CLAUDE.mapping.md) before implementing the map or spatial model. Read [CLAUDE.data-sources.md](./CLAUDE.data-sources.md) before implementing data ingestion, source access, attribution, or exports.
+Read [CLAUDE-World-Mapping.md](./CLAUDE-World-Mapping.md) before implementing the map or spatial model. Read [CLAUDE-Data-Sources.md](./CLAUDE-Data-Sources.md) before implementing data ingestion, source access, attribution, or exports.
 
 ## Product intent
 
@@ -45,6 +45,7 @@ These defaults make the build concrete. They are implementation recommendations,
 | Baseline | Selected real datasets with provenance; preprocessed subsets for the demo |
 | Simulation | Small deterministic resource-accounting model |
 | Coverage | Globally navigable grid; calculations only where inputs exist or assumptions are explicitly provided |
+| Data regions | Big datasets (> ~100 MB as a global file) are stored for two regions only: `arizona` (demo, W -113.5 S 31.3 E -109.0 N 34.5) and `uk` (W -8.7 S 49.8 E 1.9 N 60.9); hydrology uses a wider upstream box. Small global files stay global. See data/README.md §0.1 |
 | Persistence | Local scenario JSON/local storage initially; optional small API and database |
 | AI | Optional explanation/search assistance; never the source of numerical simulation truth |
 

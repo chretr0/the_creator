@@ -1,0 +1,69 @@
+{
+  "id": "NET-01-global-20261107",
+  "catalogueSourceId": "NET-01",
+  "provider": "WWF / HydroSHEDS",
+  "product": "HydroRIVERS v1.0 (global) + HydroBASINS v1c (all 8 regions, levels 1-12)",
+  "version": "HydroRIVERS 1.0; HydroBASINS 1c",
+  "documentationUrl": "https://www.hydrosheds.org/products",
+  "accessUrl": "https://data.hydrosheds.org/file/",
+  "accessMethod": "download",
+  "evidenceType": "modelled",
+  "licence": {
+    "name": "HydroSHEDS licence agreement",
+    "url": "https://www.hydrosheds.org/faq",
+    "attribution": "Lehner, B., Grill G. (2013) Hydrol. Process. 27(15): 2171-2186. Data at www.hydrosheds.org",
+    "reviewedAt": "2026-11-07",
+    "notes": "Auto-generated from catalogue; confirm against the release's own licence before publishing."
+  },
+  "region": "global",
+  "query": "global",
+  "dataScope": "global copy kept from the first download run; new runs fetch regional subsets only",
+  "retrievedAt": "2026-11-07",
+  "files": [
+    {
+      "path": "HydroRIVERS_v10_shp.zip",
+      "bytes": 544388154,
+      "sha256": "0cf9e363e4b48ede535787f9e2eecbcff43eb53acad4b9cbf048c9e12453e5b5"
+    },
+    {
+      "path": "hybas_af_lev01-12_v1c.zip",
+      "bytes": 549296874,
+      "sha256": "6b331a6e89d56c3a542dcee39a7e6e8700d0cf7c94083c5946c7db0d262a48d6"
+    },
+    {
+      "path": "hybas_ar_lev01-12_v1c.zip",
+      "bytes": 144269656,
+      "sha256": "03412d62c4e77d81bc71802d30ab122122830e622b664fb75bb0ae6dc0de59ee"
+    },
+    {
+      "path": "hybas_as_lev01-12_v1c.zip",
+      "bytes": 376386706,
+      "sha256": "5f2a9c384829b59a22b2857c79bc294602aaa29c8794abd1e7bd7cf01057cc4a"
+    },
+    {
+      "path": "hybas_au_lev01-12_v1c.zip",
+      "bytes": 194799278,
+      "sha256": "0d92e803d5b18837c811d133be87ea1fc4a1b7362c974a694e423c9bbcb479b8"
+    },
+    {
+      "path": "hybas_eu_lev01-12_v1c.zip",
+      "bytes": 360873795,
+      "sha256": "26e11e89c5b2dc5088bffff0bfaa5d8ff51e94143b1b576c9eba8b5ccbff7be8"
+    },
+    {
+      "path": "hybas_na_lev01-12_v1c.zip",
+      "bytes": 316655770,
+      "sha256": "c33bc1e2201e2643ca991479658a422c0283fd35a8642db6dab498287ba9889d"
+    },
+    {
+      "path": "hybas_sa_lev01-12_v1c.zip",
+      "bytes": 334160720,
+      "sha256": "fb012e48419bda0a7f4d0ebc56efcd906ad0e3bde324b9c70fac9693e2d21a72"
+    },
+    {
+      "path": "hybas_si_lev01-12_v1c.zip",
+      "bytes": 291137752,
+      "sha256": "e18f7b66b25ef49d63a0698f57614045f55d4fb8533f636ab655b6405db02f6a"
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "id": "CTX-05-arizona-20261107",
+  "catalogueSourceId": "CTX-05",
+  "provider": "European Commission JRC",
+  "product": "GHSL GHS-POP and GHS-BUILT-S, epoch 2025, 30 arcsec, WGS84",
+  "version": "R2023A V1-0",
+  "documentationUrl": "https://human-settlement.emergency.copernicus.eu/download.php",
+  "accessUrl": "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/",
+  "accessMethod": "download",
+  "evidenceType": "modelled",
+  "licence": {
+    "name": "CC BY 4.0",
+    "url": "https://creativecommons.org/licenses/by/4.0/",
+    "attribution": "Schiavina M. et al. GHS-POP R2023A; Pesaresi M., Politis P. GHS-BUILT-S R2023A. European Commission, JRC (cite product DOIs)",
+    "reviewedAt": "2026-11-07",
+    "notes": "Auto-generated from catalogue; confirm against the release's own licence before publishing."
+  },
+  "region": "arizona",
+  "query": "region=arizona; bbox W,S,E,N=-113.5,31.3,-109.0,34.5",
+  "dataScope": "regional subset (data/README.md 'Data scope')",
+  "processing": "Clipped from the provider's global file by scripts/clip_to_bbox.py (vectors: whole features intersecting the box; rasters: native grid window; points: inside the box).",
+  "retrievedAt": "2026-11-07",
+  "files": [
+    {
+      "path": "GHS_BUILT_S_E2025_GLOBE_R2023A_4326_30ss_V1_0_arizona.tif",
+      "bytes": 130608,
+      "sha256": "fc85495eabf66d96c5359652fe36d0f4567b18c1adc9c23b8db674bd938ed4b7"
+    },
+    {
+      "path": "GHS_POP_E2025_GLOBE_R2023A_4326_30ss_V1_0_arizona.tif",
+      "bytes": 259042,
+      "sha256": "4f6c3308e2fa5d5b9ca64e118b00725f9574d375a1471760b4f611e6a1471ae6"
+    }
+  ]
+}

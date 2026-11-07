@@ -1,0 +1,64 @@
+{
+  "id": "OBS-02-arizona-20261107",
+  "catalogueSourceId": "OBS-02",
+  "provider": "ESA Copernicus (via Microsoft Planetary Computer)",
+  "product": "Sentinel-2 L2A, one scene clip (bands B02-B12, SCL)",
+  "version": "see item.json",
+  "documentationUrl": "https://planetarycomputer.microsoft.com/dataset/sentinel-2-l2a",
+  "accessUrl": "https://planetarycomputer.microsoft.com/api/stac/v1",
+  "accessMethod": "stac",
+  "evidenceType": "satellite_retrieval",
+  "licence": {
+    "name": "Copernicus Sentinel data legal notice",
+    "url": "https://cds.climate.copernicus.eu/licences/ec-sentinel",
+    "attribution": "Contains modified Copernicus Sentinel data 2025",
+    "reviewedAt": "2026-11-07",
+    "notes": "Auto-generated from catalogue; confirm against the release's own licence before publishing."
+  },
+  "region": "arizona",
+  "query": "W -111.05 S 33.30 E -110.70 N 33.50; Apr-Jun 2025; cloud < 5%",
+  "dataScope": "regional subset (data/README.md 'Data scope')",
+  "retrievedAt": "2026-11-07",
+  "files": [
+    {
+      "path": "S2C_MSIL2A_20250423T175931_R041_T12SWC_20250423T232413/B02.tif",
+      "bytes": 2466736,
+      "sha256": "ed68cbfd9bb2723a37fe91aec37148b06b28435b5c11b7f233bc9bcf899c4bfe"
+    },
+    {
+      "path": "S2C_MSIL2A_20250423T175931_R041_T12SWC_20250423T232413/B03.tif",
+      "bytes": 2406753,
+      "sha256": "c272c0a5693a5067c20b9aeab5be279ac02b1b10b784223646eb02e87c17d1d0"
+    },
+    {
+      "path": "S2C_MSIL2A_20250423T175931_R041_T12SWC_20250423T232413/B04.tif",
+      "bytes": 2470593,
+      "sha256": "b190fef5711a7cf96fd700173476f228cb92a9ca8df8e70b785e9896f6e16d11"
+    },
+    {
+      "path": "S2C_MSIL2A_20250423T175931_R041_T12SWC_20250423T232413/B08.tif",
+      "bytes": 2420983,
+      "sha256": "931ccaa00ceb77293160291ddc40dfd71aac0a7f28ba815692b72e95b324d1ad"
+    },
+    {
+      "path": "S2C_MSIL2A_20250423T175931_R041_T12SWC_20250423T232413/B11.tif",
+      "bytes": 697592,
+      "sha256": "70955066802cc788e7176b5100db5a06c5dfc9d3736688c08a540371e9fb538d"
+    },
+    {
+      "path": "S2C_MSIL2A_20250423T175931_R041_T12SWC_20250423T232413/B12.tif",
+      "bytes": 690894,
+      "sha256": "822ef3667703ec00d7a2c572193cbba5e8f2f5a36c79c00d4e9213af6e6c2890"
+    },
+    {
+      "path": "S2C_MSIL2A_20250423T175931_R041_T12SWC_20250423T232413/SCL.tif",
+      "bytes": 8458,
+      "sha256": "54f83aba176c8f9ca70218e9f03a55536804070dacf67a7c55b89046e73d78fe"
+    },
+    {
+      "path": "S2C_MSIL2A_20250423T175931_R041_T12SWC_20250423T232413/item.json",
+      "bytes": 18766,
+      "sha256": "b89a023cccf2a2b360c64ddf439d12df0250622143cfa6e8a536083b41e656f9"
+    }
+  ]
+}

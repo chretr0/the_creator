@@ -3,7 +3,7 @@
 Last reviewed: 2026-11-07  
 Status: proposed implementation specification for a two-person, 24-hour hackathon.
 
-Read [CLAUDE.md](./CLAUDE.md) for product scope and simulation meaning. Source access and licensing are in [CLAUDE.data-sources.md](./CLAUDE.data-sources.md).
+Read [CLAUDE-Project-Overview.md](./CLAUDE-Project-Overview.md) for product scope and simulation meaning. Source access and licensing are in [CLAUDE-Data-Sources.md](./CLAUDE-Data-Sources.md).
 
 ## 1. Architecture
 

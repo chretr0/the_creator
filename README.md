@@ -1,7 +1,7 @@
 # New Worlds
 
-Interactive Earth exploration and scenario sandbox (hackathon build). See [CLAUDE.md](./CLAUDE.md)
-for product intent and [CLAUDE.mapping.md](./CLAUDE.mapping.md) for the map/H3 contract.
+Interactive Earth exploration and scenario sandbox (hackathon build). See [CLAUDE-Project-Overview.md](./CLAUDE-Project-Overview.md)
+for product intent and [CLAUDE-World-Mapping.md](./CLAUDE-World-Mapping.md) for the map/H3 contract.
 
 ## What works now
 
