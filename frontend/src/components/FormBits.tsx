@@ -80,14 +80,14 @@ export function Select<T extends string>(props: {
  * Collapsible form section. `invalid` is the number of invalid fields inside: the summary then says
  * so, and the section opens so the highlighted fields are visible.
  */
-export function Section(props: { title: string; meta?: ReactNode; open?: boolean; emphasis?: boolean; invalid?: number; children: ReactNode }) {
+export function Section(props: { title: string; group?: string; meta?: ReactNode; open?: boolean; emphasis?: boolean; invalid?: number; children: ReactNode }) {
   const ref = useRef<HTMLDetailsElement>(null);
   const invalid = props.invalid ?? 0;
   useEffect(() => {
     if (invalid > 0 && ref.current) ref.current.open = true;
   }, [invalid]);
   return (
-    <details ref={ref} className={`section${props.emphasis ? " emphasis" : ""}`} open={props.open || invalid > 0}>
+    <details ref={ref} name={props.group} className={`section${props.emphasis ? " emphasis" : ""}`} open={props.open || invalid > 0}>
       <summary>
         <span className="section-title">{props.title}</span>
         {invalid > 0 && (

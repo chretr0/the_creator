@@ -1,3 +1,4 @@
+import { PanelTabs } from "./PanelNavigation";
 import { useEffect, useMemo, useState } from "react";
 import { api, type Project, type ProjectInput, type ProjectType } from "../lib/api";
 import type { DefinitionSnapshot, LocationAssessment } from "../lib/buildings";
@@ -167,6 +168,7 @@ export default function ProjectEditor({ project, moving, onSave, onMove, onDelet
   }
 
   const label = typeLabel(draft.type);
+  const [view, setView] = useState<"overview" | "statistics" | "site" | "results">("overview");
 
   return (
     <section className="panel">
@@ -182,8 +184,12 @@ export default function ProjectEditor({ project, moving, onSave, onMove, onDelet
         {label}
         {project.sourceDefinitionId && " · from a saved definition (this building keeps its own copy)"}
       </p>
+      <PanelTabs label="Placed building sections" value={view} onChange={setView} options={[
+        { value: "overview", label: "Overview" }, { value: "statistics", label: "Statistics", count: Object.keys(parsed.errors).length },
+        { value: "site", label: "Site & rules", count: Object.keys(site.errors).length + Object.keys(crit.errors).length }, { value: "results", label: "Results" },
+      ]} />
+      <div hidden={view !== "overview"}>
       {snap.description && <p className="small description">{snap.description}</p>}
-
       <label className="field">
         <span>Name</span>
         <input value={draft.name} placeholder={label} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
@@ -209,18 +215,22 @@ export default function ProjectEditor({ project, moving, onSave, onMove, onDelet
         </label>
       </div>
 
+      </div>
+      <div hidden={view !== "results"}>
       <h3>Assessment at this location</h3>
       {assessError && <p className="warn small">Unavailable: {assessError}</p>}
       {!fresh && !assessError && <p className="muted small">Calculating…</p>}
       {fresh && (
         <>
           <AssessmentView assessment={fresh.value.assessment} />
-          <Section title="Calculated usage and costs" meta={`over ${fmtDays(fresh.periodDays)}`} open>
+          <Section title="Calculated usage and costs" meta={`over ${fmtDays(fresh.periodDays)}`}>
             <ResultView result={fresh.value.result} producesPower={template.producesPower} producesWater={template.producesWater} />
           </Section>
         </>
       )}
 
+      </div>
+      <div hidden={view !== "statistics"}>
       <h3>Statistics</h3>
       <p className="muted small">Blank means unknown. Changes apply to this building only.</p>
       <label className="field">
@@ -229,9 +239,11 @@ export default function ProjectEditor({ project, moving, onSave, onMove, onDelet
       </label>
       <BuildingForm draft={draft.stats} onChange={(stats) => setDraft({ ...draft, stats })} errors={parsed.errors} template={template} />
 
+      </div>
+      <div hidden={view !== "site"}>
       <Section title="Requirements" meta={`${crit.criteria.length} set`} invalid={Object.keys(crit.errors).length}>
         <p className="muted small">
-          What this building needs from its location. Each becomes a pass / fail / unknown check above. Without any
+          What this building needs from its location. Each becomes a pass / fail / unknown check in Results. Without any
           (and without site assumptions) the assessment can only say “More information needed”.
         </p>
         <CriteriaEditor
@@ -262,6 +274,7 @@ export default function ProjectEditor({ project, moving, onSave, onMove, onDelet
         <Field label="Note" value={draft.site.note} onChange={(v) => setDraft({ ...draft, site: { ...draft.site, note: v } })} numeric={false} placeholder="Basis for these values" />
       </Section>
 
+      </div>
       {error && <p className="warn">{error}</p>}
       <div className="actions">
         <button className="primary" onClick={save} disabled={saving}>

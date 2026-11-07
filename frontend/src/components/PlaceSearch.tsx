@@ -1,3 +1,4 @@
+import Icon from "./Icon";
 import { useState } from "react";
 import { parseCoordinates, searchLocal, searchPhoton, type PlaceHit, type SearchEntry } from "../lib/context";
 
@@ -40,6 +41,7 @@ export default function PlaceSearch({ index, onFocus, onGo }: Props) {
 
   return (
     <div className="place-search">
+      <Icon name="search" size={19} />
       <input
         value={q}
         placeholder="Search a place or coordinates"

@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { formatKw } from "../lib/infrastructure";
 import { DATASET_LABEL, METRIC, runQuery, type Dataset, type Query, type QueryRecord } from "../lib/query";
 
@@ -29,6 +29,8 @@ function formatMetric(dataset: Dataset, v: number | null): string {
 }
 
 export default function SearchPanel({ records, available, query, onQuery, near, onPick }: Props) {
+  const [page, setPage] = useState(0);
+  useEffect(() => { setPage(0); }, [query]);
   const set = (patch: Partial<Query>) => onQuery({ ...query, ...patch });
   const inDataset = useMemo(() => records.filter((r) => r.dataset === query.dataset), [records, query.dataset]);
   const countries = useMemo(
@@ -43,6 +45,7 @@ export default function SearchPanel({ records, available, query, onQuery, near, 
     [inDataset, query.country],
   );
   const result = useMemo(() => runQuery(records, { ...query, near, limit: 30 }), [records, query, near]);
+  const currentPage = Math.min(page, Math.max(0, Math.ceil(result.items.length / 5) - 1));
   const metric = METRIC[query.dataset];
   const sorts: Query["sort"][] = ["metric", "company", "nearest", "newest", "name"].filter((s) => {
     if (s === "metric") return !!metric;
@@ -67,7 +70,7 @@ export default function SearchPanel({ records, available, query, onQuery, near, 
             {(Object.keys(DATASET_LABEL) as Dataset[]).map((d) => (
               <option key={d} value={d} disabled={!available[d]}>
                 {DATASET_LABEL[d]}
-                {available[d] ? "" : " (turn on in Layers)"}
+                {available[d] ? "" : " (turn on in Data layers)"}
               </option>
             ))}
           </select>
@@ -83,6 +86,7 @@ export default function SearchPanel({ records, available, query, onQuery, near, 
           </select>
         </label>
       </div>
+      <details className="section"><summary><span className="section-title">Refine results</span><span className="section-meta">Place, operator & name</span></summary><div className="section-body">
       <div className="row">
         <label className="field">
           <span>Country</span>
@@ -114,12 +118,13 @@ export default function SearchPanel({ records, available, query, onQuery, near, 
         </label>
       </div>
 
+      </div></details>
       <h3>
         {result.total.toLocaleString()} result{result.total === 1 ? "" : "s"}
         {metric && result.metric.sum !== null && result.total > 0 && <> · {formatMetric(query.dataset, result.metric.sum)} total</>}
       </h3>
       <ul className="list results">
-        {result.items.map((r) => (
+        {result.items.slice(currentPage * 5, currentPage * 5 + 5).map((r) => (
           <li key={r.key}>
             <button className="link" onClick={() => onPick(r)}>
               <span className="result-title">
@@ -133,6 +138,8 @@ export default function SearchPanel({ records, available, query, onQuery, near, 
           </li>
         ))}
       </ul>
+      {result.items.length > 5 && <div className="pagination"><button disabled={currentPage === 0} onClick={() => setPage(currentPage - 1)}>Previous</button><span>{currentPage * 5 + 1}–{Math.min(currentPage * 5 + 5, result.items.length)} of {result.items.length}</span><button disabled={(currentPage + 1) * 5 >= result.items.length} onClick={() => setPage(currentPage + 1)}>Next results</button></div>}
+      {result.total > result.items.length && <p className="muted small">Showing the first {result.items.length} matches. Refine results to narrow your search.</p>}
     </section>
   );
 }

@@ -22,6 +22,8 @@ const MONTHS = "JFMAMJJASOND".split("");
 
 /** Everything the prepared baseline layers know about one cell (a zoomed-out hexagon aggregates its children). */
 export default function BaselineBlock({ h3Id, manifest, onShowLayer, onGoTo }: Props) {
+  const [category, setCategory] = useState("");
+  const [layerId, setLayerId] = useState("");
   const [profile, setProfile] = useState<CellProfile | null>(null);
   const [context, setContext] = useState<CellFeatureContext | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -60,15 +62,21 @@ export default function BaselineBlock({ h3Id, manifest, onShowLayer, onGoTo }: P
           satellite observations) are only prepared for Arizona and the UK; the global layers below still apply.
         </p>
       )}
-      {groups.map(([category, layers]) => (
+      {groups.length > 0 && <label className="field"><span>Data category</span><select value={groups.some(([cat]) => cat === category) || category === "__features" ? category : groups[0][0]} onChange={(e) => setCategory(e.target.value)}>
+        {groups.map(([cat]) => <option key={cat} value={cat}>{cat}</option>)}
+        {!!context?.layers.length && <option value="__features">Mapped features nearby</option>}
+      </select></label>}
+      {groups.filter(([cat]) => cat === (groups.some(([name]) => name === category) || category === "__features" ? category : groups[0]?.[0])).map(([category, layers]) => (
         <div key={category} className="baseline-group">
-          <div className="baseline-cat">{category}</div>
-          {layers.map((l) => (
+          <label className="field"><span>Dataset</span><select value={layers.some((l) => l.layer === layerId) ? layerId : layers[0]?.layer} onChange={(e) => setLayerId(e.target.value)}>
+            {layers.map((l) => <option key={l.layer} value={l.layer}>{l.name}</option>)}
+          </select></label>
+          {layers.filter((l) => l.layer === (layers.some((item) => item.layer === layerId) ? layerId : layers[0]?.layer)).map((l) => (
             <BaselineRow key={l.layer} layer={l} onShow={onShowLayer} total={profile?.simulationCells ?? 1} />
           ))}
         </div>
       ))}
-      {context && context.layers.length > 0 && (
+      {context && context.layers.length > 0 && (category === "__features" || groups.length === 0) && (
         <FeatureContext context={context} manifest={manifest} onGoTo={onGoTo} />
       )}
     </>

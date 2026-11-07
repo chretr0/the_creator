@@ -1,3 +1,5 @@
+import { useId, useState } from "react";
+import { PanelTabs } from "./PanelNavigation";
 import type { BuildingTemplate, Period } from "../lib/buildings";
 import {
   countErrors,
@@ -24,6 +26,7 @@ import {
 import { Field, ProvenanceTag, Section, Select } from "./FormBits";
 
 type Props = {
+  page?: "resources" | "impact";
   draft: StatsDraft;
   onChange: (d: StatsDraft) => void;
   errors: Errors;
@@ -41,7 +44,10 @@ const PERIODS: { value: Period; label: string }[] = [
  * Building statistics form, shared by the Build tab and the placed-building editor.
  * Blank = unknown. Every number shows its unit; invalid values are flagged inline.
  */
-export default function BuildingForm({ draft, onChange, errors, template }: Props) {
+export default function BuildingForm({ draft, onChange, errors, template, page }: Props) {
+  const [localPage, setLocalPage] = useState<"resources" | "impact">("resources");
+  const shownPage = page ?? localPage;
+  const accordion = useId();
   const currency = (draft.values["costs.currency"] ?? "").trim().toUpperCase() || "currency";
 
   const num = (path: string, unitOverride?: string) => {
@@ -108,12 +114,16 @@ export default function BuildingForm({ draft, onChange, errors, template }: Prop
 
   return (
     <div className="building-form">
-      <Section title="Size and operating hours" meta={meta(["footprintM2", "operatingHoursPerDay"], "footprint")} invalid={bad("footprintM2", "operatingHoursPerDay")} open>
+      {!page && <PanelTabs label="Building statistics sections" value={localPage} onChange={setLocalPage} options={[
+        { value: "resources", label: "Resources" }, { value: "impact", label: "Impact & costs" },
+      ]} />}
+      <div hidden={shownPage !== "resources"}>
+      <Section group={accordion} title="Size and operating hours" meta={meta(["footprintM2", "operatingHoursPerDay"], "footprint")} invalid={bad("footprintM2", "operatingHoursPerDay")} open={!template.producesPower && !template.producesWater}>
         {num("footprintM2")}
         {num("operatingHoursPerDay")}
       </Section>
 
-      <Section title="Power" meta={meta([...powerUse, ...powerOut], "power")} invalid={bad("power.")} open={template.producesPower} emphasis={template.producesPower}>
+      <Section group={accordion} title="Power" meta={meta([...powerUse, ...powerOut], "power")} invalid={bad("power.")} open={template.producesPower} emphasis={template.producesPower}>
         {template.producesPower ? (
           <>
             {powerOutput}
@@ -128,7 +138,7 @@ export default function BuildingForm({ draft, onChange, errors, template }: Prop
         <p className="muted small">Output and own use are separate: never enter a net or negative value.</p>
       </Section>
 
-      <Section title="Water" meta={meta([...waterUse, ...waterOut], "water")} invalid={bad("water.")} open={template.producesWater} emphasis={template.producesWater}>
+      <Section group={accordion} title="Water" meta={meta([...waterUse, ...waterOut], "water")} invalid={bad("water.")} open={template.producesWater} emphasis={template.producesWater}>
         {template.producesWater && (
           <>
             <h4>Usable water output</h4>
@@ -146,7 +156,7 @@ export default function BuildingForm({ draft, onChange, errors, template }: Prop
         )}
       </Section>
 
-      <Section title="Raw materials" meta={`${draft.materials.length} listed`} invalid={bad("materials.")}>
+      <Section group={accordion} title="Raw materials" meta={`${draft.materials.length} listed`} invalid={bad("materials.")}>
         {draft.materials.length === 0 && <p className="muted small">None listed. Add one row per material.</p>}
         {draft.materials.map((m) => (
           <MaterialRow
@@ -163,7 +173,9 @@ export default function BuildingForm({ draft, onChange, errors, template }: Prop
         </div>
       </Section>
 
-      <Section title="Air emissions" meta={`${draft.emissions.length} listed`} invalid={bad("emissions.")}>
+      </div>
+      <div hidden={shownPage !== "impact"}>
+      <Section group={accordion} title="Air emissions" meta={`${draft.emissions.length} listed`} invalid={bad("emissions.")}>
         {draft.emissions.length === 0 && <p className="muted small">None listed. One row per pollutant; they are never added together.</p>}
         {draft.emissions.map((e) => (
           <EmissionRow
@@ -179,14 +191,14 @@ export default function BuildingForm({ draft, onChange, errors, template }: Prop
         </div>
       </Section>
 
-      <Section title="Light" meta={meta(["light.upwardLumens", "light.hoursPerDay"], "light")} invalid={bad("light.")}>
+      <Section group={accordion} title="Light" meta={meta(["light.upwardLumens", "light.hoursPerDay"], "light")} invalid={bad("light.")}>
         <div className="row">
           {num("light.upwardLumens")}
           {num("light.hoursPerDay")}
         </div>
       </Section>
 
-      <Section title="Workers" meta={meta(["workers.capacity", "workers.staffingRequired"], "workers")} invalid={bad("workers.")}>
+      <Section group={accordion} title="Workers" meta={meta(["workers.capacity", "workers.staffingRequired"], "workers")} invalid={bad("workers.")}>
         <div className="row">
           {num("workers.capacity")}
           {num("workers.staffingRequired")}
@@ -194,7 +206,7 @@ export default function BuildingForm({ draft, onChange, errors, template }: Prop
         <p className="muted small">Capacity is not available labour or jobs created.</p>
       </Section>
 
-      <Section title="Costs" meta={meta(costPaths, "costs")} invalid={bad("costs.")}>
+      <Section group={accordion} title="Costs" meta={meta(costPaths, "costs")} invalid={bad("costs.")}>
         <div className="row">
           {num("costs.currency")}
           {num("costs.constructionTotal", currency)}
@@ -244,8 +256,10 @@ export default function BuildingForm({ draft, onChange, errors, template }: Prop
         </p>
       </Section>
 
+      </div>
+      <div hidden={shownPage !== "resources"}>
       {(template.parameters.length > 0 || isDataCentre) && (
-        <Section
+        <Section group={accordion}
           title={`${template.label} details`}
           meta={`${template.parameters.filter((p) => (draft.params[p.key] ?? "") !== "").length} of ${template.parameters.length} set`}
           invalid={bad("params.")}
@@ -286,6 +300,7 @@ export default function BuildingForm({ draft, onChange, errors, template }: Prop
           )}
         </Section>
       )}
+      </div>
     </div>
   );
 }

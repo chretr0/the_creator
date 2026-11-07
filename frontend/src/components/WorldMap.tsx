@@ -148,7 +148,7 @@ export default function WorldMap(props: Props) {
       pitchWithRotate: false,
     });
     map.touchZoomRotate.disableRotation();
-    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
+    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
     map.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-left");
 
     const overlay = new MapboxOverlay({ interleaved: false, layers: [] });
@@ -188,9 +188,24 @@ export default function WorldMap(props: Props) {
       }, 60);
     };
     map.on("load", refreshGrid);
+    map.on("load", () => {
+      // Restyle only the basemap. Scientific layers, imagery and their legends are unchanged.
+      for (const layer of map.getStyle().layers) {
+        if (layer.type === "fill" && layer["source-layer"] === "water") {
+          map.setPaintProperty(layer.id, "fill-color", "#c9e1ef");
+        }
+        if (layer.type === "background") {
+          map.setPaintProperty(layer.id, "background-color", "#f4f6f5");
+        }
+      }
+    });
     map.on("moveend", refreshGrid);
+    // The inspector and workspace panels resize the canvas without a window resize.
+    const resize = new ResizeObserver(() => map.resize());
+    resize.observe(containerRef.current!);
 
     return () => {
+      resize.disconnect();
       clearTimeout(timer);
       map.remove();
       mapRef.current = null;
@@ -335,8 +350,8 @@ export default function WorldMap(props: Props) {
         extruded: false,
         highPrecision: true,
         // Neutral "no data" styling unless a baseline layer is active.
-        getFillColor: props.cellFill ?? [100, 116, 139, 14],
-        getLineColor: props.cellFill ? [51, 65, 85, 45] : [51, 65, 85, 110],
+        getFillColor: props.cellFill ?? [89, 125, 175, 6],
+        getLineColor: props.cellFill ? [51, 65, 85, 30] : [86, 114, 151, 42],
         updateTriggers: { getFillColor: props.cellFill, getLineColor: !!props.cellFill },
         lineWidthUnits: "pixels",
         getLineWidth: 1,

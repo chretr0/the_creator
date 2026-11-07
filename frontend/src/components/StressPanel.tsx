@@ -1,3 +1,5 @@
+import { PanelTabs } from "./PanelNavigation";
+import { createPortal } from "react-dom";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { api, type Project, type Scenario } from "../lib/api";
 import {
@@ -31,6 +33,9 @@ import { QuantityText } from "./AssessmentView";
 import { Field, Section, StateBadge } from "./FormBits";
 
 type Props = {
+  resultsHost?: HTMLElement | null;
+  section: "resources" | "stress";
+  onSection: (section: "resources" | "stress") => void;
   scenario: Scenario;
   onSaved: (s: Scenario) => void;
   /** False while the panel is mounted but hidden: drafts are kept, nothing is evaluated. */
@@ -66,13 +71,15 @@ const METRIC_LABEL: Record<string, string> = {
   workerCapacity: "Worker capacity",
 };
 
-export default function StressPanel({ scenario, onSaved, active = true }: Props) {
+export default function StressPanel({ scenario, onSaved, active = true, resultsHost, section, onSection }: Props) {
   const saved = useMemo(() => mergeAssumptions(scenario.assumptions), [scenario.assumptions]);
   // Content, not object identity: a rename or any other refetch returns a new (equal) object.
   const savedKey = JSON.stringify(saved);
   const [period, setPeriod] = useState(String(saved.periodDays));
   const [budgets, setBudgets] = useState<BudgetDraft[]>(() => saved.budgets.map(budgetToDraft));
   const [stressDraft, setStressDraft] = useState<StressDraft>(() => stressToDraft(saved.stress));
+  const [editingBudget, setEditingBudget] = useState<string | null>(null);
+  const [controlGroup, setControlGroup] = useState<"supply" | "multiplier">("supply");
   const [saving, setSaving] = useState(false);
   const [saveNote, setSaveNote] = useState<{ ok: boolean; text: string } | null>(null);
 
@@ -169,154 +176,11 @@ export default function StressPanel({ scenario, onSaved, active = true }: Props)
     }
   }
 
+  const activeBudget = budgets.find((x) => x.id === editingBudget)?.id ?? budgets[0]?.id ?? "";
   const updateBudget = (id: string, patch: Partial<BudgetDraft>) => setBudgets(budgets.map((x) => (x.id === id ? { ...x, ...patch } : x)));
 
-  return (
-    <section className="panel">
-      <h2>Scenario controls</h2>
-      <p className="subtitle small">Declared supplies and stress tests for {scenario.name}. Nothing here changes baseline data.</p>
-
-      <Field label="Evaluation period" unit="days" value={period} onChange={setPeriod} error={periodError ?? undefined} help="Every usage and cost figure is over this period." />
-
-      <Section title="Resource budgets" meta={`${budgets.length} declared`} open={budgets.length > 0}>
-        <p className="muted small">
-          A budget is a pooled supply shared by every building in its scope, counted once. A plant's net output only adds to a budget if you tick it below.
-        </p>
-        {budgets.map((d) => {
-          const e = (k: string) => b.errors[`${d.id}.${k}`];
-          const unit = BUDGET_KINDS.find((k) => k.kind === d.kind)?.unit ?? "";
-          const suppliers = scenario.projects.filter((p) => canSupply(p, d.kind));
-          return (
-            <div className="list-row" key={d.id}>
-              <div className="row align-end">
-                <Field label="Label" value={d.label} onChange={(v) => updateBudget(d.id, { label: v })} error={e("label")} numeric={false} placeholder="e.g. Local grid" />
-                <button className="ghost danger" onClick={() => setBudgets(budgets.filter((x) => x.id !== d.id))}>
-                  Remove
-                </button>
-              </div>
-              <div className="row">
-                <label className="field">
-                  <span>Kind</span>
-                  <select value={d.kind} onChange={(ev) => updateBudget(d.id, { kind: ev.target.value as BudgetKind })}>
-                    {BUDGET_KINDS.map((k) => (
-                      <option key={k.kind} value={k.kind}>
-                        {k.label} ({k.unit})
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <Field label="Amount" unit={unit} value={d.amount} onChange={(v) => updateBudget(d.id, { amount: v })} error={e("amount")} />
-              </div>
-              <div className="row">
-                <label className="field">
-                  <span>Applies to</span>
-                  <select value={d.scopeKind} onChange={(ev) => updateBudget(d.id, { scopeKind: ev.target.value as BudgetDraft["scopeKind"] })}>
-                    <option value="scenario">Every building in the scenario</option>
-                    <option value="region">Buildings in a prepared region</option>
-                    <option value="radius">Buildings within a radius</option>
-                  </select>
-                </label>
-                {d.scopeKind === "region" && (
-                  <label className="field">
-                    <span>Region</span>
-                    <select value={d.region} onChange={(ev) => updateBudget(d.id, { region: ev.target.value as BudgetDraft["region"] })}>
-                      <option value="arizona">Arizona</option>
-                      <option value="uk">UK</option>
-                    </select>
-                  </label>
-                )}
-              </div>
-              {d.scopeKind === "radius" && (
-                <div className="row">
-                  <Field label="Latitude" unit="°" value={d.latitude} onChange={(v) => updateBudget(d.id, { latitude: v })} error={e("latitude")} />
-                  <Field label="Longitude" unit="°" value={d.longitude} onChange={(v) => updateBudget(d.id, { longitude: v })} error={e("longitude")} />
-                  <Field label="Radius" unit="km" value={d.radiusKm} onChange={(v) => updateBudget(d.id, { radiusKm: v })} error={e("radiusKm")} />
-                </div>
-              )}
-              {suppliers.length > 0 && (
-                <fieldset className="classes">
-                  <legend className="small muted">Placed plants whose net output adds to this budget</legend>
-                  {suppliers.map((p) => {
-                    const on = d.contributingProjectIds.includes(p.id);
-                    return (
-                      <label key={p.id} className="toggle compact">
-                        <input
-                          type="checkbox"
-                          checked={on}
-                          onChange={() =>
-                            updateBudget(d.id, {
-                              contributingProjectIds: on ? d.contributingProjectIds.filter((x) => x !== p.id) : [...d.contributingProjectIds, p.id],
-                            })
-                          }
-                        />
-                        <span>{p.name || typeLabel(p.type)}</span>
-                      </label>
-                    );
-                  })}
-                </fieldset>
-              )}
-              {e("contributors") && <small className="field-error">{e("contributors")}</small>}
-            </div>
-          );
-        })}
-        <div className="actions tight">
-          <button onClick={() => setBudgets([...budgets, newBudget()])}>+ Add budget</button>
-        </div>
-      </Section>
-
-      <h3>Stress test</h3>
-      <p className="muted small">Multipliers on declared inputs. 100% is the unstressed case. Results update as you move them.</p>
-      {CONTROLS.map((c) => {
-        const raw = stressDraft[c.key];
-        const n = Number(raw);
-        const err = st.errors[c.key];
-        const note = ev?.controlNotes?.[c.key];
-        return (
-          <div className="control" key={c.key}>
-            <div className="row align-center">
-              <span className="grow">{c.label}</span>
-              <input
-                className="num narrow"
-                inputMode="decimal"
-                aria-label={`${c.label} multiplier`}
-                value={raw}
-                onChange={(e) => setStressDraft({ ...stressDraft, [c.key]: e.target.value })}
-                aria-invalid={!!err}
-              />
-              <span className="muted small">×</span>
-            </div>
-            <input
-              type="range"
-              min={0}
-              max={c.kind === "supply" ? 1 : 3}
-              step={0.05}
-              value={Number.isFinite(n) ? Math.min(n, c.kind === "supply" ? 1 : 3) : 1}
-              aria-label={c.label}
-              onChange={(e) => setStressDraft({ ...stressDraft, [c.key]: e.target.value })}
-            />
-            {err ? (
-              <small className="field-error">
-                {c.kind === "supply" ? "A fraction from 0 to 1 (e.g. 0.5 = 50%)" : "A multiplier from 0 to 100 (e.g. 1.2 = 120%)"}
-              </small>
-            ) : (
-              <small className="muted">{c.meaning(st.stress[c.key])}</small>
-            )}
-            {note && <small className="muted block">{note}</small>}
-          </div>
-        );
-      })}
-
-      <div className="actions">
-        <button className="primary" onClick={save} disabled={saving || hasErrors || !dirty}>
-          {saving ? "Saving…" : "Save"}
-        </button>
-        <button onClick={() => setStressDraft(stressToDraft(NEUTRAL_STRESS))} disabled={JSON.stringify(st.stress) === JSON.stringify(NEUTRAL_STRESS)}>
-          Reset stress
-        </button>
-      </div>
-      {saveNote && (!saveNote.ok || !dirty) && <p className={`small ${saveNote.ok ? "ok" : "warn"}`}>{saveNote.text}</p>}
-      {dirty && <p className="note small">Results below include unsaved changes. Save to keep them with the scenario.</p>}
-
+  const comparison = (
+    <section className="panel scenario-comparison">
       <h3>
         Unstressed vs stressed {shownEval && <span className="muted">· over {fmtDays(shownEval.periodDays)}</span>}
         {status && <span className="muted small"> · {status}</span>}
@@ -327,6 +191,171 @@ export default function StressPanel({ scenario, onSaved, active = true }: Props)
       )}
       {shownEval && <Comparison ev={shownEval} />}
     </section>
+  );
+
+  return (
+    <>
+      <section className="panel stress-controls">
+        <h2>{section === "resources" ? "Resource budgets" : "Stress test"}</h2>
+        <p className="subtitle small">{section === "resources" ? "Declare the supplies shared by your buildings." : "Adjust one scenario and compare the impact."}</p>
+        <div hidden={section !== "resources"}>
+        <Field label="Evaluation period" unit="days" value={period} onChange={setPeriod} error={periodError ?? undefined} help="Every usage and cost figure is over this period." />
+
+        <Section title="Declared supplies" meta={`${budgets.length} budgets`} open>
+          <div className="row align-end">
+            {budgets.length > 0 && <label className="field"><span>Edit budget</span><select value={activeBudget} onChange={(e) => setEditingBudget(e.target.value)}>{budgets.map((x, i) => <option key={x.id} value={x.id}>{x.label.trim() || `Budget ${i + 1}`}{Object.keys(b.errors).some((key) => key.startsWith(`${x.id}.`)) ? " · needs attention" : ""}</option>)}</select></label>}
+            <button onClick={() => { const next = newBudget(); setBudgets([...budgets, next]); setEditingBudget(next.id); }}>+ Add budget</button>
+          </div>
+          <p className="muted small">
+            A budget is a pooled supply shared by every building in its scope, counted once. A plant's net output only adds to a budget if you tick it below.
+          </p>
+          {budgets.map((d) => {
+            const e = (k: string) => b.errors[`${d.id}.${k}`];
+            const unit = BUDGET_KINDS.find((k) => k.kind === d.kind)?.unit ?? "";
+            const suppliers = scenario.projects.filter((p) => canSupply(p, d.kind));
+            return (
+              <div className="list-row" key={d.id} hidden={d.id !== activeBudget}>
+                <div className="row align-end">
+                  <Field label="Label" value={d.label} onChange={(v) => updateBudget(d.id, { label: v })} error={e("label")} numeric={false} placeholder="e.g. Local grid" />
+                  <button className="ghost danger" onClick={() => setBudgets(budgets.filter((x) => x.id !== d.id))}>
+                    Remove
+                  </button>
+                </div>
+                <div className="row">
+                  <label className="field">
+                    <span>Kind</span>
+                    <select value={d.kind} onChange={(ev) => updateBudget(d.id, { kind: ev.target.value as BudgetKind })}>
+                      {BUDGET_KINDS.map((k) => (
+                        <option key={k.kind} value={k.kind}>
+                          {k.label} ({k.unit})
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <Field label="Amount" unit={unit} value={d.amount} onChange={(v) => updateBudget(d.id, { amount: v })} error={e("amount")} />
+                </div>
+                <div className="row">
+                  <label className="field">
+                    <span>Applies to</span>
+                    <select value={d.scopeKind} onChange={(ev) => updateBudget(d.id, { scopeKind: ev.target.value as BudgetDraft["scopeKind"] })}>
+                      <option value="scenario">Every building in the scenario</option>
+                      <option value="region">Buildings in a prepared region</option>
+                      <option value="radius">Buildings within a radius</option>
+                    </select>
+                  </label>
+                  {d.scopeKind === "region" && (
+                    <label className="field">
+                      <span>Region</span>
+                      <select value={d.region} onChange={(ev) => updateBudget(d.id, { region: ev.target.value as BudgetDraft["region"] })}>
+                        <option value="arizona">Arizona</option>
+                        <option value="uk">UK</option>
+                      </select>
+                    </label>
+                  )}
+                </div>
+                {d.scopeKind === "radius" && (
+                  <div className="row">
+                    <Field label="Latitude" unit="°" value={d.latitude} onChange={(v) => updateBudget(d.id, { latitude: v })} error={e("latitude")} />
+                    <Field label="Longitude" unit="°" value={d.longitude} onChange={(v) => updateBudget(d.id, { longitude: v })} error={e("longitude")} />
+                    <Field label="Radius" unit="km" value={d.radiusKm} onChange={(v) => updateBudget(d.id, { radiusKm: v })} error={e("radiusKm")} />
+                  </div>
+                )}
+                {suppliers.length > 0 && (
+                  <fieldset className="classes">
+                    <legend className="small muted">Placed plants whose net output adds to this budget</legend>
+                    {suppliers.map((p) => {
+                      const on = d.contributingProjectIds.includes(p.id);
+                      return (
+                        <label key={p.id} className="toggle compact">
+                          <input
+                            type="checkbox"
+                            checked={on}
+                            onChange={() =>
+                              updateBudget(d.id, {
+                                contributingProjectIds: on ? d.contributingProjectIds.filter((x) => x !== p.id) : [...d.contributingProjectIds, p.id],
+                              })
+                            }
+                          />
+                          <span>{p.name || typeLabel(p.type)}</span>
+                        </label>
+                      );
+                    })}
+                  </fieldset>
+                )}
+                {e("contributors") && <small className="field-error">{e("contributors")}</small>}
+              </div>
+            );
+          })}
+        </Section>
+        </div>
+        <div hidden={section !== "stress"}>
+        <p className="muted small">Multipliers on declared inputs. 100% is the unstressed case. Results update as you move them.</p>
+        <PanelTabs label="Stress controls" value={controlGroup} onChange={setControlGroup} options={[
+          { value: "supply", label: "Supply", count: Number(!!st.errors.waterAvailability) + Number(!!st.errors.powerAvailability) },
+          { value: "multiplier", label: "Demand & prices", count: Number(!!st.errors.operatingDemand) + Number(!!st.errors.operatingPrices) },
+        ]} />
+        {CONTROLS.map((c) => {
+          const raw = stressDraft[c.key];
+          const n = Number(raw);
+          const err = st.errors[c.key];
+          const note = ev?.controlNotes?.[c.key];
+          return (
+            <div className="control" key={c.key} hidden={c.kind !== controlGroup}>
+              <div className="row align-center">
+                <span className="grow">{c.label}</span>
+                <input
+                  className="num narrow"
+                  inputMode="decimal"
+                  aria-label={`${c.label} multiplier`}
+                  value={raw}
+                  onChange={(e) => setStressDraft({ ...stressDraft, [c.key]: e.target.value })}
+                  aria-invalid={!!err}
+                />
+                <span className="muted small">×</span>
+              </div>
+              <input
+                type="range"
+                min={0}
+                max={c.kind === "supply" ? 1 : 3}
+                step={0.05}
+                value={Number.isFinite(n) ? Math.min(n, c.kind === "supply" ? 1 : 3) : 1}
+                aria-label={c.label}
+                onChange={(e) => setStressDraft({ ...stressDraft, [c.key]: e.target.value })}
+              />
+              {err ? (
+                <small className="field-error">
+                  {c.kind === "supply" ? "A fraction from 0 to 1 (e.g. 0.5 = 50%)" : "A multiplier from 0 to 100 (e.g. 1.2 = 120%)"}
+                </small>
+              ) : (
+                <small className="muted">{c.meaning(st.stress[c.key])}</small>
+              )}
+              {note && <details className="readiness-note" name="stress-control-notes"><summary>Effect on this scenario</summary><small className="muted block">{note}</small></details>}
+            </div>
+          );
+        })}
+
+        </div>
+        <div className="save-strip">
+        {hasErrors && <p className="warn small">Fix invalid inputs before saving. <button className="link inline small" onClick={() => {
+          const invalidBudget = budgets.find((x) => Object.keys(b.errors).some((key) => key.startsWith(`${x.id}.`)));
+          if (invalidBudget) setEditingBudget(invalidBudget.id);
+          if (!periodError && !invalidBudget) setControlGroup(st.errors.waterAvailability || st.errors.powerAvailability ? "supply" : "multiplier");
+          onSection(periodError || invalidBudget ? "resources" : "stress");
+        }}>Review fields</button></p>}
+        <div className="actions">
+          <button className="primary" onClick={save} disabled={saving || hasErrors || !dirty}>
+            {saving ? "Saving…" : "Save scenario inputs"}
+          </button>
+          <button onClick={() => setStressDraft(stressToDraft(NEUTRAL_STRESS))} disabled={JSON.stringify(st.stress) === JSON.stringify(NEUTRAL_STRESS)}>
+            Reset stress
+          </button>
+        </div>
+        {saveNote && (!saveNote.ok || !dirty) && <p className={`small ${saveNote.ok ? "ok" : "warn"}`}>{saveNote.text}</p>}
+        {dirty && <p className="note small">Preview includes unsaved changes.</p>}
+        </div>
+      </section>
+      {resultsHost ? createPortal(comparison, resultsHost) : comparison}
+    </>
   );
 }
 
@@ -355,6 +384,9 @@ function pairs<T>(a: T[], b: T[], key: (x: T) => string): [string, T | undefined
 }
 
 function Comparison({ ev }: { ev: ScenarioEvaluation }) {
+  const [view, setView] = useState<"totals" | "budgets" | "buildings">("totals");
+  const [budgetId, setBudgetId] = useState("");
+  const [buildingId, setBuildingId] = useState("");
   const u: ScenarioResult = ev.unstressed;
   const s: ScenarioResult = ev.stressed;
   const period = `over ${fmtDays(ev.periodDays)}`;
@@ -375,10 +407,15 @@ function Comparison({ ev }: { ev: ScenarioEvaluation }) {
 
   return (
     <div className="comparison">
+      <PanelTabs label="Scenario result sections" value={view} onChange={setView} options={[
+        { value: "totals", label: "Totals" }, { value: "budgets", label: "Budgets" }, { value: "buildings", label: "Buildings" },
+      ]} />
+      <div hidden={view !== "budgets"}>
+      {!budgetPairs.length && <p className="muted small">No resource budgets declared. Add one in Resources.</p>}
       {budgetPairs.length > 0 && (
         <>
-          <h4>Budgets</h4>
-          {budgetPairs.map(([id, a, b]) => (
+          <label className="field"><span>Budget results</span><select value={budgetPairs.some(([id]) => id === budgetId) ? budgetId : budgetPairs[0][0]} onChange={(e) => setBudgetId(e.target.value)}>{budgetPairs.map(([id, a, b]) => <option key={id} value={id}>{(a ?? b)!.label}</option>)}</select></label>
+          {budgetPairs.filter(([id]) => id === (budgetPairs.some(([key]) => key === budgetId) ? budgetId : budgetPairs[0][0])).map(([id, a, b]) => (
             <table className="mini" key={id}>
               <caption>
                 {(a ?? b)!.label}{" "}
@@ -397,6 +434,8 @@ function Comparison({ ev }: { ev: ScenarioEvaluation }) {
         </>
       )}
 
+      </div>
+      <div hidden={view !== "totals"}>
       <h4>Scenario totals</h4>
       <table className="mini">
         {head}
@@ -434,15 +473,19 @@ function Comparison({ ev }: { ev: ScenarioEvaluation }) {
         </div>
       )}
 
+      </div>
+      <div hidden={view !== "buildings"}>
+      {!buildingPairs.length && <p className="muted small">No buildings placed in this scenario yet.</p>}
       {buildingPairs.length > 0 && (
         <>
-          <h4>Buildings</h4>
-          {buildingPairs.map(([id, a, b]) => (
+          <label className="field"><span>Building results</span><select value={buildingPairs.some(([id]) => id === buildingId) ? buildingId : buildingPairs[0][0]} onChange={(e) => setBuildingId(e.target.value)}>{buildingPairs.map(([id, a, b]) => <option key={id} value={id}>{(a ?? b)!.name || typeLabel((a ?? b)!.type)}</option>)}</select></label>
+          {buildingPairs.filter(([id]) => id === (buildingPairs.some(([key]) => key === buildingId) ? buildingId : buildingPairs[0][0])).map(([id, a, b]) => (
             <BuildingCompare key={id} a={a} b={b} period={period} head={head} />
           ))}
         </>
       )}
 
+      </div>
       {otherNotes.length > 0 && (
         <ul className="small muted">
           {otherNotes.map(([k, v]) => (

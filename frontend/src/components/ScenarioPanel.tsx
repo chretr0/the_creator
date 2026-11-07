@@ -13,7 +13,7 @@ type Props = {
   onSelectProject: (p: Project) => void;
 };
 
-/** Compact scenario switcher for the sidebar header. */
+/** Compact scenario switcher for the application header. */
 export function ScenarioSelect({
   scenarios,
   scenario,
@@ -59,7 +59,7 @@ export default function ScenarioPanel(props: Props) {
       <section className="panel">
         <h3 style={{ marginTop: 0 }}>Projects</h3>
         {scenario && scenario.projects.length === 0 && (
-          <p className="muted">No buildings yet. Use “+ Add building” above the map, or the Build tab.</p>
+          <p className="muted">No buildings yet. Choose Build to define a building, or use “Add building” on the map.</p>
         )}
         <ul className="list">
           {scenario?.projects.map((p) => (

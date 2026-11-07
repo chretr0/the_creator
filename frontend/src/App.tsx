@@ -19,13 +19,15 @@ import {
 import CellInspector, { type CellSelection } from "./components/CellInspector";
 import ProjectEditor from "./components/ProjectEditor";
 import ScenarioPanel, { ScenarioSelect } from "./components/ScenarioPanel";
-import BuildPanel, { type BuildTarget, type PresetRequest } from "./components/BuildPanel";
+import BuildPanel, { type BuildTarget, type PresetRequest, type BuildStage } from "./components/BuildPanel";
 import StressPanel from "./components/StressPanel";
 import { StateLegend } from "./components/FormBits";
 import type { CellState } from "./lib/buildings";
 import LayerPanel from "./components/LayerPanel";
 import FacilityInspector from "./components/FacilityInspector";
-import DataPanel, { RecordsPanel, PreparedScenes } from "./components/DataPanel";
+import Icon from "./components/Icon";
+import { BackLink, PanelTabs } from "./components/PanelNavigation";
+import DataPanel, { RecordsPanel, PreparedScenes, LayerLegend } from "./components/DataPanel";
 import { FieldList } from "./components/BaselineBlock";
 import CreditsPanel from "./components/CreditsPanel";
 import { useDataLayers } from "./lib/useDataLayers";
@@ -46,14 +48,17 @@ import {
 import { api, keepIfShown, type Project, type ProjectInput, type Scenario, type ScenarioSummary } from "./lib/api";
 import { cellContains, displayCell, normaliseLongitude, simulationCell } from "./lib/h3grid";
 
-type Tab = "details" | "layers" | "search" | "build" | "projects";
-const TAB_LABEL: Record<Tab, string> = {
-  details: "Details",
-  layers: "Layers",
-  search: "Search",
-  build: "Build",
-  projects: "Projects",
-};
+type ExploreSection = "library" | "environment" | "infrastructure" | "records" | "context" | "imagery" | "sources";
+const EXPLORE_SECTIONS = [
+  { value: "environment", label: "Environment", icon: "sun", detail: "Climate, water, land & more" },
+  { value: "infrastructure", label: "Infrastructure", icon: "building", detail: "Datacentres, dams & operators" },
+  { value: "records", label: "Mapped records", icon: "pin", detail: "Features, filters & datasets" },
+  { value: "context", label: "Context & hazards", icon: "globe", detail: "Boundaries, cables, fires & quakes" },
+  { value: "imagery", label: "Satellite imagery", icon: "layers", detail: "Products, dates & prepared scenes" },
+  { value: "sources", label: "Sources & licences", icon: "info", detail: "Provenance & data limitations" },
+] as const;
+
+type Tab = "layers" | "search" | "build" | "projects";
 
 /** "pick" = choosing an exact location for a building preview (Build tab). */
 type Mode = { kind: "inspect" } | { kind: "pick" } | { kind: "move"; projectId: string };
@@ -112,10 +117,46 @@ export default function App() {
   const [selectedFacilityId, setSelectedFacilityId] = useState<string | null>(null);
   const [tilted, setTilted] = useState(false);
   const [view, setView] = useState<MapView | null>(null);
-  const [sideTab, setSideTab] = useState<Tab>("details");
+  const [sideTab, setSideTab] = useState<Tab>("layers");
+  const [buildStage, setBuildStage] = useState<BuildStage>("define");
+  const [buildMapVisible, setBuildMapVisible] = useState(false);
+  const [exploreSection, setExploreSection] = useState<ExploreSection>("library");
+  const [scenarioSection, setScenarioSection] = useState<"overview" | "resources" | "stress">("overview");
+  const [detailView, setDetailView] = useState<"record" | "location">("record");
+  const [inspectorOpen, setInspectorOpen] = useState(false);
+  const sideBodyRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    sideBodyRef.current?.scrollTo({ top: 0 });
+  }, [sideTab, exploreSection, scenarioSection]);
+  const [stressHost, setStressHost] = useState<HTMLDivElement | null>(null);
+
+  function navigate(tab: Tab) {
+    setSideTab(tab);
+    setInspectorOpen(false);
+    setBuildMapVisible(false);
+    setMode((current) => current.kind === "pick" ? { kind: "inspect" } : current);
+    sideBodyRef.current?.scrollTo({ top: 0 });
+  }
+
   const [query, setQuery] = useState<Query>({ dataset: "datacenters", sort: "metric" });
   const [buildTarget, setBuildTarget] = useState<BuildTarget | null>(null);
   const [presetRequest, setPresetRequest] = useState<PresetRequest | null>(null);
+  const changeBuildStage = useCallback((stage: BuildStage) => {
+    setBuildStage(stage);
+    setBuildMapVisible(false);
+    setInspectorOpen(false);
+    setMode({ kind: "inspect" });
+  }, []);
+  const updateBuildTarget = useCallback((target: BuildTarget | null) => {
+    setBuildTarget(target);
+    if (target) {
+      setBuildMapVisible(false);
+      setInspectorOpen(false);
+      setBuildStage("place");
+    } else {
+      setBuildStage((current) => current === "place" ? "site" : current);
+    }
+  }, []);
   const [assessmentCells, setAssessmentCells] = useState<CellState[] | null>(null);
   const ctx = useContextData(view, { country: query.country, admin1: query.admin1 });
   const data = useDataLayers(view, grid.cells);
@@ -196,6 +237,7 @@ export default function App() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
+        setBuildMapVisible(false);
         setMode({ kind: "inspect" });
         setBuildTarget(null);
       }
@@ -215,8 +257,9 @@ export default function App() {
     setScenario((s) => (s ? { ...s, projects: s.projects.map((x) => (x.id === p.id ? p : x)) } : s));
 
   const selectProject = (p: Project) => {
+    setBuildMapVisible(false);
     setSelectedProjectId(p.id);
-    setSideTab("details");
+    setInspectorOpen(true);
     setSelection({ h3Id: p.h3Id, latitude: p.latitude, longitude: p.longitude });
   };
 
@@ -231,12 +274,13 @@ export default function App() {
     setError(null);
     const longitude = normaliseLongitude(rawLongitude);
     if (mode.kind === "pick") {
-      if (scenario) setBuildTarget({ latitude, longitude, scenarioId: scenario.id, nonce: Date.now() });
+      if (scenario) updateBuildTarget({ latitude, longitude, scenarioId: scenario.id, nonce: Date.now() });
       setMode({ kind: "inspect" });
       setSideTab("build");
       return;
     }
-    setSideTab("details");
+    setInspectorOpen(true);
+    setBuildMapVisible(false);
     try {
       if (mode.kind === "move") {
         const moved = await api.updateProject(mode.projectId, { latitude, longitude });
@@ -403,7 +447,7 @@ export default function App() {
 
   function pickRecord(r: QueryRecord) {
     setSelectedProjectId(null);
-    setSideTab("details");
+    setInspectorOpen(true);
     if (r.dataset === "datacenters" || r.dataset === "dams") {
       const f = r.ref as Facility;
       setSelectedFacilityId(f.id);
@@ -465,7 +509,7 @@ export default function App() {
       setScenario((s) => (s && s.id === p.scenarioId ? { ...s, projects: [...s.projects, p] } : s));
       setSelectedProjectId(p.id);
       setSelection({ h3Id: p.h3Id, latitude: p.latitude, longitude: p.longitude });
-      setSideTab("details");
+      setInspectorOpen(true);
     },
     [refreshList, isShown],
   );
@@ -484,16 +528,22 @@ export default function App() {
     const nonce = Date.now();
     setError(null);
     setMode({ kind: "inspect" });
-    setSideTab("build");
+    navigate("build");
     setPresetRequest({ id: presetId, nonce });
-    setBuildTarget({ latitude, longitude, scenarioId: scenario.id, nonce });
+    updateBuildTarget({ latitude, longitude, scenarioId: scenario.id, nonce });
   };
-  const setPicking = useCallback((on: boolean) => setMode(on ? { kind: "pick" } : { kind: "inspect" }), []);
+  const setPicking = useCallback((on: boolean) => {
+    if (on) setInspectorOpen(false);
+    setBuildMapVisible(on);
+    setMode(on ? { kind: "pick" } : { kind: "inspect" });
+  }, []);
   const previewMarker = useMemo(
     () => (buildTarget ? { latitude: buildTarget.latitude, longitude: buildTarget.longitude } : null),
     [buildTarget],
   );
-  const hasDetail = !!(selectedProject || selectedFacility || data.picked || ctx.selection || selection);
+  const hasRecord = !!(selectedProject || selectedFacility || data.picked || ctx.selection);
+  const hasDetail = hasRecord || !!selection;
+  useEffect(() => { setDetailView("record"); }, [selectedProjectId, selectedFacilityId, data.picked, ctx.selection]);
 
   // Layer keys (as listed by /api/sources) of everything drawn on the map right now.
   const activeCredits = new Set<string>(["basemap"]);
@@ -513,299 +563,366 @@ export default function App() {
     ...data.attributions,
   ];
   const showCredits = () => {
-    setSideTab("layers");
-    requestAnimationFrame(() => document.getElementById("data-credits")?.scrollIntoView({ behavior: "smooth" }));
+    navigate("layers");
+    setExploreSection("sources");
   };
 
+  const workspace = sideTab === "build" ? "build" : sideTab === "projects" ? "scenarios" : "explore";
+  const dock = inspectorOpen && hasDetail ? "details" : sideTab === "projects" && scenario && scenarioSection !== "overview" ? "stress" : null;
+
   return (
-    <div className="app">
-      <main className="map-wrap">
-        <WorldMap
-          projects={projects}
-          selectedProjectId={selectedProjectId}
-          selectedCell={selection?.h3Id ?? null}
-          crosshair={crosshair}
-          focus={focus}
-          onMapClick={handleMapClick}
-          facilities={facilities}
-          facilityColour={facilityColour}
-          selectedFacilityId={selectedFacilityId}
-          tilted={tilted}
-          onGridChange={setGrid}
-          contextLayers={mapLayers}
-          cellFill={data.cellFill}
-          cellTooltip={data.cellTooltip}
-          scene={data.scene}
-          contextTooltip={contextTooltip}
-          imagery={ctx.rasterImagery}
-          onViewChange={setView}
-          assessmentCells={assessmentCells}
-          preview={previewMarker}
-          onDropPreset={dropPreset}
-        />
-
-        <div className="map-top">
-          <PlaceSearch
-            index={ctx.searchIndex}
-            onFocus={ctx.ensureSearchIndex}
-            onGo={(h) =>
-              setFocus({
-                latitude: h.lat,
-                longitude: h.lon,
-                zoom: h.bbox ? 12 : 11,
-                bbox: h.bbox,
-                nonce: Date.now(),
-              })
-            }
-          />
-          <div className="toolbar" role="toolbar" aria-label="Map tools">
-            <button disabled={!scenario} className={sideTab === "build" ? "active" : ""} onClick={() => setSideTab("build")}>
-              + Add building
-            </button>
-            <span className="sep" />
-            <button className={tilted ? "active" : ""} aria-pressed={tilted} onClick={() => setTilted((t) => !t)} title="Tilt the map and show 3D buildings when zoomed in">
-              3D
-            </button>
-          </div>
-        </div>
-
-        <div className="map-credits small">
-          <a href="https://openfreemap.org" target="_blank" rel="noreferrer">OpenFreeMap</a>{" "}
-          <a href="https://www.openmaptiles.org/" target="_blank" rel="noreferrer">© OpenMapTiles</a> Data from{" "}
-          <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a>
-          {mapCredits.map((a) => (
-            <span key={a}> · {a}</span>
-          ))}
-          {" · "}
-          <button className="link inline" onClick={showCredits}>
-            Sources &amp; licences
-          </button>
-        </div>
-
-        {crosshair && (
-          <div className="hint" role="status">
-            {mode.kind === "pick" ? "Click the exact location to preview the building" : "Click the new location"}
-            <button onClick={() => setMode({ kind: "inspect" })}>Cancel</button>
-          </div>
-        )}
-
-        {assessmentCells && assessmentCells.length > 0 && (
-          <div className="map-legend small" aria-label="Assessment legend">
-            <strong>Screening by cell</strong>
-            <StateLegend />
-            <button className="link inline" onClick={() => setAssessmentCells(null)}>
-              Hide
-            </button>
-          </div>
-        )}
-      </main>
-
-      <aside className="sidebar">
-        <header className="side-header">
-          <h1>New Worlds</h1>
-          <ScenarioSelect scenarios={scenarios} scenario={scenario} onSwitch={scenarioActions.onSwitch} />
-        </header>
-
-        <nav className="tabs" role="tablist">
-          {(Object.keys(TAB_LABEL) as Tab[]).map((t) => (
-            <button key={t} role="tab" aria-selected={sideTab === t} onClick={() => setSideTab(t)}>
-              {TAB_LABEL[t]}
-            </button>
-          ))}
+    <div className={`app${workspace === "build" ? " building-active" : ""}`}>
+      <header className="app-header">
+        <a className="brand" href="#" onClick={(e) => { e.preventDefault(); navigate("layers"); }} aria-label="New Worlds home">
+          <span className="brand-symbol"><Icon name="globe" size={30} /></span><span>New Worlds</span>
+        </a>
+        <nav className="workspace-nav" aria-label="Main navigation">
+          <button aria-current={workspace === "explore" ? "page" : undefined} onClick={() => navigate("layers")}><Icon name="explore" />Explore</button>
+          <button aria-current={workspace === "build" ? "page" : undefined} onClick={() => navigate("build")}><Icon name="layers" />Build</button>
+          <button aria-current={workspace === "scenarios" ? "page" : undefined} onClick={() => navigate("projects")}><Icon name="chart" />Scenarios</button>
         </nav>
+        <div className="scenario-switcher"><span className="eyebrow">ACTIVE SCENARIO</span><ScenarioSelect scenarios={scenarios} scenario={scenario} onSwitch={scenarioActions.onSwitch} /></div>
+        <button className="sources-button" onClick={showCredits}><Icon name="info" size={18} /><span>Data & sources</span></button>
+      </header>
+      <div className={`workspace workspace-${workspace}${dock ? " with-inspector" : ""}${buildMapVisible ? " mobile-map-open" : ""}`}>
+        {workspace === "build" && <button className="mobile-map-toggle" aria-pressed={buildMapVisible} onClick={() => {
+          setBuildMapVisible(!buildMapVisible);
+          setInspectorOpen(false);
+          if (buildMapVisible) setMode({ kind: "inspect" });
+        }}><Icon name={buildMapVisible ? "arrow" : "pin"} size={16} />{buildMapVisible ? "Back to building" : "Show map"}</button>}
+        <main className="map-wrap" aria-label="Interactive world map">
+          <WorldMap
+            projects={projects}
+            selectedProjectId={selectedProjectId}
+            selectedCell={selection?.h3Id ?? null}
+            crosshair={crosshair}
+            focus={focus}
+            onMapClick={handleMapClick}
+            facilities={facilities}
+            facilityColour={facilityColour}
+            selectedFacilityId={selectedFacilityId}
+            tilted={tilted}
+            onGridChange={setGrid}
+            contextLayers={mapLayers}
+            cellFill={data.cellFill}
+            cellTooltip={data.cellTooltip}
+            scene={data.scene}
+            contextTooltip={contextTooltip}
+            imagery={ctx.rasterImagery}
+            onViewChange={setView}
+            assessmentCells={assessmentCells}
+            preview={previewMarker}
+            onDropPreset={dropPreset}
+          />
 
-        <div className="side-body">
-          {error && (
-            <div className="error" role="alert" style={{ marginTop: 12 }}>
-              {error}
-              <button className="ghost" onClick={() => setError(null)} aria-label="Dismiss">
-                ✕
+          <div className="map-top">
+            <PlaceSearch
+              index={ctx.searchIndex}
+              onFocus={ctx.ensureSearchIndex}
+              onGo={(h) =>
+                setFocus({
+                  latitude: h.lat,
+                  longitude: h.lon,
+                  zoom: h.bbox ? 12 : 11,
+                  bbox: h.bbox,
+                  nonce: Date.now(),
+                })
+              }
+            />
+            <div className="toolbar" role="toolbar" aria-label="Map tools">
+              <button disabled={!scenario} className={sideTab === "build" ? "active" : ""} onClick={() => navigate("build")}>
+                <Icon name="plus" size={17} /> Add building
+              </button>
+              <span className="sep" />
+              <button className={tilted ? "active" : ""} aria-pressed={tilted} onClick={() => setTilted((t) => !t)} title="Tilt the map and show 3D buildings when zoomed in">
+                3D
+              </button>
+            </div>
+          </div>
+
+          <div className="map-context"><span className="context-dot" />{workspace === "explore" ? "Explore mode" : workspace === "build" ? "Building workspace" : "Scenario workspace"}<span className="map-context-divider" />{projects.length} {projects.length === 1 ? "building" : "buildings"}</div>
+          {!crosshair && !dock && <div className="map-guide"><Icon name="info" size={17} />Click a location to explore its data</div>}
+          {data.activeLayer && !data.outsideRegions && !assessmentCells?.length && (
+            <div className="layer-map-legend" aria-label="Active data layer legend">
+              <div><strong>{data.activeLayer.name}</strong><span className="muted small block">{data.activeSlice?.label}</span></div>
+              <LayerLegend data={data} />
+              <span className="muted small legend-unknown"><span className="swatch no-data" /> No data</span>
+            </div>
+          )}
+          <div className="map-credits small">
+            <a href="https://openfreemap.org" target="_blank" rel="noreferrer">OpenFreeMap</a>{" "}
+            <a href="https://www.openmaptiles.org/" target="_blank" rel="noreferrer">© OpenMapTiles</a> Data from{" "}
+            <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a>
+            {mapCredits.map((a) => (
+              <span key={a}> · {a}</span>
+            ))}
+            {" · "}
+            <button className="link inline" onClick={showCredits}>
+              Sources &amp; licences
+            </button>
+          </div>
+
+          {crosshair && (
+            <div className="hint" role="status">
+              {mode.kind === "pick" ? "Click the exact location to preview the building" : "Click the new location"}
+              <button onClick={() => { setMode({ kind: "inspect" }); setBuildMapVisible(false); }}>Cancel</button>
+            </div>
+          )}
+
+          {assessmentCells && assessmentCells.length > 0 && (
+            <div className="map-legend small" aria-label="Assessment legend">
+              <strong>Screening by cell</strong>
+              <StateLegend />
+              <button className="link inline" onClick={() => setAssessmentCells(null)}>
+                Hide
               </button>
             </div>
           )}
+        </main>
 
-          {sideTab === "details" && (
-            <>
-              {!hasDetail && (
-                <div className="empty">
-                  <strong>Nothing selected</strong>
-                  Click anywhere on the map to see what's there.
-                </div>
-              )}
-
-              {selectedProject && (
-                <ProjectEditor
-                  project={selectedProject}
-                  moving={mode.kind === "move"}
-                  onSave={saveProject}
-                  onMove={() =>
-                    setMode(mode.kind === "move" ? { kind: "inspect" } : { kind: "move", projectId: selectedProject.id })
-                  }
-                  onDelete={deleteProject}
-                  onClose={() => setSelectedProjectId(null)}
-                  catalogue={data.catalogue}
-                  periodDays={mergeAssumptions(scenario?.assumptions).periodDays}
-                />
-              )}
-
-              {selectedFacility && (
-                <FacilityInspector
-                  facility={selectedFacility}
-                  canModel={!!scenario}
-                  onModel={modelFacility}
-                  onShowCompany={(key) => {
-                    setCompanyFilter(key);
-                    setSideTab("layers");
-                  }}
-                  onZoomTo={() =>
-                    setFocus({
-                      latitude: selectedFacility.properties.lat,
-                      longitude: selectedFacility.properties.lon,
-                      zoom: 16,
-                      nonce: Date.now(),
-                    })
-                  }
-                  onClose={() => setSelectedFacilityId(null)}
-                />
-              )}
-
-              {data.picked && (
-                <section className="panel">
-                  <div className="panel-head">
-                    <h2>
-                      {String(
-                        (data.picked.meta.nameField && data.picked.feature.properties[data.picked.meta.nameField]) ||
-                          data.picked.feature.properties.id ||
-                          "Unnamed",
-                      )}
-                    </h2>
-                    <button className="ghost" onClick={() => data.setPicked(null)} aria-label="Close">
-                      ✕
-                    </button>
-                  </div>
-                  <p className="subtitle">{data.picked.meta.name}</p>
-                  <FieldList props={data.picked.feature.properties} meta={data.picked.meta} />
-                </section>
-              )}
-
-              {ctx.selection && <ContextInspector selection={ctx.selection} onClose={() => ctx.setSelection(null)} />}
-
-              {selection && (
-                <CellInspector
-                  selection={selection}
-                  projectsInCell={projectsInCell}
-                  onSelectProject={(id) => {
-                    const p = projects.find((x) => x.id === id);
-                    if (p) selectProject(p);
-                  }}
-                  facilities={allFacilities}
-                  power={ctx.power}
-                  powerStatus={ctx.status.power}
-                  onLoadPower={(lat, lon) => ctx.requestPower(lat, lon)}
-                  onClearPower={() => ctx.setPower(null)}
-                  featureManifest={data.manifest}
-                  onShowLayer={(layerId, sliceId) => {
-                    const l = data.catalogue.find((x) => x.id === layerId);
-                    if (l) data.setActive({ layerId, sliceId: sliceId ?? l.defaultSlice });
-                    setSideTab("layers");
-                  }}
-                  onGoTo={(lat, lon) => setFocus({ latitude: lat, longitude: lon, zoom: 11, nonce: Date.now() })}
-                  onSelectSimulationCell={() =>
-                    setSelection((s) => (s ? { ...s, h3Id: simulationCell(s.latitude, s.longitude) } : s))
-                  }
-                  onZoomToCell={(bbox) => setFocus({ latitude: (bbox[1] + bbox[3]) / 2, longitude: (bbox[0] + bbox[2]) / 2, bbox, zoom: 12, nonce: Date.now() })}
-                  onFilterRegion={(country, admin1) => {
-                    setQuery((q) => ({ ...q, dataset: "datacenters", country, admin1, sort: "metric" }));
-                    setSideTab("search");
-                  }}
-                />
-              )}
-            </>
-          )}
-
-          {sideTab === "layers" && (
-            <>
-              <DataPanel data={data} onFitBBox={fitBBox} />
-              <LayerPanel
-                manifest={manifest}
-                loadError={infraError}
-                visible={visibleLayers}
-                onToggle={(id) => setVisibleLayers((v) => ({ ...v, [id]: !v[id] }))}
-                companies={companies}
-                companyFilter={companyFilter}
-                onCompanyFilter={setCompanyFilter}
-                shownCount={facilities.length}
-              />
-              <RecordsPanel data={data} />
-              <ContextPanel
-                toggles={ctx.toggles}
-                onToggles={ctx.setToggles}
-                status={ctx.status}
-                quakes={ctx.quakes}
-                fires={ctx.fires}
-                fireHint={ctx.fireHint}
-              />
-              <ImageryPanel
-                imagery={ctx.imagery}
-                onImagery={ctx.setImagery}
-                defaultImageryDate={ctx.defaultImageryDate}
-                view={view}
-              >
-                <PreparedScenes data={data} onFitBBox={fitBBox} />
-              </ImageryPanel>
-              <CreditsPanel sources={ctx.sources} activeLayers={activeCredits} />
-            </>
-          )}
-
-          {sideTab === "search" && (
-            <SearchPanel
-              records={searchRecords}
-              available={datasetAvailable}
-              query={query}
-              onQuery={setQuery}
-              near={view?.centre ?? null}
-              onPick={pickRecord}
-            />
-          )}
-
-          {/* Kept mounted so the building draft survives tab switches. */}
-          <div hidden={sideTab !== "build"}>
-            <BuildPanel
-              scenario={scenario}
-              view={view}
-              catalogue={data.catalogue}
-              target={buildTarget}
-              onTarget={setBuildTarget}
-              picking={mode.kind === "pick"}
-              onPick={setPicking}
-              onCells={setAssessmentCells}
-              onBuilt={onBuilt}
-              onFocus={focusOn}
-              onFitBounds={(bbox) => fitBBox(bbox, 7)}
-              presetRequest={presetRequest}
-            />
+        <aside className="sidebar">
+          <div className="workspace-heading">
+            <div className="eyebrow">{sideTab === "build" ? "PLAN & PLACE" : sideTab === "projects" ? "MODEL & COMPARE" : "THE WORLD, IN CONTEXT"}</div>
+            <h1>{sideTab === "build" ? ({ define: "Define your building", site: "Find a site", place: "Review & place" }[buildStage]) : sideTab === "projects" ? "Your scenarios" : "Explore the world"}</h1>
+            <p>{sideTab === "build" ? "From an idea to the right location." : sideTab === "projects" ? "Understand the impact of change." : "Discover the data behind a place."}</p>
           </div>
+          {(sideTab === "layers" || sideTab === "search") && (
+            <nav className="explore-tabs" aria-label="Explore views">
+              <button aria-pressed={sideTab === "layers"} onClick={() => setSideTab("layers")}><Icon name="layers" size={17} />Data layers</button>
+              <button aria-pressed={sideTab === "search"} onClick={() => setSideTab("search")}><Icon name="search" size={17} />Search records</button>
+            </nav>
+          )}
 
-          {sideTab === "projects" && (
-            <ScenarioPanel
-              scenarios={scenarios}
-              scenario={scenario}
-              selectedProjectId={selectedProjectId}
-              onSelectProject={(p) => {
-                selectProject(p);
-                setFocus({ latitude: p.latitude, longitude: p.longitude, nonce: Date.now() });
-              }}
-              {...scenarioActions}
-            />
-          )}
-          {/* Kept mounted so unsaved stress and budget edits survive tab switches (not evaluated while hidden). */}
-          {scenario && (
-            <div hidden={sideTab !== "projects"}>
-              <StressPanel scenario={scenario} active={sideTab === "projects"} onSaved={applySavedScenario} />
+          {sideTab === "projects" && <PanelTabs label="Scenario sections" value={scenarioSection} onChange={setScenarioSection} options={[
+            { value: "overview", label: "Overview" }, { value: "resources", label: "Resources" }, { value: "stress", label: "Stress test" },
+          ]} />}
+          <div className="side-body" ref={sideBodyRef}>
+            {error && (
+              <div className="error" role="alert" style={{ marginTop: 12 }}>
+                {error}
+                <button className="ghost" onClick={() => setError(null)} aria-label="Dismiss">
+                  ✕
+                </button>
+              </div>
+            )}
+
+            <div hidden={sideTab !== "layers"}>
+              {exploreSection === "library" ? (
+                <section className="panel section-library">
+                  <h2>What would you like to explore?</h2>
+                  <p className="subtitle small">Open a section to choose its layers and controls.</p>
+                  <div className="section-grid">
+                    {EXPLORE_SECTIONS.map((section) => <button key={section.value} onClick={() => setExploreSection(section.value)}>
+                      <Icon name={section.icon} /><strong>{section.label}</strong><small>{section.detail}</small>
+                    </button>)}
+                  </div>
+                  {data.activeLayer && <button className="active-layer-shortcut" onClick={() => setExploreSection("environment")}><Icon name="layers" size={18} /><span><small>ACTIVE ENVIRONMENTAL LAYER</small>{data.activeLayer.name}</span><Icon name="chevron" size={16} /></button>}
+                </section>
+              ) : <div className="section-back"><BackLink onClick={() => setExploreSection("library")}>All data sections</BackLink><h2>{EXPLORE_SECTIONS.find((x) => x.value === exploreSection)?.label}</h2></div>}
+              <div hidden={exploreSection !== "environment"}><DataPanel data={data} onFitBBox={fitBBox} /></div>
+              <div hidden={exploreSection !== "infrastructure"}>
+                <LayerPanel
+                  manifest={manifest}
+                  loadError={infraError}
+                  visible={visibleLayers}
+                  onToggle={(id) => setVisibleLayers((v) => ({ ...v, [id]: !v[id] }))}
+                  companies={companies}
+                  companyFilter={companyFilter}
+                  onCompanyFilter={setCompanyFilter}
+                  shownCount={facilities.length}
+                />
+
+              </div>
+              <div hidden={exploreSection !== "records"}><RecordsPanel data={data} /></div>
+              <div hidden={exploreSection !== "context"}>
+                <ContextPanel
+                  toggles={ctx.toggles}
+                  onToggles={ctx.setToggles}
+                  status={ctx.status}
+                  quakes={ctx.quakes}
+                  fires={ctx.fires}
+                  fireHint={ctx.fireHint}
+                />
+
+              </div>
+              <div hidden={exploreSection !== "imagery"}>
+                <ImageryPanel
+                  imagery={ctx.imagery}
+                  onImagery={ctx.setImagery}
+                  defaultImageryDate={ctx.defaultImageryDate}
+                  view={view}
+                >
+                  <PreparedScenes data={data} onFitBBox={fitBBox} />
+                </ImageryPanel>
+
+              </div>
+              <div hidden={exploreSection !== "sources"}><CreditsPanel sources={ctx.sources} activeLayers={activeCredits} /></div>
             </div>
-          )}
-        </div>
-      </aside>
+
+            {sideTab === "search" && (
+              <SearchPanel
+                records={searchRecords}
+                available={datasetAvailable}
+                query={query}
+                onQuery={setQuery}
+                near={view?.centre ?? null}
+                onPick={pickRecord}
+              />
+            )}
+
+            {/* Kept mounted so the building draft survives tab switches. */}
+            <div className="build-mount" hidden={sideTab !== "build"}>
+              <BuildPanel
+                stage={buildStage}
+                onStage={changeBuildStage}
+                scenario={scenario}
+                view={view}
+                catalogue={data.catalogue}
+                target={buildTarget}
+                onTarget={updateBuildTarget}
+                picking={mode.kind === "pick"}
+                onPick={setPicking}
+                onCells={setAssessmentCells}
+                onBuilt={onBuilt}
+                onFocus={focusOn}
+                onFitBounds={(bbox) => fitBBox(bbox, 7)}
+                presetRequest={presetRequest}
+              />
+            </div>
+
+            {sideTab === "projects" && scenarioSection === "overview" && (
+              <ScenarioPanel
+                scenarios={scenarios}
+                scenario={scenario}
+                selectedProjectId={selectedProjectId}
+                onSelectProject={(p) => {
+                  selectProject(p);
+                  setFocus({ latitude: p.latitude, longitude: p.longitude, nonce: Date.now() });
+                }}
+                {...scenarioActions}
+              />
+            )}
+            {/* Kept mounted so unsaved stress and budget edits survive tab switches (not evaluated while hidden). */}
+            {scenario && (
+              <div hidden={sideTab !== "projects" || scenarioSection === "overview"}>
+                <StressPanel scenario={scenario} section={scenarioSection === "resources" ? "resources" : "stress"} onSection={setScenarioSection} active={sideTab === "projects" && scenarioSection !== "overview"} onSaved={applySavedScenario} resultsHost={stressHost} />
+              </div>
+            )}
+          </div>
+        </aside>
+        <aside className="inspector" hidden={!dock} aria-label={dock === "details" ? "Selected location details" : "Scenario results"}>
+          <div className="inspector-heading">
+            <div><span className="eyebrow">{dock === "details" ? "LOCATION INSIGHTS" : "SCENARIO ANALYSIS"}</span><h2>{dock === "details" ? "At this location" : "Impact overview"}</h2></div>
+            {dock === "details" && <button className="icon-button" aria-label="Close location details" onClick={() => setInspectorOpen(false)}><Icon name="close" size={18} /></button>}
+          </div>
+          <div className="inspector-body">
+            <div hidden={dock !== "details"}>
+            {inspectorOpen && hasDetail && (
+              <>
+                {hasRecord && selection && <PanelTabs label="Inspector views" value={detailView} onChange={setDetailView} options={[
+                  { value: "record", label: selectedProject ? "Building" : "Record" }, { value: "location", label: "Location" },
+                ]} />}
+                <div hidden={detailView !== "record"}>
+                {selectedProject && (
+                  <ProjectEditor
+                    project={selectedProject}
+                    moving={mode.kind === "move"}
+                    onSave={saveProject}
+                    onMove={() => {
+                      setBuildMapVisible(mode.kind !== "move");
+                      setMode(mode.kind === "move" ? { kind: "inspect" } : { kind: "move", projectId: selectedProject.id });
+                    }}
+                    onDelete={deleteProject}
+                    onClose={() => setSelectedProjectId(null)}
+                    catalogue={data.catalogue}
+                    periodDays={mergeAssumptions(scenario?.assumptions).periodDays}
+                  />
+                )}
+
+                {selectedFacility && (
+                  <FacilityInspector
+                    facility={selectedFacility}
+                    canModel={!!scenario}
+                    onModel={modelFacility}
+                    onShowCompany={(key) => {
+                      setCompanyFilter(key);
+                      setExploreSection("infrastructure");
+                      setSideTab("layers");
+                    }}
+                    onZoomTo={() =>
+                      setFocus({
+                        latitude: selectedFacility.properties.lat,
+                        longitude: selectedFacility.properties.lon,
+                        zoom: 16,
+                        nonce: Date.now(),
+                      })
+                    }
+                    onClose={() => setSelectedFacilityId(null)}
+                  />
+                )}
+
+                {data.picked && (
+                  <section className="panel">
+                    <div className="panel-head">
+                      <h2>
+                        {String(
+                          (data.picked.meta.nameField && data.picked.feature.properties[data.picked.meta.nameField]) ||
+                            data.picked.feature.properties.id ||
+                            "Unnamed",
+                        )}
+                      </h2>
+                      <button className="ghost" onClick={() => data.setPicked(null)} aria-label="Close">
+                        ✕
+                      </button>
+                    </div>
+                    <p className="subtitle">{data.picked.meta.name}</p>
+                    <FieldList props={data.picked.feature.properties} meta={data.picked.meta} />
+                  </section>
+                )}
+
+                {ctx.selection && <ContextInspector selection={ctx.selection} onClose={() => ctx.setSelection(null)} />}
+
+                </div>
+                <div hidden={hasRecord && detailView !== "location"}>
+                {selection && (
+                  <CellInspector
+                    selection={selection}
+                    projectsInCell={projectsInCell}
+                    onSelectProject={(id) => {
+                      const p = projects.find((x) => x.id === id);
+                      if (p) selectProject(p);
+                    }}
+                    facilities={allFacilities}
+                    power={ctx.power}
+                    powerStatus={ctx.status.power}
+                    onLoadPower={(lat, lon) => ctx.requestPower(lat, lon)}
+                    onClearPower={() => ctx.setPower(null)}
+                    featureManifest={data.manifest}
+                    onShowLayer={(layerId, sliceId) => {
+                      const l = data.catalogue.find((x) => x.id === layerId);
+                      if (l) data.setActive({ layerId, sliceId: sliceId ?? l.defaultSlice });
+                      setExploreSection("environment");
+                      setSideTab("layers");
+                    }}
+                    onGoTo={(lat, lon) => setFocus({ latitude: lat, longitude: lon, zoom: 11, nonce: Date.now() })}
+                    onSelectSimulationCell={() =>
+                      setSelection((s) => (s ? { ...s, h3Id: simulationCell(s.latitude, s.longitude) } : s))
+                    }
+                    onZoomToCell={(bbox) => setFocus({ latitude: (bbox[1] + bbox[3]) / 2, longitude: (bbox[0] + bbox[2]) / 2, bbox, zoom: 12, nonce: Date.now() })}
+                    onFilterRegion={(country, admin1) => {
+                      setQuery((q) => ({ ...q, dataset: "datacenters", country, admin1, sort: "metric" }));
+                      setSideTab("search");
+                    }}
+                  />
+                )}
+                </div>
+              </>
+            )}
+            </div>
+            <div ref={setStressHost} hidden={dock !== "stress"} />
+          </div>
+        </aside>
+      </div>
     </div>
   );
 }

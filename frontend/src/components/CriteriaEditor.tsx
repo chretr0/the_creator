@@ -19,21 +19,32 @@ const HELP = Object.fromEntries(CRITERION_KINDS.map((k) => [k.kind, k.help])) as
 /** Location requirements. Each becomes one pass / fail / unknown check. */
 export default function CriteriaEditor({ drafts, onChange, errors, catalogue, currency, periodDays }: Props) {
   const [adding, setAdding] = useState<CriterionKind>("layer");
+  const [editing, setEditing] = useState<string | null>(null);
+  const activeId = drafts.find((d) => d.id === editing)?.id ?? drafts[0]?.id;
   const update = (id: string, patch: Partial<CriterionDraft>) => onChange(drafts.map((d) => (d.id === id ? { ...d, ...patch } : d)));
 
   return (
     <div>
       <p className="muted small">
         Usage, costs and emissions are compared over the scenario's evaluation period: <strong>{fmtDays(periodDays)}</strong>. Change it
-        in Projects → Scenario controls.
+        in Scenarios → Resources.
       </p>
       {drafts.length === 0 && (
         <p className="muted small">
           No requirements yet. Without at least one, no location can be shown as meeting criteria.
         </p>
       )}
+      {drafts.length > 0 && <label className="field">
+        <span>Edit requirement</span>
+        <select value={activeId} onChange={(e) => setEditing(e.target.value)}>
+          {drafts.map((d, i) => <option key={d.id} value={d.id}>
+            {i + 1}. {CRITERION_LABEL[d.kind]}{d.kind === "layer" && d.layerId ? ` · ${catalogue.find((l) => l.id === d.layerId)?.name ?? d.layerId}` : ""}
+            {Object.keys(errors).some((key) => key.startsWith(`${d.id}.`)) ? " · needs attention" : ""}
+          </option>)}
+        </select>
+      </label>}
       {drafts.map((d) => (
-        <div className="list-row" key={d.id}>
+        <div className="list-row" key={d.id} hidden={d.id !== activeId}>
           <div className="row align-center">
             <strong className="grow">{CRITERION_LABEL[d.kind]}</strong>
             <label className="toggle compact" title="A failing required check makes the location fail. Optional checks are shown but don't decide the state.">
@@ -47,8 +58,8 @@ export default function CriteriaEditor({ drafts, onChange, errors, catalogue, cu
           <p className="muted small">{HELP[d.kind]}</p>
           {SITE_KINDS.includes(d.kind) && (
             <p className="muted small">
-              The value to compare against comes from the site assumptions in the preview, or a scenario budget in Projects → Scenario
-              controls. Where neither is declared, the check is unknown.
+              The value to compare against comes from Site inputs in the placement review, or a scenario budget in Scenarios → Resources.
+              Where neither is declared, the check is unknown.
             </p>
           )}
           <CriterionFields d={d} errors={errors} catalogue={catalogue} currency={currency} period={fmtDays(periodDays)} update={(p) => update(d.id, p)} />
@@ -65,7 +76,7 @@ export default function CriteriaEditor({ drafts, onChange, errors, catalogue, cu
             ))}
           </select>
         </label>
-        <button onClick={() => onChange([...drafts, newCriterion(adding)])}>+ Add</button>
+        <button onClick={() => { const next = newCriterion(adding); onChange([...drafts, next]); setEditing(next.id); }}>+ Add</button>
       </div>
     </div>
   );

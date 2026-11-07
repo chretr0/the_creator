@@ -1,3 +1,5 @@
+import Icon, { type IconName } from "./Icon";
+import { BackLink } from "./PanelNavigation";
 import { useEffect, useMemo, useState } from "react";
 import {
   categoryColours,
@@ -25,18 +27,13 @@ const REGION_LABEL: Record<string, string> = { arizona: "Arizona", uk: "UK", glo
 export default function DataPanel({ data, onFitBBox }: Props) {
   return (
     <section className="panel">
-      <h2>Colour the grid</h2>
+      <div className="region-picker" aria-label="Map region">
+        <span>Region</span>
+        <button onClick={() => onFitBBox(null)}>World</button>
+        {REGION_VIEWS.map((r) => <button key={r.id} onClick={() => onFitBBox(r.bbox)}>{r.id === "uk" ? "UK" : r.label}</button>)}
+      </div>
       {data.loadError && <p className="warn small">Couldn't load data layers: {data.loadError}</p>}
       <CellLayerPicker data={data} onFitBBox={onFitBBox} />
-      <div className="actions tight" style={{ marginTop: 14 }}>
-        <span className="muted small" style={{ alignSelf: "center" }}>Jump to</span>
-        <button className="chip" onClick={() => onFitBBox(null)}>World</button>
-        {REGION_VIEWS.map((r) => (
-          <button key={r.id} className="chip" onClick={() => onFitBBox(r.bbox)}>
-            {r.label}
-          </button>
-        ))}
-      </div>
     </section>
   );
 }
@@ -73,6 +70,14 @@ export function PreparedScenes({ data, onFitBBox }: Props) {
 
 function CellLayerPicker({ data, onFitBBox }: Props) {
   const { catalogue, active, activeLayer, activeSlice, values, cellStatus } = data;
+  const [category, setCategory] = useState<string | null>(null);
+  const [showSettings, setShowSettings] = useState(!!active);
+  useEffect(() => {
+    if (activeLayer) {
+      setCategory(activeLayer.category);
+      setShowSettings(true);
+    }
+  }, [activeLayer?.id]);
   const groups = useMemo(() => {
     const m = new Map<string, CellLayer[]>();
     for (const l of catalogue) m.set(l.category, [...(m.get(l.category) ?? []), l]);
@@ -89,7 +94,12 @@ function CellLayerPicker({ data, onFitBBox }: Props) {
   }, [activeLayer]);
 
   const pick = (layerId: string) => {
-    if (!layerId) return data.setActive(null);
+    if (!layerId) {
+      data.setActive(null);
+      setShowSettings(false);
+      return;
+    }
+    setShowSettings(true);
     const l = catalogue.find((x) => x.id === layerId);
     if (l) data.setActive({ layerId, sliceId: l.defaultSlice });
   };
@@ -99,26 +109,24 @@ function CellLayerPicker({ data, onFitBBox }: Props) {
 
   return (
     <>
-      <label className="field">
-        <span>Show</span>
-        <select value={active?.layerId ?? ""} onChange={(e) => pick(e.target.value)}>
-          <option value="">Nothing</option>
-          {groups.map(([cat, ls]) => (
-            <optgroup key={cat} label={cat}>
-              {ls.map((l) => (
-                <option key={l.id} value={l.id} disabled={!l.available}>
-                  {l.name}
-                  {l.coverage === "regions" ? ` · ${l.regions.map((r) => REGION_LABEL[r] ?? r).join(" + ") || "regions"}` : ""}
-                  {l.available ? "" : " (unavailable)"}
-                </option>
-              ))}
-            </optgroup>
-          ))}
-        </select>
-      </label>
-
-      {activeLayer && activeSlice && active && (
+      {!showSettings && (
         <>
+          {category ? <><BackLink onClick={() => setCategory(null)}>All categories</BackLink><h3 className="detail-title">{category}</h3></> : <p className="subtitle small">Choose an environmental category.</p>}
+          {!category ? <div className="category-grid">{groups.map(([cat, ls]) => {
+            const icon: IconName = /water|soil/i.test(cat) ? "water" : /energy|climate|weather/i.test(cat) ? "sun" : /mineral|geolog|terrain/i.test(cat) ? "mountain" : "layers";
+            return <button key={cat} onClick={() => setCategory(cat)}><Icon name={icon} size={18} /><span>{cat}</span><small>{ls.length} {ls.length === 1 ? "layer" : "layers"}</small></button>;
+          })}</div> : <div className="layer-options" aria-label={`${category} layers`}>
+            {groups.find(([cat]) => cat === category)?.[1].map((l) => <button key={l.id} className={`layer-choice${active?.layerId === l.id ? " selected" : ""}`} onClick={() => pick(l.id)} disabled={!l.available}>
+              <span>{l.name}<small>{!l.available ? "Unavailable" : l.coverage === "regions" ? l.regions.map((r) => REGION_LABEL[r] ?? r).join(" · ") : "Global coverage"}</small></span><Icon name="chevron" size={16} />
+            </button>)}
+          </div>}
+          {activeLayer && <button className="active-layer-shortcut" onClick={() => { setCategory(activeLayer.category); setShowSettings(true); }}><Icon name="layers" size={17} /><span><small>ACTIVE LAYER SETTINGS</small>{activeLayer.name}</span><Icon name="chevron" size={16} /></button>}
+        </>
+      )}
+      {showSettings && <BackLink onClick={() => setShowSettings(false)}>{category ?? "Choose a layer"}</BackLink>}
+      {showSettings && activeLayer && activeSlice && active && (
+        <div className="layer-settings">
+          <div className="panel-head"><h3>{activeLayer.name}</h3><span className="tag">Active layer</span></div>
           {activeLayer.slices.length > 1 && (
             <label className="field">
               <span>Variant</span>
@@ -158,7 +166,7 @@ function CellLayerPicker({ data, onFitBBox }: Props) {
             </label>
           )}
           <label className="field">
-            <span>Opacity</span>
+            <span>Opacity <em className="right">{Math.round(data.opacity * 100)}%</em></span>
             <input
               type="range"
               min={0.2}
@@ -186,7 +194,7 @@ function CellLayerPicker({ data, onFitBBox }: Props) {
             </div>
           ) : (
             <>
-              <Legend data={data} />
+              <LayerLegend data={data} />
               {cellStatus.loading && <p className="muted small">Loading…</p>}
               {cellStatus.error && <p className="warn small">{cellStatus.error}</p>}
               {!cellStatus.loading && !cellStatus.error && values && (
@@ -199,13 +207,14 @@ function CellLayerPicker({ data, onFitBBox }: Props) {
             </>
           )}
           {activeLayer.description && <p className="small">{activeLayer.description}</p>}
-        </>
+          <button className="link inline small" onClick={() => pick("")}>Remove from map</button>
+        </div>
       )}
     </>
   );
 }
 
-function Legend({ data }: { data: DataLayersState }) {
+export function LayerLegend({ data }: { data: DataLayersState }) {
   const { activeLayer, activeSlice, scale, values } = data;
   if (!activeLayer || !activeSlice) return null;
   if (activeSlice.categorical) {
@@ -245,19 +254,22 @@ function Legend({ data }: { data: DataLayersState }) {
 
 export function RecordsPanel({ data }: { data: DataLayersState }) {
   const { manifest, enabled, featureData, featureStatus } = data;
+  const [selectedRecord, setSelectedRecord] = useState("");
+  const recordId = manifest.some((m) => m.id === selectedRecord) ? selectedRecord : manifest[0]?.id ?? "";
   const mapped = manifest.filter((m) => m.geometry !== "table");
   const tables = manifest.filter((m) => m.geometry === "table" && m.available);
 
   return (
     <section className="panel">
-      <h2>Records</h2>
+      <label className="field" style={{ marginTop: 0 }}><span>Dataset</span><select value={recordId} onChange={(e) => setSelectedRecord(e.target.value)}>{manifest.map((m) => <option key={m.id} value={m.id}>{m.name}{enabled[m.id] ? " · on map" : ""}</option>)}</select></label>
+      <p className="muted small">Changing the dataset here keeps your other enabled layers on the map.</p>
       {mapped.length === 0 && <p className="muted small">No record layers available.</p>}
       {mapped.map((m) => {
         const on = !!enabled[m.id];
         const st = featureStatus[m.id];
         const fd = featureData[m.id];
         return (
-          <div key={m.id}>
+          <div key={m.id} hidden={recordId !== m.id}>
             <label className="toggle">
               <input
                 type="checkbox"
@@ -288,7 +300,7 @@ export function RecordsPanel({ data }: { data: DataLayersState }) {
         );
       })}
       {tables.map((t) =>
-        t.id === "neso_carbon_intensity" ? <CarbonIntensityCard key={t.id} meta={t} /> : null,
+        t.id === "neso_carbon_intensity" ? <div key={t.id} hidden={recordId !== t.id}><CarbonIntensityCard meta={t} /></div> : null,
       )}
     </section>
   );

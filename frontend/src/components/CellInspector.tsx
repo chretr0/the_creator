@@ -1,3 +1,4 @@
+import { PanelTabs } from "./PanelNavigation";
 import { useEffect, useMemo, useState } from "react";
 import { cellArea, cellToBoundary, cellToChildrenSize, getResolution, UNITS } from "h3-js";
 import { SIMULATION_RESOLUTION } from "../lib/h3grid";
@@ -51,6 +52,7 @@ const coord = (lat: number, lon: number) =>
 
 export default function CellInspector(props: Props) {
   const { selection, projectsInCell, onSelectProject } = props;
+  const [view, setView] = useState<"overview" | "data" | "weather" | "power">("overview");
   const [region, setRegion] = useState<RegionLocate | null>(null);
   const [regionError, setRegionError] = useState(false);
 
@@ -80,6 +82,10 @@ export default function CellInspector(props: Props) {
         {coord(selection.latitude, selection.longitude)} · {Math.round(area).toLocaleString()} km²{" "}
         {coarse ? `hexagon (resolution ${res})` : "cell"}
       </p>
+      <PanelTabs label="Location sections" value={view} onChange={setView} options={[
+        { value: "overview", label: "Overview" }, { value: "data", label: "Data" }, { value: "weather", label: "Weather" }, { value: "power", label: "Power grid" },
+      ]} />
+      <div hidden={view !== "overview"}>
       {coarse && (
         <>
           <p className="muted small">
@@ -116,6 +122,9 @@ export default function CellInspector(props: Props) {
         </>
       )}
 
+      <button className="primary" style={{ marginTop: 16 }} onClick={() => setView("data")}>Explore this location’s data</button>
+      </div>
+      <div hidden={view !== "data"}>
       <BaselineBlock
         h3Id={selection.h3Id}
         manifest={props.featureManifest}
@@ -123,8 +132,9 @@ export default function CellInspector(props: Props) {
         onGoTo={props.onGoTo}
       />
 
-      <WeatherBlock latitude={selection.latitude} longitude={selection.longitude} />
-      <PowerBlock {...props} />
+      </div>
+      <div hidden={view !== "weather"}><WeatherBlock latitude={selection.latitude} longitude={selection.longitude} /></div>
+      <div hidden={view !== "power"}><PowerBlock {...props} /></div>
 
       <p className="muted small mono" style={{ marginTop: 20 }}>
         Cell {selection.h3Id}

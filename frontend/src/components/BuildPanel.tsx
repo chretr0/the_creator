@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import Icon from "./Icon";
+import { PanelTabs } from "./PanelNavigation";
 import { api, ApiError, type Project, type Scenario } from "../lib/api";
 import {
   PRESET_DRAG_TYPE,
@@ -14,6 +16,7 @@ import type { CellLayer } from "../lib/datalayers";
 import {
   applyLocationPrice,
   coordLabel,
+  countErrors,
   criterionToDraft,
   fmtDays,
   mergeAssumptions,
@@ -45,7 +48,11 @@ export type BuildTarget = { latitude: number; longitude: number; scenarioId: str
 /** Ask the panel to load a real example into the form (e.g. after it was dropped on the map). */
 export type PresetRequest = { id: string; nonce: number };
 
+export type BuildStage = "define" | "site" | "place";
+
 type Props = {
+  stage: BuildStage;
+  onStage: (stage: BuildStage) => void;
   scenario: Scenario | null;
   view: MapView | null;
   catalogue: CellLayer[];
@@ -81,9 +88,18 @@ const pristine = (d: StatsDraft) =>
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
 export default function BuildPanel(props: Props) {
-  const { scenario, view, catalogue, target, onTarget, picking, onPick, onCells, onBuilt, onFocus, onFitBounds, presetRequest } = props;
+  const { stage, onStage, scenario, view, catalogue, target, onTarget, picking, onPick, onCells, onBuilt, onFocus, onFitBounds, presetRequest } = props;
   const { templates, templateFor, error: templatesError } = useBuildingTemplates();
   const { presets, loaded: presetsLoaded, error: presetsError } = useBuildingPresets();
+
+  const [definePage, setDefinePage] = useState<"building" | "resources" | "impact">("building");
+  const [sitePage, setSitePage] = useState<"requirements" | "search">("requirements");
+  const [previewPage, setPreviewPage] = useState<"assessment" | "usage" | "site">("assessment");
+  const contentRef = useRef<HTMLDivElement>(null);
+  useEffect(() => { contentRef.current?.scrollTo({ top: 0 }); }, [stage, definePage, sitePage, previewPage]);
+  useEffect(() => {
+    if (stage === "place" && !target) onStage("site");
+  }, [stage, target, onStage]);
 
   // ---- definition draft ----
   const [type, setType] = useState<BuildingType>("power_station");
@@ -201,6 +217,9 @@ export default function BuildPanel(props: Props) {
   useEffect(() => {
     if (scrollToPreview) previewRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [scrollToPreview]);
+  useEffect(() => {
+    if (target) previewRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [target?.nonce]);
 
   function loadDefinition(id: string) {
     const d = definitions.find((x) => x.id === id);
@@ -226,6 +245,8 @@ export default function BuildPanel(props: Props) {
     setCriteria([]);
     setSaveNote(null);
     onTarget(null);
+    onStage("define");
+    setDefinePage("building");
   }
 
   async function saveDefinition(asNew: boolean) {
@@ -431,36 +452,122 @@ export default function BuildPanel(props: Props) {
   const colour = `rgb(${typeColour(type).join(",")})`;
   const canBuild = targetOk && !building && !errorCount && !siteErrors && (locFresh || !!locError);
 
-  return (
-    <>
-      <section className="panel">
-        <h2>Build</h2>
-        <p className="subtitle">
-          Define a building, see where it meets your requirements, then place it in{" "}
-          <strong>{scenario?.name ?? "a scenario"}</strong>.
+  const preview = target && targetOk ? (
+    <div className="preview" ref={previewRef}>
+      <div className="panel-head">
+        <h2>
+          <span className="dot" style={{ background: colour }} /> {name.trim() || template.label}
+        </h2>
+        <button className="ghost" onClick={() => onTarget(null)} aria-label="Cancel preview">
+          ✕
+        </button>
+      </div>
+      <p className="subtitle small">
+        {template.label} · <span className="mono">{coordLabel(target.latitude, target.longitude)}</span>
+        {locFresh && <span className="mono"> · {loc!.value.h3Id}</span>}
+      </p>
+
+      {locLoading && !locFresh && <p className="muted small">Assessing this location…</p>}
+      {locError && <p className="warn small">Assessment unavailable: {locError}</p>}
+      {(errorCount > 0 || siteErrors > 0) && <p className="warn small">Fix the highlighted fields to assess this location.</p>}
+
+      <PanelTabs label="Placement details" value={previewPage} onChange={setPreviewPage} options={[
+        { value: "assessment", label: "Assessment" }, { value: "usage", label: "Usage & costs" }, { value: "site", label: "Site inputs", count: siteErrors },
+      ]} />
+      {locFresh && (
+        <>
+          <div hidden={previewPage !== "assessment"}>
+          <h4>Assessment</h4>
+          <AssessmentView assessment={loc!.value.assessment} />
+          {(loc!.value.utilityPrices?.length ?? 0) > 0 && (
+            <>
+              <h4>Utility prices at this location</h4>
+              <LocationPrices
+                offers={loc!.value.utilityPrices!}
+                onApply={(o) => setStats(applyLocationPrice(stats, o))}
+                onRemove={(r) => setStats(removeLocationPrice(stats, r))}
+              />
+            </>
+          )}
+          </div>
+          <div hidden={previewPage !== "usage"}>
+          <Section title="Calculated usage and costs" meta={`over ${fmtDays(loc!.periodDays)}`} open>
+            <ResultView result={loc!.value.result} producesPower={template.producesPower} producesWater={template.producesWater} />
+          </Section>
+          </div>
+        </>
+      )}
+
+      <div hidden={previewPage !== "site"}>
+      <Section title="Site assumptions for this exact location" meta="optional" invalid={siteErrors} open>
+        <p className="muted small">
+          What this exact point can provide. Each value you enter is checked against the building's demand (usable
+          area vs footprint, connected capacity vs peak demand, energy and water over the period). Never applied
+          to other candidates.
         </p>
-        {templatesError && <p className="small warn">Templates couldn't be loaded ({templatesError}); using built-in field lists.</p>}
-      </section>
+        {SITE_FIELDS.map((f) => (
+          <Field
+            key={f.key}
+            label={f.label}
+            unit={f.unit}
+            value={siteDraft[f.key]}
+            onChange={(v) => setSiteDraft({ ...siteDraft, [f.key]: v })}
+            error={site.errors[f.key]}
+          />
+        ))}
+        <Field label="Note" value={siteDraft.note} onChange={(v) => setSiteDraft({ ...siteDraft, note: v })} numeric={false} placeholder="Basis for these values" />
+      </Section>
 
+      </div>
+      {buildError && <p className="warn small">Not placed: {buildError}</p>}
+    </div>
+  ) : null;
+
+  const statsErrorCount = Object.keys(parsed.errors).length;
+  const resourceErrors = countErrors(parsed.errors, ["footprintM2", "operatingHoursPerDay", "power.", "water.", "materials.", "params."]);
+  const stageIndex = ["define", "site", "place"].indexOf(stage);
+
+  return (
+    <div className="build-workflow">
+      <div className="workflow-header">
+        <nav className="build-steps" aria-label="Building workflow">
+          {([ ["define", "Define"], ["site", "Find a site"], ["place", "Place"] ] as const).map(([id, label], i) => (
+            <button key={id} aria-current={stage === id ? "step" : undefined}
+              disabled={(id === "site" && statsErrorCount > 0) || (id === "place" && (!targetOk || errorCount > 0))}
+              onClick={() => onStage(id)}>
+              <span>{i + 1}</span>{label}{i < 2 && <Icon name="chevron" size={14} />}
+            </button>
+          ))}
+        </nav>
+        <div className="stage-caption">Step {stageIndex + 1} of 3 <span>{stage === "define" ? "Define what you want to build" : stage === "site" ? "Choose where it should go" : "Review before placing"}</span></div>
+      </div>
+      <div className="workflow-content" ref={contentRef}>
+      <div hidden={stage !== "define"}>
+        <PanelTabs label="Building definition sections" value={definePage} onChange={setDefinePage} options={[
+          { value: "building", label: "Building" }, { value: "resources", label: "Resources", count: resourceErrors },
+          { value: "impact", label: "Impact & costs", count: statsErrorCount - resourceErrors },
+        ]} />
+        {templatesError && <p className="note small">Templates couldn't be loaded ({templatesError}); using built-in field lists.</p>}
       {/* ---------------- 1. Define ---------------- */}
-      <section className="panel">
-        <h3 className="step">1 · Define the building</h3>
-        <PresetPalette presets={presets} loaded={presetsLoaded} error={presetsError} selectedId={basedOn?.id ?? null} onLoad={loadPreset} />
-        {presetNote && <p className="warn small">{presetNote}</p>}
-
-        <h4>Or start from a type</h4>
+      <section className="panel" id="build-define">
+        <div hidden={definePage !== "building"}>
+        <h3 className="step">Choose a building type</h3>
         <div className="template-grid" role="radiogroup" aria-label="Building type">
           {templates.map((t) => {
             const on = t.id === template.id;
             return (
               <button key={t.id} role="radio" aria-checked={on} className={on ? "selected" : ""} onClick={() => chooseTemplate(t)}>
-                <span className="dot" style={{ background: `rgb(${typeColour(t.type).join(",")})` }} />
+                <Icon name={t.type === "water_plant" ? "water" : t.type === "power_station" ? "bolt" : t.type === "solar" ? "sun" : "building"} />
                 {t.label}
               </button>
             );
           })}
         </div>
-        <p className="muted small">{template.description}</p>
+        <details className="readiness-note"><summary>About this building type</summary><p className="muted small">{template.description}</p></details>
+        <details className="section example-section"><summary><Icon name="globe" size={17} /><span className="section-title">Start from a real-world example</span></summary><div className="section-body">
+          <PresetPalette presets={presets} loaded={presetsLoaded} error={presetsError} selectedId={basedOn?.id ?? null} onLoad={loadPreset} />
+        </div></details>
+        {presetNote && <p className="warn small">{presetNote}</p>}
 
         {definitions.length > 0 && (
           <div className="row align-end">
@@ -485,6 +592,7 @@ export default function BuildPanel(props: Props) {
         {defsError && <p className="small muted">Saved definitions unavailable: {defsError}</p>}
 
         <Field label="Name" value={name} onChange={setName} numeric={false} placeholder={template.label} />
+        <Section title="Description & source notes">
         <label className="field">
           <span>What do you want to build?</span>
           <textarea
@@ -493,12 +601,18 @@ export default function BuildPanel(props: Props) {
             placeholder="Plain-language description, e.g. a 50 MW gas turbine plant with evaporative cooling"
             onChange={(e) => setDescription(e.target.value)}
           />
-          <small className="muted">Saved with the definition. Numbers are never read from it — enter them in the fields below.</small>
+          <small className="muted">Saved with the definition. Numbers are never read from it — enter them in Resources and Impact &amp; costs.</small>
         </label>
 
         {basedOn && <PresetBasis preset={basedOn} />}
-
+        </Section>
+        </div>
+        <div hidden={definePage === "building"}>
+          <p className="subtitle small">{name.trim() || template.label} · blank fields remain unknown.</p>
+          <BuildingForm draft={stats} onChange={setStats} errors={parsed.errors} template={template} page={definePage === "impact" ? "impact" : "resources"} />
+        </div>
         {missing.length > 0 && (
+          <details className="readiness-note"><summary>{missing.length} item{missing.length === 1 ? "" : "s"} still needed for a conclusive assessment</summary>
           <div className="note">
             <strong>Still needed for a conclusive assessment</strong>
             <ul>
@@ -507,11 +621,8 @@ export default function BuildPanel(props: Props) {
               ))}
             </ul>
             <span className="muted small">Blank fields are treated as unknown, never as zero.</span>
-          </div>
+          </div></details>
         )}
-
-        <h3>Statistics</h3>
-        <BuildingForm draft={stats} onChange={setStats} errors={parsed.errors} template={template} />
 
         {errorCount > 0 && <p className="warn small">Fix {errorCount} highlighted field{errorCount === 1 ? "" : "s"} before saving or placing.</p>}
         <div className="actions">
@@ -531,18 +642,31 @@ export default function BuildPanel(props: Props) {
         <p className="muted small">Saving is optional — you can place a building straight from this form.</p>
       </section>
 
+      </div>
+      <div hidden={stage !== "site"}>
+        <div className="draft-summary"><Icon name="building" size={18} /><span><strong>{name.trim() || template.label}</strong><small>{template.label} · {fmtDays(periodDays)}</small></span><button className="link inline small" onClick={() => onStage("define")}>Edit</button></div>
+        <PanelTabs label="Site selection sections" value={sitePage} onChange={setSitePage} options={[
+          { value: "requirements", label: "Requirements", count: Object.keys(crit.errors).length }, { value: "search", label: "Find locations" },
+        ]} />
       {/* ---------------- 2. Requirements ---------------- */}
-      <section className="panel">
-        <h3 className="step">2 · Location requirements</h3>
+      <section className="panel" id="build-requirements" hidden={sitePage !== "requirements"}>
+        <h3 className="step">Location requirements</h3>
         <CriteriaEditor drafts={criteria} onChange={setCriteria} errors={crit.errors} catalogue={catalogue} currency={currency} periodDays={periodDays} />
       </section>
 
       {/* ---------------- 3. Find locations ---------------- */}
-      <section className="panel">
-        <h3 className="step">3 · Find locations</h3>
+      <section className="panel" hidden={sitePage !== "search"}>
+        <h3 className="step">Find a site</h3>
+        {targetOk && <div className="selected-site">
+          <span className="small">Selected point <strong className="block mono">{coordLabel(target!.latitude, target!.longitude)}</strong></span>
+          <button className={picking ? "active" : ""} disabled={!scenario || errorCount > 0} aria-pressed={picking} onClick={() => onPick(!picking)}>{picking ? "Cancel map pick" : "Pick another point"}</button>
+        </div>}
+        <details className="section search-setup" open={!areaFresh}>
+        <summary><span className="section-title">Search area</span><span className="section-meta">{AREA_LABEL[area]}</span></summary>
+        <div className="section-body">
         {crit.criteria.every((c) => !c.required) && (
           <p className="note small">
-            No required location requirements yet, so every cell will show “More information needed”. Add one in step 2
+            No required location requirements yet, so every cell will show “More information needed”. Add one in Requirements
             (for example a water-stress or land-cover limit) to sort locations.
           </p>
         )}
@@ -557,7 +681,7 @@ export default function BuildPanel(props: Props) {
         </fieldset>
         <div className="actions">
           <button className="primary" onClick={findLocations} disabled={!scenario || areaLoading || errorCount > 0}>
-            {areaLoading ? "Assessing…" : "Find locations"}
+            <Icon name="search" size={17} />{areaLoading ? "Assessing…" : "Find locations"}
           </button>
           {areaLoading && (
             <button
@@ -575,6 +699,7 @@ export default function BuildPanel(props: Props) {
             </button>
           )}
         </div>
+        </div></details>
         {areaError && <p className="warn small">{areaError}</p>}
         {areaResult && !areaFresh && (
           <p className="note small">The building, requirements or scenario changed since this search. Find locations again to update the results.</p>
@@ -582,98 +707,50 @@ export default function BuildPanel(props: Props) {
         {areaResult && areaFresh && <AreaResults area={areaResult.area} periodDays={areaResult.periodDays} onPick={pickCandidate} />}
       </section>
 
-      {/* ---------------- 4. Preview and place ---------------- */}
-      <section className="panel">
-        <h3 className="step">4 · Preview and place</h3>
-        <p className="muted small">Choose a candidate above, or pick any exact point on the map. Failing or unknown locations can still be used.</p>
-        <div className="actions tight">
-          <button className={picking ? "active" : ""} aria-pressed={picking} disabled={!scenario} onClick={() => onPick(!picking)}>
-            {picking ? "Click the map…" : "Pick on map"}
-          </button>
+      </div>
+      <div hidden={stage !== "place"}>{preview}</div>
+      </div>
+      <footer className="workflow-footer">
+        {stage === "define" && statsErrorCount > 0 && <p className="warn small" role="status">Fix the marked resource or impact fields to continue. Blank fields are allowed.</p>}
+        {stage === "site" && !targetOk && <p className="muted small">Choose a candidate or pick an exact point on the map.</p>}
+        {stage === "place" && (errorCount > 0 || siteErrors > 0) && <p className="warn small">Fix highlighted inputs before placing. <button className="link inline small" onClick={() => {
+          if (statsErrorCount) { setDefinePage(resourceErrors ? "resources" : "impact"); onStage("define"); }
+          else if (Object.keys(crit.errors).length) { setSitePage("requirements"); onStage("site"); }
+          else setPreviewPage("site");
+        }}>Review fields</button></p>}
+        <div className="actions">
+          {stage === "define" ? (
+            <button className="primary right" disabled={statsErrorCount > 0} onClick={() => onStage("site")}>Next: Find a site <Icon name="arrow" size={16} /></button>
+          ) : stage === "site" ? (
+            <>
+              <button onClick={() => onStage("define")}>Back</button>
+              {sitePage === "requirements" ? <button className="primary right" onClick={() => setSitePage("search")} disabled={errorCount > 0}>Continue to locations <Icon name="arrow" size={16} /></button>
+                : targetOk ? <button className="primary right" disabled={errorCount > 0} onClick={() => onStage("place")}>Next: Review & place <Icon name="arrow" size={16} /></button>
+                : <button className={picking ? "active right" : "primary right"} disabled={!scenario || errorCount > 0} aria-pressed={picking} onClick={() => onPick(!picking)}><Icon name="pin" size={16} />{picking ? "Cancel map pick" : "Pick on map"}</button>}
+            </>
+          ) : (
+            <>
+              <button disabled={building} onClick={() => { setSitePage("search"); onStage("site"); }}>Change site</button>
+              <button className="primary right" disabled={!canBuild} onClick={buildHere}>{building ? "Placing…" : "Build here"}<Icon name="arrow" size={16} /></button>
+            </>
+          )}
         </div>
-
-        {target && targetOk && (
-          <div className="preview" ref={previewRef}>
-            <div className="panel-head">
-              <h2>
-                <span className="dot" style={{ background: colour }} /> {name.trim() || template.label}
-              </h2>
-              <button className="ghost" onClick={() => onTarget(null)} aria-label="Cancel preview">
-                ✕
-              </button>
-            </div>
-            <p className="subtitle small">
-              {template.label} · <span className="mono">{coordLabel(target.latitude, target.longitude)}</span>
-              {locFresh && <span className="mono"> · {loc!.value.h3Id}</span>}
-            </p>
-
-            {locLoading && !locFresh && <p className="muted small">Assessing this location…</p>}
-            {locError && <p className="warn small">Assessment unavailable: {locError}</p>}
-            {(errorCount > 0 || siteErrors > 0) && <p className="warn small">Fix the highlighted fields to assess this location.</p>}
-
-            {locFresh && (
-              <>
-                <h4>Assessment</h4>
-                <AssessmentView assessment={loc!.value.assessment} />
-                {(loc!.value.utilityPrices?.length ?? 0) > 0 && (
-                  <>
-                    <h4>Utility prices at this location</h4>
-                    <LocationPrices
-                      offers={loc!.value.utilityPrices!}
-                      onApply={(o) => setStats(applyLocationPrice(stats, o))}
-                      onRemove={(r) => setStats(removeLocationPrice(stats, r))}
-                    />
-                  </>
-                )}
-                <Section title="Calculated usage and costs" meta={`over ${fmtDays(loc!.periodDays)}`} open>
-                  <ResultView result={loc!.value.result} producesPower={template.producesPower} producesWater={template.producesWater} />
-                </Section>
-              </>
-            )}
-
-            <Section title="Site assumptions for this exact location" meta="optional" invalid={siteErrors}>
-              <p className="muted small">
-                What this exact point can provide. Each value you enter is checked against the building's demand (usable
-                area vs footprint, connected capacity vs peak demand, energy and water over the period). Never applied
-                to other candidates.
-              </p>
-              {SITE_FIELDS.map((f) => (
-                <Field
-                  key={f.key}
-                  label={f.label}
-                  unit={f.unit}
-                  value={siteDraft[f.key]}
-                  onChange={(v) => setSiteDraft({ ...siteDraft, [f.key]: v })}
-                  error={site.errors[f.key]}
-                />
-              ))}
-              <Field label="Note" value={siteDraft.note} onChange={(v) => setSiteDraft({ ...siteDraft, note: v })} numeric={false} placeholder="Basis for these values" />
-            </Section>
-
-            {buildError && <p className="warn small">Not placed: {buildError}</p>}
-            <div className="actions">
-              <button className="primary" onClick={buildHere} disabled={!canBuild}>
-                {building ? "Placing…" : `Build here in ${scenario!.name}`}
-              </button>
-              <button onClick={() => onTarget(null)} disabled={building}>
-                Cancel
-              </button>
-            </div>
-          </div>
-        )}
-      </section>
-    </>
+      </footer>
+    </div>
   );
 }
 
 function AreaResults({ area, periodDays, onPick }: { area: AreaAssessment; periodDays: number; onPick: (lat: number, lon: number) => void }) {
+  const [page, setPage] = useState(0);
+  useEffect(() => { setPage(0); }, [area]);
+  const pages = Math.ceil(area.candidates.length / 5);
   return (
     <div className="results">
       <p className="small">
         {area.cellCount.toLocaleString()} cells assessed (resolution 6) · usage over {fmtDays(periodDays)}
       </p>
       <StateLegend counts={area.counts} />
-      {area.note && <p className="note small">{area.note}</p>}
+      {area.note && <details className="readiness-note"><summary>Screening method & limitations</summary><p className="note small">{area.note}</p></details>}
       {area.candidates.length === 0 ? (
         <p className="muted small">No candidate cells in this area.</p>
       ) : (
@@ -686,7 +763,7 @@ function AreaResults({ area, periodDays, onPick }: { area: AreaAssessment; perio
             </span>
           </h4>
           <ol className="list candidates">
-            {area.candidates.map((c) => {
+            {area.candidates.slice(page * 5, page * 5 + 5).map((c) => {
               const fails = c.assessment.checks.filter((x) => x.status === "fail").length;
               const unknown = c.assessment.checks.filter((x) => x.status === "unknown").length;
               return (
@@ -704,6 +781,7 @@ function AreaResults({ area, periodDays, onPick }: { area: AreaAssessment; perio
               );
             })}
           </ol>
+          {pages > 1 && <div className="pagination"><button disabled={page === 0} onClick={() => setPage(page - 1)}>Previous</button><span>Page {page + 1} of {pages}</span><button disabled={page + 1 >= pages} onClick={() => setPage(page + 1)}>Next candidates</button></div>}
         </>
       )}
     </div>

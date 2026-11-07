@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { PanelTabs } from "./PanelNavigation";
 import type {
   Assessment,
   BuildingResult,
@@ -74,6 +76,7 @@ const shown = (q: Quantity | undefined) => !!q && (q.value !== null || q.missing
 
 /** Calculated usage, outputs and costs for one building over the evaluation period. */
 export function ResultView({ result, producesPower, producesWater }: { result: BuildingResult; producesPower?: boolean; producesWater?: boolean }) {
+  const [view, setView] = useState<"usage" | "costs">("usage");
   const period = `over ${fmtDays(result.periodDays)}`;
   const c = result.costs;
   const cur = c.currency ?? "";
@@ -99,6 +102,10 @@ export function ResultView({ result, producesPower, producesWater }: { result: B
 
   return (
     <div className="result">
+      <PanelTabs label="Calculated results" value={view} onChange={setView} options={[
+        { value: "usage", label: "Usage & output" }, { value: "costs", label: "Costs" },
+      ]} />
+      <div hidden={view !== "usage"}>
       <p className="muted small">
         Demand basis: {result.demandBasis === "derived" ? "derived from IT power × load × PUE" : "entered directly"}.
       </p>
@@ -147,6 +154,8 @@ export function ResultView({ result, producesPower, producesWater }: { result: B
         </table>
       )}
 
+      </div>
+      <div hidden={view !== "costs"}>
       <h4>Costs {cur && <span className="muted">({cur}, never converted)</span>}</h4>
       <table className="mini">
         <tbody>
@@ -190,6 +199,7 @@ export function ResultView({ result, producesPower, producesWater }: { result: B
         </tbody>
       </table>
       {c.missing.length > 0 && <p className="small warn">Not included (unknown): {c.missing.join(", ")}</p>}
+      </div>
     </div>
   );
 }
