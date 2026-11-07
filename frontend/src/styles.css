@@ -468,3 +468,31 @@ fieldset.classes .toggle, fieldset.radios .toggle { width: 100%; }
   border: 2px dashed var(--accent); background: color-mix(in srgb, var(--accent) 7%, transparent);
 }
 .map-drop span { padding: 6px 14px; border-radius: 999px; background: var(--text); color: var(--surface); box-shadow: var(--shadow); font-size: 14px; }
+
+/* ---------- Site capacity (what a hexagon and its neighbours provide) ---------- */
+.site-capacity { display: grid; gap: 8px; margin-top: 8px; }
+.site-res { border: 1px solid var(--border); border-left-width: 3px; border-radius: var(--radius); padding: 8px 10px; background: var(--surface); }
+.site-res.res-pass { border-left-color: var(--ok); }
+.site-res.res-fail { border-left-color: var(--danger); }
+.site-res.res-unknown { border-left-color: var(--muted); border-left-style: dashed; }
+.site-res.res-none { border-left-color: var(--border); }
+.support { margin: 8px 0; padding: 8px 10px; border: 1px dashed var(--accent, var(--border)); border-radius: var(--radius); }
+.support h4 { margin: 0 0 4px; }
+.support-item + .support-item { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+.actions.wrap { flex-wrap: wrap; }
+.site-res.res-advisory { border-left-color: var(--warn); }
+.res-chip.res-advisory { color: var(--warn); background: color-mix(in srgb, var(--warn) 12%, transparent); }
+.site-res-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.site-res-nums { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 2px; }
+.res-chip { font-size: 11px; font-weight: 600; padding: 0 8px; border-radius: 999px; white-space: nowrap; background: var(--surface-2); color: var(--muted); }
+.res-chip.res-pass { color: var(--ok); background: color-mix(in srgb, var(--ok) 12%, transparent); }
+.res-chip.res-fail { color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, transparent); }
+.meter { height: 6px; margin-top: 6px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+.meter > span { display: block; height: 100%; border-radius: 999px; background: var(--ok); }
+.res-fail .meter > span { background: var(--danger); }
+.site-res-parts { margin-top: 4px; }
+.site-res-parts > summary { cursor: pointer; }
+.site-res-parts ul { margin: 4px 0 0; padding-left: 18px; }
+.site-needs { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 4px; }
+.site-needs li { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; padding: 4px 0; border-bottom: 1px solid var(--border); }
+.site-needs li:last-child { border-bottom: none; }

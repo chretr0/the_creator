@@ -3,7 +3,7 @@
     "id": "palo-verde-nuclear",
     "name": "Palo Verde Nuclear Generating Station",
     "type": "power_station",
-    "description": "Three-unit pressurized-water-reactor nuclear plant west of Phoenix, cooled with treated municipal wastewater. Its figures are EIA-860 nameplate capacity, reported cooling-water use, site area, staffing and the reported construction cost. Generation is left unknown because a gross-generation figure could not be verified.",
+    "description": "Three-unit pressurized-water-reactor nuclear plant west of Phoenix, cooled with treated municipal wastewater. Its figures are EIA-860 nameplate capacity, 2024 net generation, reported cooling-water use, site area, staffing and the reported construction cost.",
     "headline": "4,210 MW nuclear (3 × PWR) · Arizona",
     "referenceSite": {
       "name": "Palo Verde Nuclear Generating Station, Wintersburg, Maricopa County, Arizona",
@@ -19,15 +19,15 @@
       },
       "operatingHoursPerDay": 24,
       "power": {
-        "averageDemandKw": null,
+        "averageDemandKw": 0,
         "peakDemandKw": null,
-        "averageOutputKw": null,
+        "averageOutputKw": 3687171.9,
         "ratedOutputKw": 4209600,
         "capacityFactor": null,
         "technology": "Three Combustion Engineering System 80 PWRs with steam turbines (in service 1986, 1986, 1988); three mechanical forced-draft cooling towers on treated municipal effluent",
         "provenance": {
           "kind": "cited",
-          "note": "[S1] GridInfo, republishing the 2025 EIA-860 report for plant 6008: three generators, each 1,403.2 MW nameplate, giving ratedOutputKw = 3 × 1,403.2 MW = 4,209.6 MW = 4,209,600 kW. The same source gives net summer capacities of 1,311, 1,314 and 1,312 MW (3,937 MW in total) and operating dates of January 1986, September 1986 and January 1988. [S6] gives the technology: Combustion Engineering System 80 PWRs, and three mechanical forced-draft cooling towers, one per unit. Average output, own-use demand and capacity factor are left unknown because the 2024 gross generation could not be confirmed. The EIA API was rate-limited, and no other source read states gross generation. Net-basis figures are given in the notes for context only; they are not entered, because averageOutputKw is gross output."
+          "note": "[S1] GridInfo, republishing the 2025 EIA-860 report for plant 6008: three generators of 1,403.2 MW nameplate each, so ratedOutputKw = 4,209,600 kW. [S7] (EIA Electricity Data Browser table) and [S2] Pinnacle West: 2024 NET generation 32,388,118 MWh ÷ 8,784 h (2024 is a leap year) = 3,687,171.9 kW, entered as averageOutputKw. Gross generation could not be confirmed, so output is the net figure: the station's own electricity use is already deducted from it, and averageDemandKw is set to 0 so that own use is counted exactly once (inside the net figure), not because the plant uses no electricity. [S6] gives the technology: Combustion Engineering System 80 PWRs, and three mechanical forced-draft cooling towers, one per unit."
         }
       },
       "water": {
@@ -37,7 +37,8 @@
         "provenance": {
           "kind": "cited",
           "note": "[S4] Associated Press (May 2022): the plant uses about 65 million gallons of treated wastewater every day, more than 23 billion gallons a year. 65 MGD × 157.725491 = 10,252 m³/hour (a daily average spread over 24 h). Cross-checks: [S3] APS says Palo Verde recycles more than 20 billion gallons of wastewater a year, a lower bound. [S5] the 2010 agreement with Phoenix, Mesa, Tempe, Scottsdale and Glendale allows up to 80,000 acre-feet a year through 2050; this is an allocation cap, not actual use. [S6] says the effluent is further treated at the on-site Palo Verde Water Reclamation Facility and that cooling-tower blowdown is discharged to evaporation ponds, so water output is left empty."
-        }
+        },
+        "source": "wastewater"
       },
       "materials": [],
       "emissions": [],
@@ -136,15 +137,15 @@
     ],
     "notes": [
       "operatingHoursPerDay is 24 because the plant runs as continuous baseload and the water figure is a daily average (65 million gallons a day) spread over 24 hours.",
-      "Power generation is left unknown. The app's averageOutputKw is gross output, and the 2024 gross generation could not be verified: the EIA Open Data API returned rate-limit errors, and no other source read states it. averageDemandKw (own use) and capacityFactor depend on that figure, so they are left unknown too.",
-      "For context only (not entered): 2024 net generation was 32,388,118 MWh, from the EIA Electricity Data Browser table reproduced in [S7], about 3,687,172 kW averaged over 8,784 h. Pinnacle West [S2] reports a 93.7% capacity factor for 2024, which matches 32,388,118 MWh ÷ (3,937 MW net summer capacity [S1] × 8,784 h) = 0.937.",
+      "Power output is the 2024 NET generation (32,388,118 MWh [S7], consistent with Pinnacle West's 93.7% capacity factor [S2]) averaged over 8,784 h = 3,687,171.9 kW. Gross generation could not be verified, so own use is already inside this net figure and averageDemandKw is 0 to avoid counting it twice. Capacity factor stays blank because average output is given directly.",
+      "Check: 32,388,118 MWh ÷ (3,937 MW net summer capacity [S1] × 8,784 h) = 0.937, matching the 93.7% Pinnacle West reports [S2].",
       "Nameplate is 3 × 1,403.2 MW = 4,209.6 MW [S1, EIA-860 2025]; net summer capacity is 3,937 MW.",
       "Water input is a 2022 press figure (about 65 million gallons a day) [S4]. APS's 'more than 20 billion gallons a year' [S3] and the 80,000 acre-feet a year contract cap [S5] bracket it; the cap is an allocation, not use.",
       "Water output is left empty because cooling-tower blowdown goes to on-site evaporation ponds [S6]; the plant does not produce water.",
       "Footprint is the whole 4,000-acre site [S6], including reservoirs and evaporation ponds.",
       "Construction cost is the nominal reported $5.9 billion [S6]; it is not inflated.",
       "Reference coordinates (33.3881, −112.8617) are the EIA-860 plant coordinates as republished by [S1]. The Wikipedia infobox point (33.38917, −112.865) is about 0.33 km away.",
-      "Left unknown because no source read states them: average and peak power output and demand, capacity factor, operating cost, electricity and water prices, materials, emissions, light and worker capacity."
+      "Left unknown because no source read states them: peak demand, capacity factor, operating cost, electricity and water prices, materials, emissions, light and worker capacity."
     ]
   },
   {
@@ -449,7 +450,8 @@
         "provenance": {
           "kind": "cited",
           "note": "outputM3PerHour: [S1] SDCWA says the plant 'is capable of delivering more than 50 million gallons of fresh, desalinated drinking water per day'. [S4] San Diego Regional Water Board gives 'an average daily flow of 50 million gallons per day (MGD)'. 50 MGD x 157.725491 = 7,886.27 m³/h. inputM3PerHour: [S1] SDCWA says 'On a typical day, the Carlsbad plant uses 100 million gallons of seawater'. 100 MGD x 157.725491 = 15,772.55 m³/h. Recovery in basis: 50/100 = 50% (derived); [S2] gives ~52% at design. Brine salinity is from [S4]."
-        }
+        },
+        "source": "seawater"
       },
       "materials": [],
       "emissions": [],

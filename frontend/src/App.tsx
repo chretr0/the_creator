@@ -459,10 +459,11 @@ export default function App() {
 
 
   const onBuilt = useCallback(
-    (p: Project) => {
+    (p: Project, opts?: { stay?: boolean }) => {
       refreshList();
       if (!isShown(p.scenarioId, `"${p.name || p.type}"`)) return;
       setScenario((s) => (s && s.id === p.scenarioId ? { ...s, projects: [...s.projects, p] } : s));
+      if (opts?.stay) return; // a supporting building is previewed next in the Build tab
       setSelectedProjectId(p.id);
       setSelection({ h3Id: p.h3Id, latitude: p.latitude, longitude: p.longitude });
       setSideTab("details");

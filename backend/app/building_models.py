@@ -133,6 +133,9 @@ class PowerStats(ApiModel):
 class WaterStats(ApiModel):
     input_m3_per_hour: NonNeg = None  # water consumed while operating
     output_m3_per_hour: NonNeg = None  # usable treated/produced output (water plants)
+    # Where the intake comes from. Only "fresh" draws on rivers/runoff; "seawater" needs a coastal site;
+    # "wastewater" (treated municipal effluent) is estimated from the population within pipeline reach.
+    source: Literal["fresh", "seawater", "wastewater"] = "fresh"
     basis: ShortText = None  # water source / process basis, e.g. "brackish groundwater RO"
     provenance: Provenance = Provenance()
 
@@ -529,9 +532,14 @@ class BuildingResult(ApiModel):
     demand_basis: Literal["direct", "derived"]
 
 
+# Checks generated automatically from what the site can provide (app/site_capacity.py).
+SiteCheckKind = Literal["site_land", "site_water", "site_power", "site_grid_export", "site_workforce", "site_air",
+                        "site_light", "site_material"]
+
+
 class CheckResult(ApiModel):
     criterion_id: str
-    kind: CriterionKind
+    kind: CriterionKind | SiteCheckKind
     label: str
     required: bool
     status: CheckStatus
@@ -543,10 +551,35 @@ class CheckResult(ApiModel):
     explanation: str = ""
 
 
+class SuggestedPreset(ApiModel):
+    id: str
+    name: str
+    capacity: float  # its output (kW or m³/day) or, for consumers, its demand (kW)
+    unit: str
+    count: int = 1  # how many it would take to cover the shortfall
+
+
+class SupportSuggestion(ApiModel):
+    """A building that could be placed alongside to cover a shortfall the site can't (power, water, export)."""
+
+    resource: Literal["power", "water", "grid_export"]
+    shortfall: float
+    unit: str
+    building_type: BuildingType  # type of the supporting building
+    reach_km: float  # it must be placed within this distance (same or neighbouring hexagons)
+    rings: int
+    title: str
+    explanation: str
+    presets: list[SuggestedPreset] = []
+    generic_name: str
+    generic_stats: BuildingStats  # a building of the right size, scaled from a reference preset
+
+
 class Assessment(ApiModel):
     state: AssessmentState
     checks: list[CheckResult]
     summary: str
+    suggestions: list[SupportSuggestion] = []
 
 
 # --- assessment API ---------------------------------------------------------------------------
@@ -624,12 +657,45 @@ class LocationPriceOffer(ApiModel):
     message: str
 
 
+class SiteResourcePart(ApiModel):
+    label: str
+    value: float | None = None
+    unit: str = ""
+    text: str | None = None
+
+
+class SiteResource(ApiModel):
+    """One resource the site can provide (estimated from prepared data, never typed in)."""
+
+    key: Literal["land", "water", "power", "workforce", "air", "light", "materials"]
+    label: str
+    unit: str
+    available: float | None  # None = unknown here (outside data coverage)
+    needed: float | None  # the building's own need, when its specs declare it
+    reach: str  # how far around the cell the resource is gathered from
+    parts: list[SiteResourcePart] = []
+    note: str | None = None
+    # Set when available/needed are not a simple "enough or not" (air, light, materials); the UI then
+    # shows this instead of comparing numbers. "advisory" = shown for planning, never blocks.
+    status: Literal["pass", "fail", "unknown", "none", "advisory"] | None = None
+    advisory: bool = False  # raw materials: can be shipped, so never a requirement
+
+
+class SiteCapacity(ApiModel):
+    h3_id: str
+    resources: list[SiteResource]
+    neighbour_cells: list[str]  # ring-1 cells around the site, for the map
+    rings: dict[str, int]  # H3 rings each resource reaches
+    note: str
+
+
 class LocationAssessment(ApiModel):
     latitude: float
     longitude: float
     h3_id: str
     result: BuildingResult
     assessment: Assessment
+    site: SiteCapacity | None = None
     utility_prices: list[LocationPriceOffer] = []
 
 

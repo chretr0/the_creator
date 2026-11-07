@@ -107,3 +107,19 @@ def search_index() -> list[dict]:
                 "label": label,
             })
     return items
+
+
+def country_iso(lats, lons) -> list[str | None]:
+    """ISO-3 country code at many points at once (None outside every country / no boundary pack)."""
+    import numpy as np
+
+    idx = _index("countries")
+    n = len(lats)
+    out: list[str | None] = [None] * n
+    if idx is None or n == 0:
+        return out
+    pts = shapely.points(np.asarray(lons, dtype=float), np.asarray(lats, dtype=float))
+    pi, gi = idx.tree.query(pts, predicate="intersects")
+    for p, g in zip(pi[::-1], gi[::-1]):  # reversed so the first match per point wins
+        out[int(p)] = idx.props[int(g)].get("iso")
+    return out
