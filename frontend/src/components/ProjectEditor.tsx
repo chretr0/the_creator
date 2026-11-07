@@ -81,7 +81,7 @@ export default function ProjectEditor({ project, moving, onSave, onMove, onDelet
   return (
     <section className="panel">
       <div className="panel-head">
-        <h2>Project</h2>
+        <h2>{draft.name || def.label}</h2>
         <button className="ghost" onClick={onClose} aria-label="Close project">
           ✕
         </button>
@@ -123,12 +123,8 @@ export default function ProjectEditor({ project, moving, onSave, onMove, onDelet
           />
         </label>
       </div>
-      <p className="muted small">
-        Cell <span className="mono">{project.h3Id}</span> (res {project.h3Resolution})
-      </p>
-
       <h3>Assumptions</h3>
-      <p className="muted small">Every value is a user assumption. Blank means unknown.</p>
+      <p className="muted small">Leave blank if unknown.</p>
       {def.params.map((p) => (
         <label className="field" key={p.key} title={p.hint}>
           <span>
@@ -139,7 +135,7 @@ export default function ProjectEditor({ project, moving, onSave, onMove, onDelet
               value={draft.params[p.key] ?? ""}
               onChange={(e) => setDraft({ ...draft, params: { ...draft.params, [p.key]: e.target.value } })}
             >
-              <option value="">— not set —</option>
+              <option value="">Not set</option>
               {p.options!.map((o) => (
                 <option key={o} value={o}>
                   {o}
@@ -150,7 +146,7 @@ export default function ProjectEditor({ project, moving, onSave, onMove, onDelet
             <input
               inputMode="decimal"
               value={draft.params[p.key] ?? ""}
-              placeholder="not set"
+              placeholder="Not set"
               onChange={(e) => setDraft({ ...draft, params: { ...draft.params, [p.key]: e.target.value } })}
             />
           )}
@@ -165,7 +161,7 @@ export default function ProjectEditor({ project, moving, onSave, onMove, onDelet
         <button onClick={onMove} className={moving ? "active" : ""}>
           {moving ? "Click the map…" : "Move"}
         </button>
-        <button className="danger" onClick={onDelete}>
+        <button className="danger right" onClick={onDelete}>
           Delete
         </button>
       </div>

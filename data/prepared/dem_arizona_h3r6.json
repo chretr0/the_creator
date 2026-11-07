@@ -1,0 +1,53 @@
+{
+  "layer": "dem_arizona",
+  "sourceId": "CTX-03",
+  "provider": "ESA / Airbus (Copernicus)",
+  "product": "Copernicus DEM GLO-90 (COG, AWS open data)",
+  "version": "as published on copernicus-dem-90m bucket",
+  "licence": "Copernicus DEM GLO-90 licence",
+  "licenceUrl": "https://dataspace.copernicus.eu/sites/default/files/media/files/2025-06/copernicus_contributing_mission_data_access_v2_cop_dem_licenses.pdf",
+  "attribution": "© DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved (verify exact text)",
+  "evidenceType": "satellite_retrieval",
+  "retrievedAt": "2026-11-07",
+  "method": "Mean, min and max of Copernicus DEM GLO-90 pixel heights whose centres fall in each H3 res-6 cell inside the region box; pixels of exactly 0.0 m (the DEM's flattened sea) are treated as sea and skipped; slope_mean is the mean per-pixel slope from central differences at native resolution (metres per degree at the pixel's latitude), excluding pixels next to sea or a tile edge.",
+  "h3Resolution": 6,
+  "units": {
+    "value": "m (mean elevation, EGM2008 heights)",
+    "min": "m",
+    "max": "m",
+    "n_valid": "count of 90 m pixels",
+    "slope_mean": "degrees"
+  },
+  "region": "arizona",
+  "regionBbox": [
+    -113.5,
+    31.3,
+    -109.0,
+    34.5
+  ],
+  "inputFiles": [
+    "Copernicus_DSM_COG_30_N31_00_W110_00_DEM.tif",
+    "Copernicus_DSM_COG_30_N31_00_W111_00_DEM.tif",
+    "Copernicus_DSM_COG_30_N31_00_W112_00_DEM.tif",
+    "Copernicus_DSM_COG_30_N31_00_W113_00_DEM.tif",
+    "Copernicus_DSM_COG_30_N31_00_W114_00_DEM.tif",
+    "Copernicus_DSM_COG_30_N32_00_W110_00_DEM.tif",
+    "Copernicus_DSM_COG_30_N32_00_W111_00_DEM.tif",
+    "Copernicus_DSM_COG_30_N32_00_W112_00_DEM.tif",
+    "Copernicus_DSM_COG_30_N32_00_W113_00_DEM.tif",
+    "Copernicus_DSM_COG_30_N32_00_W114_00_DEM.tif",
+    "Copernicus_DSM_COG_30_N33_00_W110_00_DEM.tif",
+    "Copernicus_DSM_COG_30_N33_00_W111_00_DEM.tif",
+    "Copernicus_DSM_COG_30_N33_00_W112_00_DEM.tif",
+    "Copernicus_DSM_COG_30_N33_00_W113_00_DEM.tif",
+    "Copernicus_DSM_COG_30_N33_00_W114_00_DEM.tif",
+    "Copernicus_DSM_COG_30_N34_00_W110_00_DEM.tif",
+    "Copernicus_DSM_COG_30_N34_00_W111_00_DEM.tif",
+    "Copernicus_DSM_COG_30_N34_00_W112_00_DEM.tif",
+    "Copernicus_DSM_COG_30_N34_00_W113_00_DEM.tif",
+    "Copernicus_DSM_COG_30_N34_00_W114_00_DEM.tif"
+  ],
+  "rowCount": 3699,
+  "generatedAt": "2026-11-07T14:46:05+00:00",
+  "script": "scripts/prepare_regional_h3.py"
+}

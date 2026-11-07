@@ -12,10 +12,10 @@ type Props = {
 };
 
 const SORT_LABEL: Record<Query["sort"], string> = {
-  metric: "Largest value first",
-  company: "Most-mapped operator first",
-  nearest: "Nearest to map centre",
-  newest: "Newest first",
+  metric: "Largest first",
+  company: "Biggest operator",
+  nearest: "Nearest",
+  newest: "Newest",
   name: "Name",
 };
 
@@ -53,10 +53,10 @@ export default function SearchPanel({ records, available, query, onQuery, near, 
 
   return (
     <section className="panel">
-      <h2>Search & rank</h2>
+      <h2>Search</h2>
       <div className="row">
         <label className="field">
-          <span>Dataset</span>
+          <span>Find</span>
           <select
             value={query.dataset}
             onChange={(e) => {
@@ -67,7 +67,7 @@ export default function SearchPanel({ records, available, query, onQuery, near, 
             {(Object.keys(DATASET_LABEL) as Dataset[]).map((d) => (
               <option key={d} value={d} disabled={!available[d]}>
                 {DATASET_LABEL[d]}
-                {available[d] ? "" : " (turn layer on)"}
+                {available[d] ? "" : " (turn on in Layers)"}
               </option>
             ))}
           </select>
@@ -94,7 +94,7 @@ export default function SearchPanel({ records, available, query, onQuery, near, 
           </select>
         </label>
         <label className="field">
-          <span>State / province</span>
+          <span>State / region</span>
           <select value={query.admin1 ?? ""} disabled={!query.country} onChange={(e) => set({ admin1: e.target.value || null })}>
             <option value="">All</option>
             {admin1s.map((a) => (
@@ -105,49 +105,34 @@ export default function SearchPanel({ records, available, query, onQuery, near, 
       </div>
       <div className="row">
         <label className="field">
-          <span>Operator / owner contains</span>
+          <span>Operator</span>
           <input value={query.operator ?? ""} onChange={(e) => set({ operator: e.target.value })} placeholder="e.g. Equinix" />
         </label>
         <label className="field">
-          <span>Name contains</span>
-          <input value={query.text ?? ""} onChange={(e) => set({ text: e.target.value })} />
+          <span>Name</span>
+          <input value={query.text ?? ""} onChange={(e) => set({ text: e.target.value })} placeholder="Any" />
         </label>
       </div>
 
-      <p className="small">
-        <strong>{result.total.toLocaleString()}</strong> match
-        {metric && result.total > 0 && (
-          <>
-            {" "}
-            · {result.metric.withValue} with a {metric.label.toLowerCase()}
-            {result.metric.sum !== null && <> · tagged total {formatMetric(query.dataset, result.metric.sum)}</>}
-            {result.metric.max !== null && <> · max {formatMetric(query.dataset, result.metric.max)}</>}
-          </>
-        )}
-      </p>
-      {result.operators.length > 0 && (
-        <p className="muted small">Top operators: {result.operators.map((o) => `${o.name} (${o.count})`).join(", ")}</p>
-      )}
-
+      <h3>
+        {result.total.toLocaleString()} result{result.total === 1 ? "" : "s"}
+        {metric && result.metric.sum !== null && result.total > 0 && <> · {formatMetric(query.dataset, result.metric.sum)} total</>}
+      </h3>
       <ul className="list results">
         {result.items.map((r) => (
           <li key={r.key}>
             <button className="link" onClick={() => onPick(r)}>
               <span className="result-title">
                 {r.title}
-                <span className="muted small"> {[r.operator, r.admin1, r.country].filter(Boolean).join(" · ")}</span>
+                <span className="muted small" style={{ display: "block" }}>{[r.operator, r.admin1, r.country].filter(Boolean).join(" · ")}</span>
               </span>
-              <span className="small right mono">
+              <span className="small right num" style={{ whiteSpace: "nowrap" }}>
                 {query.sort === "nearest" && r.distanceKm !== null ? `${Math.round(r.distanceKm)} km` : formatMetric(r.dataset, r.metric)}
               </span>
             </button>
           </li>
         ))}
       </ul>
-      <p className="muted small">
-        Ranks only by the criteria above, over what is loaded. Unknown values sort last, not as zero. Sums
-        cover only the records that carry a value. Not a siting recommendation.
-      </p>
     </section>
   );
 }

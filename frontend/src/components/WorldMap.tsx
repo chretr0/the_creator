@@ -4,11 +4,10 @@ import { MapboxOverlay } from "@deck.gl/mapbox";
 import { H3HexagonLayer } from "@deck.gl/geo-layers";
 import { GeoJsonLayer, LineLayer, ScatterplotLayer, TextLayer } from "@deck.gl/layers";
 import { WebMercatorViewport, type Layer, type PickingInfo } from "@deck.gl/core";
-import { getResolution } from "h3-js";
 import type { Project } from "../lib/api";
 import { viewportCells, type ViewportCells } from "../lib/h3grid";
 import { PROJECT_TYPE_BY_ID } from "../lib/projectTypes";
-import { facilityTitle, formatKw, LAYER_META, type Facility } from "../lib/infrastructure";
+import { facilityTitle, formatKw, type Facility } from "../lib/infrastructure";
 
 type RGB = [number, number, number];
 
@@ -59,7 +58,7 @@ function pickLabels(map: maplibregl.Map, facilities: Facility[], selectedId: str
     .map((x) => x.f);
 }
 
-// OpenFreeMap (OSM data, ODbL). The style carries its own attribution, kept visible below.
+// OpenFreeMap basemap (OSM data).
 const STYLE_URL = "https://tiles.openfreemap.org/styles/liberty";
 
 export type MapFocus = {
@@ -88,6 +87,9 @@ export type RasterImagery = {
 };
 
 const IMAGERY_SOURCE = "context-imagery";
+const SCENE_SOURCE = "scene-image";
+
+export type SceneImage = { id: string; url: string; bounds: [number, number, number, number] };
 
 type Props = {
   projects: Project[];
@@ -105,7 +107,12 @@ type Props = {
   imagery: RasterImagery | null;
   onViewChange: (view: MapView) => void;
   onMapClick: (latitude: number, longitude: number, picked: Picked | null) => void;
-  onGridChange: (grid: { resolution: number; count: number; overview: boolean }) => void;
+  onGridChange: (grid: { resolution: number; count: number; overview: boolean; cells: string[] }) => void;
+  /** Choropleth fill for display cells (null = neutral "no layer" styling). */
+  cellFill: ((h3: string) => [number, number, number, number]) | null;
+  cellTooltip: (h3: string) => string | null;
+  /** A prepared single-scene PNG (EPSG:4326) drawn at its bounds, under the labels. */
+  scene: SceneImage | null;
 };
 
 export default function WorldMap(props: Props) {
@@ -126,12 +133,12 @@ export default function WorldMap(props: Props) {
       style: STYLE_URL,
       center: [10, 30],
       zoom: 1.6,
-      attributionControl: { compact: false },
+      attributionControl: false,
       dragRotate: false,
       pitchWithRotate: false,
     });
     map.touchZoomRotate.disableRotation();
-    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-left");
+    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
     map.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-left");
 
     const overlay = new MapboxOverlay({ interleaved: false, layers: [] });
@@ -160,6 +167,7 @@ export default function WorldMap(props: Props) {
           resolution: next.resolution,
           count: next.cells.length,
           overview: next.overview,
+          cells: next.cells,
         });
         const c = map.getCenter();
         propsRef.current.onViewChange({
@@ -264,6 +272,36 @@ export default function WorldMap(props: Props) {
 
   useEffect(() => {
     const map = mapRef.current;
+    if (!map) return;
+    const sc = props.scene;
+    const apply = () => {
+      if (map.getLayer(SCENE_SOURCE)) map.removeLayer(SCENE_SOURCE);
+      if (map.getSource(SCENE_SOURCE)) map.removeSource(SCENE_SOURCE);
+      if (!sc) return;
+      const [w, s, e, n] = sc.bounds;
+      map.addSource(SCENE_SOURCE, {
+        type: "image",
+        url: sc.url,
+        coordinates: [
+          [w, n],
+          [e, n],
+          [e, s],
+          [w, s],
+        ],
+      });
+      const firstSymbol = map.getStyle().layers.find((l) => l.type === "symbol" || l.type === "fill-extrusion")?.id;
+      map.addLayer({ id: SCENE_SOURCE, type: "raster", source: SCENE_SOURCE, paint: { "raster-opacity": 1 } }, firstSymbol);
+    };
+    if (map.isStyleLoaded()) apply();
+    else map.once("load", apply);
+    return () => {
+      map.off("load", apply);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.scene?.id]);
+
+  useEffect(() => {
+    const map = mapRef.current;
     if (map?.getLayer(IMAGERY_SOURCE) && props.imagery) {
       map.setPaintProperty(IMAGERY_SOURCE, "raster-opacity", props.imagery.opacity);
     }
@@ -286,9 +324,10 @@ export default function WorldMap(props: Props) {
         stroked: true,
         extruded: false,
         highPrecision: true,
-        // No baseline layer is loaded yet: neutral "no data" styling, not a value colour.
-        getFillColor: [100, 116, 139, 14],
-        getLineColor: [51, 65, 85, 110],
+        // Neutral "no data" styling unless a baseline layer is active.
+        getFillColor: props.cellFill ?? [100, 116, 139, 14],
+        getLineColor: props.cellFill ? [51, 65, 85, 45] : [51, 65, 85, 110],
+        updateTriggers: { getFillColor: props.cellFill, getLineColor: !!props.cellFill },
         lineWidthUnits: "pixels",
         getLineWidth: 1,
         pickable: true,
@@ -430,21 +469,22 @@ export default function WorldMap(props: Props) {
         if (!object || !layer) return null;
         if (layer.id === "projects") {
           const p = object as Project;
-          return { text: `${p.name || PROJECT_TYPE_BY_ID[p.type].label}\n${p.h3Id}` };
+          return { text: `${p.name || PROJECT_TYPE_BY_ID[p.type].label}\n${PROJECT_TYPE_BY_ID[p.type].label}` };
         }
         if (layer.id === "infra-points" || layer.id === "infra-footprints") {
           const p = (object as Facility).properties;
-          const company = p.owner ? `Owner: ${p.owner}` : p.operator ? `Operator: ${p.operator}` : "Owner/operator not tagged";
+          const company = p.operator ?? p.owner;
           const rating = p.powerRatings.find((r) => r.kw !== null);
-          const lines = [`${facilityTitle(p)} · ${LAYER_META[p.layer].label}`, company];
-          if (rating?.kw != null) lines.push(`Rated ${formatKw(rating.kw)} (${rating.tag})`);
+          const lines = [facilityTitle(p), [p.layer === "datacenters" ? "Datacenter" : "Dam", company].filter(Boolean).join(" · ")];
+          if (rating?.kw != null) lines.push(formatKw(rating.kw));
           return { text: lines.join("\n") };
         }
         const context = propsRef.current.contextTooltip(layer.id, object);
         if (context) return { text: context };
         if (layer.id === "grid") {
           const id = object as string;
-          return { text: `${id} · res ${getResolution(id)}\nNo baseline layer loaded` };
+          const value = propsRef.current.cellTooltip(id);
+          return value ? { text: value } : null;
         }
         return null;
       },
@@ -461,6 +501,7 @@ export default function WorldMap(props: Props) {
     props.selectedFacilityId,
     props.tilted,
     props.contextLayers,
+    props.cellFill,
   ]);
 
   return <div ref={containerRef} className="map" />;

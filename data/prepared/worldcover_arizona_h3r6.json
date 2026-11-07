@@ -1,0 +1,45 @@
+{
+  "layer": "worldcover_arizona",
+  "sourceId": "LAND-02",
+  "provider": "ESA",
+  "product": "WorldCover 10 m 2021",
+  "version": "v200",
+  "licence": "CC BY 4.0",
+  "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+  "attribution": "© ESA WorldCover project 2021 / Contains modified Copernicus Sentinel data (2021) processed by ESA WorldCover consortium",
+  "evidenceType": "satellite_retrieval",
+  "retrievedAt": "2026-11-07",
+  "method": "Share of valid ESA WorldCover 2021 v200 class samples per H3 res-6 cell inside the region box; the 10 m map was read decimated 10x (~100 m grid, nearest-neighbour via the COG overviews), so fractions are a regular point sample, not exact 10 m areas; class 0 (nodata) is skipped.",
+  "h3Resolution": 6,
+  "units": {
+    "frac_tree": "fraction 0-1 of valid samples (class 10)",
+    "frac_shrub": "fraction 0-1 of valid samples (class 20)",
+    "frac_grass": "fraction 0-1 of valid samples (class 30)",
+    "frac_crop": "fraction 0-1 of valid samples (class 40)",
+    "frac_built": "fraction 0-1 of valid samples (class 50)",
+    "frac_bare": "fraction 0-1 of valid samples (class 60)",
+    "frac_snow": "fraction 0-1 of valid samples (class 70)",
+    "frac_water": "fraction 0-1 of valid samples (class 80)",
+    "frac_wetland": "fraction 0-1 of valid samples (class 90)",
+    "frac_mangrove": "fraction 0-1 of valid samples (class 95)",
+    "frac_moss": "fraction 0-1 of valid samples (class 100)",
+    "dominant": "WorldCover class code (most frequent valid class)",
+    "n_valid": "count of ~100 m samples (10 m pixels decimated 10x)"
+  },
+  "region": "arizona",
+  "regionBbox": [
+    -113.5,
+    31.3,
+    -109.0,
+    34.5
+  ],
+  "inputFiles": [
+    "ESA_WorldCover_10m_2021_v200_N30W111_Map.tif",
+    "ESA_WorldCover_10m_2021_v200_N30W114_Map.tif",
+    "ESA_WorldCover_10m_2021_v200_N33W111_Map.tif",
+    "ESA_WorldCover_10m_2021_v200_N33W114_Map.tif"
+  ],
+  "rowCount": 3700,
+  "generatedAt": "2026-11-07T14:46:11+00:00",
+  "script": "scripts/prepare_regional_h3.py"
+}

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { locateCell, type CellInfo, type Project } from "../lib/api";
+import { cellArea, UNITS } from "h3-js";
+import type { Project } from "../lib/api";
 import { PROJECT_TYPE_BY_ID } from "../lib/projectTypes";
 import {
   loadWeather,
@@ -12,6 +13,8 @@ import {
 } from "../lib/context";
 import { formatKw, type Facility } from "../lib/infrastructure";
 import { fromFacilities, runQuery } from "../lib/query";
+import BaselineBlock from "./BaselineBlock";
+import type { FeatureLayerMeta } from "../lib/datalayers";
 
 export type CellSelection = { h3Id: string; latitude: number; longitude: number };
 
@@ -25,74 +28,48 @@ type Props = {
   onLoadPower: (lat: number, lon: number) => void;
   onClearPower: () => void;
   onFilterRegion: (country: string | null, admin1: string | null) => void;
+  featureManifest: FeatureLayerMeta[];
+  onShowLayer: (layerId: string, sliceId?: string) => void;
+  onGoTo: (lat: number, lon: number) => void;
 };
 
-const fmt = (n: number, d = 5) => n.toFixed(d);
+const coord = (lat: number, lon: number) =>
+  `${Math.abs(lat).toFixed(4)}° ${lat >= 0 ? "N" : "S"}, ${Math.abs(lon).toFixed(4)}° ${lon >= 0 ? "E" : "W"}`;
 
 export default function CellInspector(props: Props) {
   const { selection, projectsInCell, onSelectProject } = props;
-  const [cell, setCell] = useState<CellInfo | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [region, setRegion] = useState<RegionLocate | null>(null);
+  const [regionError, setRegionError] = useState(false);
 
   useEffect(() => {
     const ctrl = new AbortController();
-    setCell(null);
-    setError(null);
-    locateCell(selection.latitude, selection.longitude, ctrl.signal)
-      .then(setCell)
-      .catch((e) => {
-        if (!ctrl.signal.aborted) setError(String(e.message ?? e));
-      });
+    setRegion(null);
+    setRegionError(false);
+    locateRegion(selection.latitude, selection.longitude, ctrl.signal)
+      .then(setRegion)
+      .catch(() => !ctrl.signal.aborted && setRegionError(true));
     return () => ctrl.abort();
   }, [selection.latitude, selection.longitude]);
 
-  const matches = cell ? cell.h3Id === selection.h3Id : null;
+  const place = region
+    ? [region.county?.name, region.admin1?.name, region.country?.name].filter(Boolean).join(", ") || "Open water"
+    : regionError
+      ? "Selected location"
+      : "Locating…";
+  const area = cellArea(selection.h3Id, UNITS.km2);
 
   return (
     <section className="panel">
-      <h2>Cell</h2>
-      <dl className="kv">
-        <dt>H3 ID</dt>
-        <dd className="mono">{selection.h3Id}</dd>
-        <dt>Resolution</dt>
-        <dd>6 (simulation)</dd>
-        <dt>Clicked point</dt>
-        <dd className="mono">
-          {fmt(selection.latitude)}, {fmt(selection.longitude)}
-        </dd>
-        {cell && (
-          <>
-            <dt>Cell centre</dt>
-            <dd className="mono">
-              {fmt(cell.centre.latitude)}, {fmt(cell.centre.longitude)}
-            </dd>
-            <dt>Area</dt>
-            <dd>{cell.areaKm2.toFixed(2)} km²</dd>
-            <dt>Shape</dt>
-            <dd>
-              {cell.isPentagon ? "pentagon" : "hexagon"} · {cell.neighbours.length} neighbours
-            </dd>
-            <dt>Backend</dt>
-            <dd className={matches ? "ok" : "warn"}>
-              {matches ? "same cell ID ✓" : `mismatch: ${cell.h3Id}`}
-            </dd>
-          </>
-        )}
-      </dl>
-      {error && <p className="warn">Backend lookup failed: {error}</p>}
-
-      <RegionBlock {...props} />
-      <WeatherBlock latitude={selection.latitude} longitude={selection.longitude} />
-      <PowerBlock {...props} />
-
-      <h3>Baseline data</h3>
-      <p className="muted small">
-        No measured baseline layers loaded yet. Missing values stay unknown, not zero.
+      <h2>{place}</h2>
+      <p className="subtitle num">
+        {coord(selection.latitude, selection.longitude)} · {area.toFixed(0)} km² cell
       </p>
+
+      <RegionStats region={region} facilities={props.facilities} onFilterRegion={props.onFilterRegion} />
 
       {projectsInCell.length > 0 && (
         <>
-          <h3>Projects in this cell</h3>
+          <h3>Projects here</h3>
           <ul className="list">
             {projectsInCell.map((p) => (
               <li key={p.id}>
@@ -105,102 +82,52 @@ export default function CellInspector(props: Props) {
           </ul>
         </>
       )}
+
+      <BaselineBlock
+        h3Id={selection.h3Id}
+        manifest={props.featureManifest}
+        onShowLayer={props.onShowLayer}
+        onGoTo={props.onGoTo}
+      />
+
+      <WeatherBlock latitude={selection.latitude} longitude={selection.longitude} />
+      <PowerBlock {...props} />
+
+      <p className="muted small mono" style={{ marginTop: 20 }}>
+        Cell {selection.h3Id}
+      </p>
     </section>
   );
 }
 
-function RegionBlock({ selection, facilities, onFilterRegion }: Props) {
-  const [region, setRegion] = useState<RegionLocate | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const ctrl = new AbortController();
-    setRegion(null);
-    setError(null);
-    locateRegion(selection.latitude, selection.longitude, ctrl.signal)
-      .then(setRegion)
-      .catch((e) => !ctrl.signal.aborted && setError(String(e.message ?? e)));
-    return () => ctrl.abort();
-  }, [selection.latitude, selection.longitude]);
-
+function RegionStats({
+  region,
+  facilities,
+  onFilterRegion,
+}: {
+  region: RegionLocate | null;
+  facilities: Facility[];
+  onFilterRegion: Props["onFilterRegion"];
+}) {
   const records = useMemo(() => fromFacilities(facilities), [facilities]);
-  const summary = (country: string, admin1: string | null) => {
-    const dc = runQuery(records, { dataset: "datacenters", country, admin1, sort: "name", limit: 0 });
-    const dams = runQuery(records, { dataset: "dams", country, admin1, sort: "name", limit: 0 });
-    return { dc, dams };
-  };
   const country = region?.country?.name ?? null;
+  if (!country) return null;
   const admin1 = region?.admin1?.name ?? null;
-  const rows = country
-    ? [
-        ...(admin1 ? [{ label: admin1, ...summary(country, admin1), admin1 }] : []),
-        { label: country, ...summary(country, null), admin1: null },
-      ]
-    : [];
+  const area = admin1 ?? country;
+  const dc = runQuery(records, { dataset: "datacenters", country, admin1, sort: "name", limit: 0 }).total;
+  const dams = runQuery(records, { dataset: "dams", country, admin1, sort: "name", limit: 0 }).total;
 
   return (
-    <>
-      <h3>Region</h3>
-      {error && <p className="warn small">Region lookup failed: {error}</p>}
-      {region && (
-        <dl className="kv">
-          <dt>Country</dt>
-          <dd>{region.country?.name ?? <span className="muted">outside country outlines (sea)</span>}</dd>
-          {region.admin1 && (
-            <>
-              <dt>State / province</dt>
-              <dd>{region.admin1.name}</dd>
-            </>
-          )}
-          {region.county && (
-            <>
-              <dt>County</dt>
-              <dd>{region.county.name}</dd>
-            </>
-          )}
-        </dl>
-      )}
-      {rows.length > 0 && (
-        <table className="mini">
-          <thead>
-            <tr>
-              <th>Mapped in</th>
-              <th>Datacenters</th>
-              <th>Dams</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr key={r.label}>
-                <td>
-                  <button className="link inline" onClick={() => onFilterRegion(country, r.admin1)}>
-                    {r.label}
-                  </button>
-                </td>
-                <td>
-                  {r.dc.total.toLocaleString()}
-                  {r.dc.operators[0] && <div className="muted small">top: {r.dc.operators[0].name} ({r.dc.operators[0].count})</div>}
-                </td>
-                <td>
-                  {r.dams.total.toLocaleString()}
-                  {r.dams.metric.sum !== null && (
-                    <div className="muted small">
-                      {formatKw(r.dams.metric.sum)} rated ({r.dams.metric.withValue} tagged)
-                    </div>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-      {region && (
-        <p className="muted small">
-          Counts are features mapped in OSM, not complete inventories. Outlines are simplified, so points
-          near a border can fall in the neighbour.
-        </p>
-      )}
-    </>
+    <div className="stats">
+      <button className="stat" onClick={() => onFilterRegion(country, admin1)} title={`List datacenters in ${area}`}>
+        <strong>{dc.toLocaleString()}</strong>
+        <span>datacenters in {area}</span>
+      </button>
+      <div className="stat" style={{ display: "flex" }}>
+        <strong>{dams.toLocaleString()}</strong>
+        <span>dams in {area}</span>
+      </div>
+    </div>
   );
 }
 
@@ -233,9 +160,27 @@ function WeatherBlock({ latitude, longitude }: { latitude: number; longitude: nu
     <>
       <h3>Weather forecast</h3>
       {!requested ? (
-        <button onClick={() => setRequested(true)}>Load forecast for this point</button>
+        <button onClick={() => setRequested(true)}>Show forecast</button>
       ) : (
         <>
+          {error && <p className="warn small">{error}</p>}
+          {!weather && !error && <p className="muted small">Loading…</p>}
+          {weather && (
+            <dl className="kv">
+              <dt>Now</dt>
+              <dd>
+                {fmt1(weather.temperatureC, "°C")}, wind {fmt1(weather.windSpeed10m, "m/s")}
+              </dd>
+              <dt>Next 24 h</dt>
+              <dd>
+                {fmt1(weather.next24h.tempMinC, "°C")} to {fmt1(weather.next24h.tempMaxC, "°C")}
+              </dd>
+              <dt>Wind at 100 m</dt>
+              <dd>
+                avg {fmt1(weather.next24h.wind100mMean, "m/s")}, max {fmt1(weather.next24h.wind100mMax, "m/s")}
+              </dd>
+            </dl>
+          )}
           <label className="field">
             <span>Model</span>
             <select value={model} onChange={(e) => setModel(e.target.value as WeatherModel)}>
@@ -246,35 +191,6 @@ function WeatherBlock({ latitude, longitude }: { latitude: number; longitude: nu
               ))}
             </select>
           </label>
-          {error && <p className="warn small">{error}</p>}
-          {!weather && !error && <p className="muted small">Loading…</p>}
-          {weather && (
-            <dl className="kv">
-              <dt>Now (model)</dt>
-              <dd>
-                {fmt1(weather.temperatureC, "°C")} · wind 10 m {fmt1(weather.windSpeed10m, "m/s")}
-                {weather.windDirection10m !== null && ` from ${Math.round(weather.windDirection10m)}°`}
-              </dd>
-              <dt>Next 24 h</dt>
-              <dd>
-                {fmt1(weather.next24h.tempMinC, "°C")} to {fmt1(weather.next24h.tempMaxC, "°C")}
-              </dd>
-              <dt>Wind 100 m, 24 h</dt>
-              <dd>
-                mean {fmt1(weather.next24h.wind100mMean, "m/s")} · max {fmt1(weather.next24h.wind100mMax, "m/s")}
-              </dd>
-              <dt>Valid</dt>
-              <dd className="mono">{weather.time}Z</dd>
-            </dl>
-          )}
-          <p className="muted small">
-            Model forecast for one point (not an observation). A day of forecast wind says nothing about
-            annual wind resource. Cooling and heat-reuse assumptions need climatology.{" "}
-            <a href="https://open-meteo.com/" target="_blank" rel="noreferrer">
-              Weather data by Open-Meteo.com
-            </a>{" "}
-            (CC BY 4.0).
-          </p>
         </>
       )}
     </>
@@ -293,35 +209,32 @@ function PowerBlock({ selection, power, powerStatus, onLoadPower, onClearPower }
 
   return (
     <>
-      <h3>Electricity infrastructure (OSM)</h3>
-      <div className="actions">
+      <h3>Power grid within 10 km</h3>
+      {here ? (
+        <>
+          <dl className="kv">
+            <dt>Power plants</dt>
+            <dd>
+              {counts.plant ?? 0}
+              {ratedN > 0 && <span className="muted"> · {formatKw(ratedKw)} capacity</span>}
+            </dd>
+            <dt>Substations</dt>
+            <dd>{counts.substation ?? 0}</dd>
+            <dt>Line segments</dt>
+            <dd>{(counts.line ?? 0) + (counts.cable ?? 0)}</dd>
+          </dl>
+          <div className="actions">
+            <button className="ghost" onClick={onClearPower} style={{ paddingLeft: 0 }}>
+              Hide from map
+            </button>
+          </div>
+        </>
+      ) : (
         <button disabled={powerStatus?.loading} onClick={() => onLoadPower(selection.latitude, selection.longitude)}>
-          {powerStatus?.loading ? "Querying Overpass…" : here ? "Reload within 10 km" : "Show within 10 km"}
+          {powerStatus?.loading ? "Loading…" : "Show power grid"}
         </button>
-        {power && (
-          <button className="ghost" onClick={onClearPower}>
-            Clear
-          </button>
-        )}
-      </div>
-      {powerStatus?.error && <p className="warn small">{powerStatus.error}</p>}
-      {power && (
-        <p className="small">
-          {here ? "Around this point" : "Loaded area elsewhere"}: {counts.plant ?? 0} plants, {counts.substation ?? 0}{" "}
-          substations, {(counts.line ?? 0) + (counts.cable ?? 0)} line segments.
-          {ratedN > 0 && (
-            <>
-              {" "}
-              Tagged plant nameplate: {formatKw(ratedKw)} ({ratedN} of {plants.length} plants tagged).
-            </>
-          )}
-          {power.source.stale && <span className="warn"> Cached copy (Overpass unreachable).</span>}
-        </p>
       )}
-      <p className="muted small">
-        Mapped routes and nameplate ratings only. This does not show grid headroom or which plant would
-        supply a project.
-      </p>
+      {powerStatus?.error && <p className="warn small">{powerStatus.error}</p>}
     </>
   );
 }

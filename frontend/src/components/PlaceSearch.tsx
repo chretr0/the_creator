@@ -42,7 +42,7 @@ export default function PlaceSearch({ index, onFocus, onGo }: Props) {
     <div className="place-search">
       <input
         value={q}
-        placeholder="Search places or lat, lon"
+        placeholder="Search a place or coordinates"
         aria-label="Search places"
         onFocus={() => {
           onFocus();
@@ -70,20 +70,18 @@ export default function PlaceSearch({ index, onFocus, onGo }: Props) {
                   {h.label}
                   <span className="muted small"> {h.detail}</span>
                 </span>
-                {h.source === "photon" && <span className="muted small right">Photon</span>}
               </button>
             </li>
           ))}
           {!remote && !coord && (
             <li>
               <button className="link muted" disabled={busy} onClick={more}>
-                {busy ? "Searching…" : `Search more places for “${q.trim()}” (Photon)`}
+                {busy ? "Searching…" : `Search more for “${q.trim()}”`}
               </button>
             </li>
           )}
           {remote && remote.length === 0 && <li className="muted small pad">No more results.</li>}
           {error && <li className="warn small pad">{error}</li>}
-          {remote && <li className="muted small pad">Search by Photon (komoot) · © OpenStreetMap contributors</li>}
         </ul>
       )}
     </div>
