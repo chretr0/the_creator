@@ -1,0 +1,21 @@
+# Python
+backend/.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+backend/.env
+
+# Node
+frontend/node_modules/
+frontend/dist/
+*.tsbuildinfo
+
+.DS_Store
+
+# Downloaded datasets (large; provenance lives in data/raw/*/source.json)
+data/raw/**
+!data/raw/*/
+!data/raw/*/source.json
+
+# Live-source response cache (rebuilt automatically)
+data/cache/

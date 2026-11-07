@@ -1,0 +1,93 @@
+{
+  "id": "BOUNDARIES-GEV",
+  "provider": "Natural Earth (countries, admin-1); U.S. Census Bureau (counties)",
+  "product": "Simplified boundary packs bundled with gods-eye-view",
+  "licence": "Public domain",
+  "attribution": "Made with Natural Earth · U.S. Census Bureau cartographic boundary files",
+  "evidenceType": "reference_geometry",
+  "retrievedAt": "2026-11-07",
+  "upstream": {
+    "repository": "https://github.com/bilawalsidhu/gods-eye-view",
+    "commit": "8b8ccc9a81379e8b40d4be67610570ee5b159512"
+  },
+  "limitations": [
+    "Outlines are simplified (see simplification tolerances) and are not legal or surveyed boundaries.",
+    "Natural Earth reflects de facto control for some disputed areas; check before using for anything jurisdictional.",
+    "US counties cover the US and its territories only."
+  ],
+  "layers": [
+    {
+      "id": "countries",
+      "level": "country",
+      "file": "countries.geojson",
+      "features": 256,
+      "upstream": {
+        "title": "Natural Earth admin-0 countries",
+        "source": "ne_10m_admin_0_countries",
+        "url": "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/ca96624a56bd078437bca8184e78163e5039ad19/geojson/ne_10m_admin_0_countries.geojson",
+        "sha256": "239eec57ac17f100a11e2536cffc56752c318b50ae765b0918ff7aab4ce8f255",
+        "commit": "ca96624a56bd078437bca8184e78163e5039ad19",
+        "license": "Public domain (https://www.naturalearthdata.com/about/terms-of-use/)"
+      },
+      "simplification": {
+        "toleranceFactor": 0.004,
+        "minToleranceDeg": 0.005,
+        "maxToleranceDeg": 0.02,
+        "decimals": 3,
+        "minPartKm2": 20,
+        "minPartShare": 3e-05,
+        "minHoleKm2": 20
+      }
+    },
+    {
+      "id": "admin1",
+      "level": "admin1",
+      "file": "admin1.geojson",
+      "features": 4587,
+      "upstream": {
+        "title": "Natural Earth admin-1 states and provinces",
+        "source": "ne_10m_admin_1_states_provinces",
+        "url": "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/ca96624a56bd078437bca8184e78163e5039ad19/geojson/ne_10m_admin_1_states_provinces.geojson",
+        "sha256": "22d0e3ad85eb3e27f17cabf8ba2d50e554fbc27a87796ff891d958185da62fb5",
+        "commit": "ca96624a56bd078437bca8184e78163e5039ad19",
+        "license": "Public domain (https://www.naturalearthdata.com/about/terms-of-use/)"
+      },
+      "simplification": {
+        "toleranceFactor": 0.004,
+        "minToleranceDeg": 0.005,
+        "maxToleranceDeg": 0.02,
+        "decimals": 3,
+        "minPartKm2": 20,
+        "minPartShare": 0.0003,
+        "minHoleKm2": 20,
+        "ambiguity": {
+          "insideMinPopulation": 200000,
+          "elsewhereMinPopulation": 50000,
+          "cityStateMaxKm2": 1000
+        }
+      }
+    },
+    {
+      "id": "us_counties",
+      "level": "us_county",
+      "file": "us_counties.geojson",
+      "features": 3235,
+      "upstream": {
+        "title": "US Census Bureau cartographic boundary counties",
+        "source": "cb_2025_us_county_5m",
+        "url": "https://www2.census.gov/geo/tiger/GENZ2025/shp/cb_2025_us_county_5m.zip",
+        "sha256": "faec522080681e79be5be435c981009a77891206ff8a7f1d142f3bf5da9ebd74",
+        "license": "Public domain (U.S. Government work, 17 U.S.C. § 105)"
+      },
+      "simplification": {
+        "toleranceFactor": 0.003,
+        "minToleranceDeg": 0.0005,
+        "maxToleranceDeg": 0.01,
+        "decimals": 4,
+        "minPartKm2": 1,
+        "minPartShare": 0.001,
+        "minHoleKm2": 1
+      }
+    }
+  ]
+}

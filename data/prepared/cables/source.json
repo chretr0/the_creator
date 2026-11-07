@@ -1,0 +1,51 @@
+{
+  "id": "CABLES-TELEGEOGRAPHY",
+  "provider": "TeleGeography",
+  "product": "Submarine Cable Map public GeoJSON (cable routes and landing points)",
+  "licence": "CC BY-NC-SA 3.0",
+  "licenceUrl": "https://creativecommons.org/licenses/by-nc-sa/3.0/",
+  "attribution": "© TeleGeography — submarinecablemap.com",
+  "commercialUse": false,
+  "evidenceType": "reported_record",
+  "retrievedAt": "2026-05-24",
+  "upstream": {
+    "repository": "https://github.com/bilawalsidhu/gods-eye-view",
+    "commit": "8b8ccc9a81379e8b40d4be67610570ee5b159512",
+    "files": [
+      {
+        "path": "cable-geo.json",
+        "url": "https://www.submarinecablemap.com/api/v3/cable/cable-geo.json",
+        "format": "GeoJSON",
+        "geojson_type": "FeatureCollection",
+        "feature_count": 712,
+        "sha256": "3d28db104e57982e7ae67fabe66f2ff8dc01e137458454e0de0032a8878c6bad"
+      },
+      {
+        "path": "landing-point-geo.json",
+        "url": "https://www.submarinecablemap.com/api/v3/landing-point/landing-point-geo.json",
+        "format": "GeoJSON",
+        "geojson_type": "FeatureCollection",
+        "feature_count": 1917,
+        "sha256": "11fc154189db51237099ffe1da2183984d666a906e5ed0e89b86421192eb622b"
+      }
+    ]
+  },
+  "limitations": [
+    "NonCommercial licence: remove this layer (data/prepared/cables) before any commercial use, or license it from TeleGeography.",
+    "ShareAlike: redistributed or adapted copies of this data must stay under CC BY-NC-SA 3.0.",
+    "Routes are schematic map geometry, not surveyed seabed positions.",
+    "Owners, capacity and ready-for-service dates are not in the public GeoJSON (TeleGeography licenses them separately)."
+  ],
+  "layers": [
+    {
+      "id": "cables",
+      "file": "cables.geojson",
+      "features": 712
+    },
+    {
+      "id": "landing_points",
+      "file": "landing_points.geojson",
+      "features": 1917
+    }
+  ]
+}

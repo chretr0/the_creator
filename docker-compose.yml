@@ -1,0 +1,37 @@
+# Local development infrastructure: Postgres + Flyway migrations.
+# Backend (FastAPI) and frontend (Vite) run on the host for fast reloads; see README.md.
+services:
+  db:
+    image: postgres:17
+    container_name: newworlds-db
+    environment:
+      POSTGRES_DB: newworlds
+      POSTGRES_USER: newworlds
+      POSTGRES_PASSWORD: newworlds
+    ports:
+      - "5433:5432" # host 5433 to avoid clashing with a locally installed Postgres
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U newworlds -d newworlds"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  flyway:
+    image: flyway/flyway:11
+    container_name: newworlds-flyway
+    command: -connectRetries=30 migrate
+    environment:
+      FLYWAY_URL: jdbc:postgresql://db:5432/newworlds
+      FLYWAY_USER: newworlds
+      FLYWAY_PASSWORD: newworlds
+      FLYWAY_LOCATIONS: filesystem:/flyway/sql
+    volumes:
+      - ./db/migrations:/flyway/sql:ro
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db-data:
