@@ -27,7 +27,7 @@ from uuid import UUID
 import h3
 import numpy as np
 
-from app import building_prices, features, h3store, layers
+from app import building_prices, features, h3store, layers, site_capacity, site_support
 from app.api_base import ParamValue
 from app.building_calc import LocationContext, average_kw, calculate, fmt_num, is_unknown, q
 from app.building_models import (
@@ -69,11 +69,11 @@ GHI_LAYER, GHI_SLICE = "solar_ghi", "clim-ann"
 NO_CURRENCY = "unspecified currency"
 
 SCREENING_NOTE = (
-    "Screening result per resolution-6 H3 cell (about 36 km²) using the cell's layer values and "
-    "scenario-wide or regional budgets only; site-specific assumptions apply to an exact location. "
-    "A cell's state is not proof that every parcel in it is suitable, and says nothing about "
-    "permission, ownership, engineering feasibility or a utility connection. Re-assess the exact "
-    "location before placing."
+    "Each resolution-6 H3 cell (about 36 km²) is checked against what it and its neighbouring cells can "
+    "provide: open land, fresh water, grid power and workforce, estimated from prepared data, minus what "
+    "buildings already in the scenario use nearby. A cell's state is a screening result, not proof that "
+    "every parcel in it is suitable, and says nothing about permission, ownership or a utility connection. "
+    "Pick a cell to see the exact location's breakdown before placing."
 )
 
 
@@ -662,29 +662,54 @@ def overall(statuses: np.ndarray, required: np.ndarray, n: int) -> np.ndarray:
 
 
 NO_REQUIREMENTS = (
-    "Nothing to check yet: this building has no required location requirements and no declared site supply, "
-    "so suitability can't be judged (its usage and costs are still calculated). Add a requirement, or declare "
-    "usable area, power, energy or water under Site assumptions."
+    "Nothing to check yet: the building's specs declare no footprint, water, power or staffing, so whether "
+    "this site can provide them can't be judged (its usage and costs are still calculated)."
 )
 
 
-def _summary(checks: list[CheckResult], state: str) -> str:
+def _summary(checks: list[CheckResult], state: str, skipped: list[str] = ()) -> str:
     req = [c for c in checks if c.required]
-    nf = sum(c.status == "fail" for c in req)
     nu = sum(c.status == "unknown" for c in req)
     if not req:
         return NO_REQUIREMENTS
     if state == "fails_criteria":
-        return f"Does not meet {nf} of {len(req)} required criteria" + (f"; {nu} more unknown." if nu else ".")
-    if state == "insufficient_data":
-        return f"More information needed: {nu} of {len(req)} required criteria unknown."
-    return f"Meets all {len(req)} evaluated required criteria under the displayed assumptions."
+        failed = ", ".join(c.label.lower() for c in req if c.status == "fail")
+        text = f"Can't be built here: {failed}" + (f"; {nu} more unknown." if nu else ".")
+    elif state == "insufficient_data":
+        text = f"Possibly buildable, but {nu} of {len(req)} checks can't be judged with the available data."
+    else:
+        text = f"Can be built here: the site provides everything its specs need ({len(req)} checks)."
+    if skipped:
+        text += " Not checked: " + "; ".join(skipped) + "."
+    return text
 
 
-def assessment_at(checks: list[CheckVec], i: int, state_idx: int) -> Assessment:
+def assessment_at(checks: list[CheckVec], i: int, state_idx: int, skipped: list[str] = (),
+                  coastal: bool | None = None) -> Assessment:
+    """With `coastal` (from the site data), shortfalls another building could cover get suggestions."""
     results = [c.build(i) for c in checks]
     state = _STATES[state_idx]
-    return Assessment(state=state, checks=results, summary=_summary(results, state))
+    suggestions = site_support.suggestions(results, coastal) if coastal is not None else []
+    return Assessment(state=state, checks=results, summary=_summary(results, state, skipped), suggestions=suggestions)
+
+
+def _site_vecs(btype: str, stats: BuildingStats, result: BuildingResult, cells: np.ndarray, lats: np.ndarray,
+               lons: np.ndarray, ctx: ScenarioContext, results: dict[UUID, BuildingResult], exclude: set[UUID],
+               stress: StressControls):
+    """Automatic checks: what the site (cell + neighbours) provides vs what the building's specs need.
+
+    Other scenario buildings nearby share the same supply (their demand is subtracted, placed plants'
+    output added); the building itself and `exclude` are never counted."""
+    sd = site_capacity.site_data(cells, lats, lons)
+    neighbours = [
+        site_capacity.Neighbour(b.id, b.name, int(b.h3_id, 16),
+                                site_capacity.demand_of(b.type, b.snapshot.stats, results[b.id]))
+        for b in ctx.buildings if b.id not in exclude and b.id in results
+    ]
+    sh = site_capacity.shared(cells, neighbours)
+    demand = site_capacity.demand_of(btype, stats, result)
+    checks, skipped, mats = site_capacity.site_checks(btype, demand, sd, sh, stress)
+    return [CheckVec(c.status, c.build, c.required) for c in checks], skipped, (sd, sh, demand, mats)
 
 
 # --- public entry points ----------------------------------------------------------------------
@@ -704,23 +729,27 @@ def assess_point(
     h3_id = h3.latlng_to_cell(latitude, longitude, h3store.SIM_RES)
     if result is None:
         result = calculate(btype, stats, parameters, ctx.period_days, stress, location_context(h3_id))
+    results = results if results is not None else building_results(ctx, stress)
     if pools is None:
-        results = results if results is not None else building_results(ctx, stress)
         pools = _scenario_pools(ctx, results, stress)
     criteria = criteria + implied_criteria(criteria, site, pools, latitude, longitude, exclude)
     cells = np.array([int(h3_id, 16)], dtype=np.uint64)
-    checks = build_checks(criteria, stats, result, cells, lambda: np.array([latitude]), lambda: np.array([longitude]),
-                          lambda _i: h3_id, site, pools, stress, exclude, (latitude, longitude))
+    lat, lon = np.array([latitude]), np.array([longitude])
+    site_vecs, skipped, site_state = _site_vecs(btype, stats, result, cells, lat, lon, ctx, results, exclude, stress)
+    checks = site_vecs + build_checks(criteria, stats, result, cells, lambda: lat, lambda: lon,
+                                      lambda _i: h3_id, site, pools, stress, exclude, (latitude, longitude))
     statuses = np.array([c.status for c in checks]).reshape(len(checks), 1)
     state = overall(statuses, np.array([c.required for c in checks], dtype=bool), 1)
-    return h3_id, result, assessment_at(checks, 0, int(state[0])), checks
+    sd, sh, demand, mats = site_state
+    capacity = site_capacity.capacity_at(sd, sh, 0, stress, demand, btype, mats)
+    return h3_id, result, assessment_at(checks, 0, int(state[0]), skipped, bool(sd.coastal[0])), checks, capacity
 
 
 def assess_location(btype, stats, parameters, criteria, site, latitude, longitude, ctx, exclude) -> LocationAssessment:
-    h3_id, result, assessment, _ = assess_point(btype, stats, parameters, criteria, site, latitude, longitude,
-                                                ctx, exclude)
+    h3_id, result, assessment, _, capacity = assess_point(btype, stats, parameters, criteria, site, latitude,
+                                                          longitude, ctx, exclude)
     return LocationAssessment(latitude=latitude, longitude=longitude, h3_id=h3_id, result=result, assessment=assessment,
-                              utility_prices=building_prices.location_offers(h3_id, stats.costs))
+                              site=capacity, utility_prices=building_prices.location_offers(h3_id, stats.costs))
 
 
 def _box_area_km2(w: float, s: float, e: float, n: float) -> float:
@@ -775,8 +804,11 @@ def assess_area(btype, stats, parameters, criteria, box: tuple[float, float, flo
     result = calculate(btype, stats, parameters, ctx.period_days, stress, None)
     results = building_results(ctx, stress)
     pools = _scenario_pools(ctx, results, stress)
-    checks = build_checks(criteria, stats, result, cells, lambda: latlon()[0], lambda: latlon()[1], hexes,
-                          None, pools, stress, exclude)
+    site_vecs, skipped, site_state = _site_vecs(btype, stats, result, cells, latlon()[0], latlon()[1], ctx, results,
+                                                exclude, stress)
+    coastal = site_state[0].coastal
+    checks = site_vecs + build_checks(criteria, stats, result, cells, lambda: latlon()[0], lambda: latlon()[1],
+                                      hexes, None, pools, stress, exclude)
     statuses = np.array([c.status for c in checks]).reshape(len(checks), n)
     states = overall(statuses, np.array([c.required for c in checks], dtype=bool), n)
 
@@ -785,7 +817,7 @@ def assess_area(btype, stats, parameters, criteria, box: tuple[float, float, flo
     for i in order[:limit]:
         lat, lon = h3.cell_to_latlng(hexes(int(i)))
         candidates.append(Candidate(h3_id=hexes(int(i)), latitude=lat, longitude=lon,
-                                    assessment=assessment_at(checks, int(i), int(states[i]))))
+                                    assessment=assessment_at(checks, int(i), int(states[i]), skipped, bool(coastal[i]))))
     counts = {s: int(np.count_nonzero(states == k)) for k, s in enumerate(_STATES)}
     return AreaAssessment(
         cell_count=n,
@@ -915,7 +947,7 @@ def scenario_result(ctx: ScenarioContext, stress: StressControls, locs: dict[UUI
     pools = _scenario_pools(ctx, results, stress)
     buildings = []
     for b in ctx.buildings:
-        _, _, assessment, _ = assess_point(
+        _, _, assessment, _, _ = assess_point(
             b.type, b.snapshot.stats, b.parameters, b.snapshot.criteria, b.site, b.latitude, b.longitude,
             ctx, {b.id}, stress, results, pools, results[b.id])
         buildings.append(BuildingEvaluation(project_id=b.id, name=b.name, type=b.type, result=results[b.id],

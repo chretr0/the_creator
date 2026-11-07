@@ -5,13 +5,9 @@ import {
   criterionToDraft,
   fmtDays,
   parseCriteria,
-  parseSite,
   parseStats,
-  SITE_FIELDS,
-  siteToDraft,
   statsToDraft,
   type CriterionDraft,
-  type SiteDraft,
   type StatsDraft,
 } from "../lib/buildingForm";
 import type { CellLayer } from "../lib/datalayers";
@@ -20,7 +16,7 @@ import { useBuildingTemplates } from "../lib/useBuildingTemplates";
 import BuildingForm from "./BuildingForm";
 import { AssessmentView, ResultView } from "./AssessmentView";
 import CriteriaEditor from "./CriteriaEditor";
-import { Field, Section } from "./FormBits";
+import { Section } from "./FormBits";
 
 type Props = {
   project: Project;
@@ -42,7 +38,6 @@ type Draft = {
   longitude: string;
   description: string;
   stats: StatsDraft;
-  site: SiteDraft;
   criteria: CriterionDraft[];
 };
 
@@ -60,7 +55,6 @@ function toDraft(p: Project): Draft {
     longitude: String(p.longitude),
     description: snap.description ?? "",
     stats: statsToDraft(snap.stats, p.parameters ?? {}),
-    site: siteToDraft(p.site),
     criteria: (snap.criteria ?? []).map(criterionToDraft),
   };
 }
@@ -84,9 +78,8 @@ export default function ProjectEditor({ project, moving, onSave, onMove, onDelet
   const snap = snapshotOf(project);
   const template = templateFor(draft.type, draft.type === project.type ? snap.templateId : null);
   const parsed = useMemo(() => parseStats(draft.stats, template.parameters), [draft.stats, template]);
-  const site = useMemo(() => parseSite(draft.site), [draft.site]);
   const crit = useMemo(() => parseCriteria(draft.criteria), [draft.criteria]);
-  const errorCount = Object.keys(parsed.errors).length + Object.keys(site.errors).length + Object.keys(crit.errors).length;
+  const errorCount = Object.keys(parsed.errors).length + Object.keys(crit.errors).length;
 
   // Calculated results and checks for the saved building at its saved location (excluding itself
   // from shared budgets so it is not counted twice).
@@ -105,7 +98,6 @@ export default function ProjectEditor({ project, moving, onSave, onMove, onDelet
           stats: s.stats ?? {},
           parameters: project.parameters ?? {},
           criteria: s.criteria ?? [],
-          site: project.site ?? {},
           location: { latitude: project.latitude, longitude: project.longitude },
           excludeProjectId: project.id,
         },
@@ -150,7 +142,6 @@ export default function ProjectEditor({ project, moving, onSave, onMove, onDelet
       type: draft.type,
       parameters: parsed.parameters,
       definition,
-      site: site.site,
     };
     if (draft.latitude !== String(project.latitude)) patch.latitude = latitude;
     if (draft.longitude !== String(project.longitude)) patch.longitude = longitude;
@@ -209,12 +200,12 @@ export default function ProjectEditor({ project, moving, onSave, onMove, onDelet
         </label>
       </div>
 
-      <h3>Assessment at this location</h3>
+      <h3>Can it be built here?</h3>
       {assessError && <p className="warn small">Unavailable: {assessError}</p>}
       {!fresh && !assessError && <p className="muted small">Calculating…</p>}
       {fresh && (
         <>
-          <AssessmentView assessment={fresh.value.assessment} />
+          <AssessmentView assessment={fresh.value.assessment} site={fresh.value.site} />
           <Section title="Calculated usage and costs" meta={`over ${fmtDays(fresh.periodDays)}`} open>
             <ResultView result={fresh.value.result} producesPower={template.producesPower} producesWater={template.producesWater} />
           </Section>
@@ -229,10 +220,10 @@ export default function ProjectEditor({ project, moving, onSave, onMove, onDelet
       </label>
       <BuildingForm draft={draft.stats} onChange={(stats) => setDraft({ ...draft, stats })} errors={parsed.errors} template={template} />
 
-      <Section title="Requirements" meta={`${crit.criteria.length} set`} invalid={Object.keys(crit.errors).length}>
+      <Section title="Your own extra limits" meta={crit.criteria.length ? `${crit.criteria.length} set` : "optional"} invalid={Object.keys(crit.errors).length}>
         <p className="muted small">
-          What this building needs from its location. Each becomes a pass / fail / unknown check above. Without any
-          (and without site assumptions) the assessment can only say “More information needed”.
+          Land, water, power and workforce are checked automatically against what this hexagon and its neighbours
+          provide. Add limits here only for extra preferences (e.g. water stress, slope or a budget).
         </p>
         <CriteriaEditor
           drafts={draft.criteria}
@@ -244,23 +235,6 @@ export default function ProjectEditor({ project, moving, onSave, onMove, onDelet
         />
       </Section>
 
-      <Section title="Site assumptions" meta="this location only" invalid={Object.keys(site.errors).length}>
-        <p className="muted small">
-          What this exact location can provide. Each value you enter is checked against the building's demand (usable
-          area vs footprint, connected capacity vs peak demand, energy and water over the period).
-        </p>
-        {SITE_FIELDS.map((f) => (
-          <Field
-            key={f.key}
-            label={f.label}
-            unit={f.unit}
-            value={draft.site[f.key]}
-            onChange={(v) => setDraft({ ...draft, site: { ...draft.site, [f.key]: v } })}
-            error={site.errors[f.key]}
-          />
-        ))}
-        <Field label="Note" value={draft.site.note} onChange={(v) => setDraft({ ...draft, site: { ...draft.site, note: v } })} numeric={false} placeholder="Basis for these values" />
-      </Section>
 
       {error && <p className="warn">{error}</p>}
       <div className="actions">

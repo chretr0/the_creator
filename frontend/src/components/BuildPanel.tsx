@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { cellToLatLng, gridDisk } from "h3-js";
 import { api, ApiError, type Project, type Scenario } from "../lib/api";
 import {
   PRESET_DRAG_TYPE,
@@ -9,6 +10,7 @@ import {
   type CellState,
   type DefinitionSnapshot,
   type LocationAssessment,
+  type SupportSuggestion,
 } from "../lib/buildings";
 import type { CellLayer } from "../lib/datalayers";
 import {
@@ -19,14 +21,11 @@ import {
   mergeAssumptions,
   missingInputs,
   parseCriteria,
-  parseSite,
   parseStats,
   removeLocationPrice,
-  SITE_FIELDS,
-  siteToDraft,
+  siteNeeds,
   statsToDraft,
   type CriterionDraft,
-  type SiteDraft,
   type StatsDraft,
 } from "../lib/buildingForm";
 import { typeColour } from "../lib/projectTypes";
@@ -54,7 +53,8 @@ type Props = {
   picking: boolean;
   onPick: (on: boolean) => void;
   onCells: (cells: CellState[] | null) => void;
-  onBuilt: (p: Project) => void;
+  /** `stay`: keep the Build tab open (a supporting building is previewed next). */
+  onBuilt: (p: Project, opts?: { stay?: boolean }) => void;
   onFocus: (latitude: number, longitude: number) => void;
   /** Fit the map to [west, south, east, north] when a prepared region is searched. */
   onFitBounds?: (bbox: [number, number, number, number]) => void;
@@ -97,6 +97,13 @@ export default function BuildPanel(props: Props) {
   const [basedOn, setBasedOn] = useState<BuildingPreset | null>(null);
   const template = templateFor(type, templateId);
 
+  // The form as last loaded (empty, a preset or a saved definition). Anything else is the user's own
+  // edits, which loading a preset must not discard without asking.
+  const formState = JSON.stringify([name, description, stats]);
+  const [loadedState, setLoadedState] = useState(formState);
+  const hasEdits = formState !== loadedState;
+  const markLoaded = (n: string, d: string, st: StatsDraft) => setLoadedState(JSON.stringify([n, d, st]));
+
   const [definitions, setDefinitions] = useState<BuildingDefinition[]>([]);
   const [defsError, setDefsError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -122,6 +129,7 @@ export default function BuildPanel(props: Props) {
     () => missingInputs(parsed.stats, parsed.parameters, template, crit.criteria),
     [parsed, template, crit.criteria],
   );
+  const needs = useMemo(() => siteNeeds(parsed.stats, parsed.parameters, type), [parsed, type]);
   const currency = parsed.stats.costs?.currency || "currency";
   const periodDays = useMemo(() => mergeAssumptions(scenario?.assumptions).periodDays, [scenario?.assumptions]);
 
@@ -166,7 +174,10 @@ export default function BuildPanel(props: Props) {
   }
 
   /** Load a real example; requirements (step 2) are kept. Presets are not templates: the type's template is used. */
-  function loadPreset(p: BuildingPreset) {
+  function loadPreset(p: BuildingPreset, force = false): boolean {
+    if (!force && hasEdits && !confirm(`Replace your current building with “${p.name}”? Your edits to the form will be lost (requirements are kept).`)) {
+      return false;
+    }
     const form = presetToForm(p);
     setType(form.type);
     setTemplateId(null);
@@ -174,9 +185,11 @@ export default function BuildPanel(props: Props) {
     setName(form.name);
     setDescription(form.description);
     setStats(form.stats);
+    markLoaded(form.name, form.description, form.stats);
     setBasedOn(p);
     setSaveNote(null);
     setPresetNote(null);
+    return true;
   }
 
   // A preset dropped on the map: load it once per request, then bring the preview into view.
@@ -192,7 +205,10 @@ export default function BuildPanel(props: Props) {
       onTarget(null); // don't preview a different building than the one dropped
       return setPresetNote("That example couldn't be loaded, so nothing is previewed.");
     }
-    loadPreset(p);
+    if (!loadPreset(p)) {
+      onTarget(null); // kept the user's draft: don't preview it at the drop point unasked
+      return;
+    }
     setScrollToPreview(presetRequest.nonce);
     // loadPreset only sets state.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -211,7 +227,9 @@ export default function BuildPanel(props: Props) {
     setDefinitionId(d.id);
     setName(d.name);
     setDescription(d.description);
-    setStats(statsToDraft(d.stats, d.parameters));
+    const st = statsToDraft(d.stats, d.parameters);
+    setStats(st);
+    markLoaded(d.name, d.description, st);
     setCriteria(d.criteria.map(criterionToDraft));
     setSaveNote(null);
   }
@@ -222,7 +240,9 @@ export default function BuildPanel(props: Props) {
     setBasedOn(null);
     setName("");
     setDescription("");
-    setStats(statsToDraft(templateFor(type, templateId).defaults ?? {}, {}));
+    const st = statsToDraft(templateFor(type, templateId).defaults ?? {}, {});
+    setStats(st);
+    markLoaded("", "", st);
     setCriteria([]);
     setSaveNote(null);
     onTarget(null);
@@ -246,6 +266,7 @@ export default function BuildPanel(props: Props) {
     try {
       const saved = definitionId && !asNew ? await api.updateDefinition(definitionId, input) : await api.createDefinition(input);
       setDefinitionId(saved.id);
+      setLoadedState(formState); // saved, so nothing is lost by loading something else
       setSaveNote({ ok: true, text: `Saved “${saved.name}”. Future placements use it; buildings already placed keep their own copy.` });
       refreshDefinitions();
     } catch (e) {
@@ -331,8 +352,6 @@ export default function BuildPanel(props: Props) {
   }
 
   // ---- step 4: exact-location preview ----
-  const [siteDraft, setSiteDraft] = useState<SiteDraft>(() => siteToDraft(null));
-  const site = useMemo(() => parseSite(siteDraft), [siteDraft]);
   const [loc, setLoc] = useState<{ key: string; value: LocationAssessment; periodDays: number } | null>(null);
   const [locLoading, setLocLoading] = useState(false);
   /** The error belongs to one request revision; an edit makes it stale. */
@@ -342,14 +361,11 @@ export default function BuildPanel(props: Props) {
   const [buildError, setBuildError] = useState<string | null>(null);
 
   const targetOk = !!target && !!scenario && target.scenarioId === scenario.id;
-  const siteErrors = Object.keys(site.errors).length;
-  const locKey = target ? JSON.stringify([inputKey, site.site, target.latitude, target.longitude]) : "";
+  const locKey = target ? JSON.stringify([inputKey, target.latitude, target.longitude]) : "";
   const locFresh = !!loc && loc.key === locKey;
   const locError = locErr && locErr.key === locKey ? locErr.message : null;
 
-  // Site assumptions belong to one exact location: a new target starts blank.
   useEffect(() => {
-    setSiteDraft(siteToDraft(null));
     setBuildError(null);
     setLocErr(null);
   }, [target?.latitude, target?.longitude, target?.nonce]);
@@ -360,7 +376,7 @@ export default function BuildPanel(props: Props) {
   }, [target, scenario, onTarget]);
 
   useEffect(() => {
-    if (!target || !targetOk || errorCount || siteErrors) return;
+    if (!target || !targetOk || errorCount) return;
     const ctrl = new AbortController();
     const key = locKey;
     const timer = setTimeout(async () => {
@@ -368,7 +384,7 @@ export default function BuildPanel(props: Props) {
       setLocErr(null);
       try {
         const r = await api.assess(
-          { ...baseRequest, site: site.site, location: { latitude: target.latitude, longitude: target.longitude } },
+          { ...baseRequest, location: { latitude: target.latitude, longitude: target.longitude } },
           ctrl.signal,
         );
         if (ctrl.signal.aborted) return;
@@ -388,15 +404,18 @@ export default function BuildPanel(props: Props) {
     };
     // locKey captures every input of the request.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [locKey, targetOk, errorCount, siteErrors]);
+  }, [locKey, targetOk, errorCount]);
 
-  async function buildHere() {
-    if (!target || buildingRef.current) return;
+  async function buildHere(stay = false): Promise<Project | null> {
+    if (!target || buildingRef.current) return null;
     if (!scenario || scenario.id !== target.scenarioId) {
       onTarget(null);
-      return;
+      return null;
     }
-    if (errorCount || siteErrors) return setBuildError("Fix the highlighted fields first.");
+    if (errorCount) {
+      setBuildError("Fix the highlighted fields first.");
+      return null;
+    }
     buildingRef.current = true;
     setBuilding(true);
     setBuildError(null);
@@ -409,17 +428,54 @@ export default function BuildPanel(props: Props) {
         parameters: parsed.parameters,
         definition: snapshot(),
         sourceDefinitionId: definitionId,
-        site: site.site,
       });
       onTarget(null);
-      onBuilt(created);
+      onBuilt(created, { stay });
+      setSupportNote(null);
+      return created;
     } catch (e) {
       setBuildError(message(e)); // the draft is kept
+      return null;
     } finally {
       buildingRef.current = false;
       setBuilding(false);
     }
   }
+
+  /**
+   * Place the previewed building, then load a supporting building (a preset, or the suggestion's
+   * generic one sized to the shortfall) and preview it in a neighbouring hexagon. Placed buildings
+   * feed their neighbours, so once it is placed too the first building's shortfall is covered.
+   */
+  async function placeWithSupport(s: SupportSuggestion, presetId: string | null) {
+    const here = locFresh ? loc!.value.h3Id : null;
+    if (!here) return;
+    const preset = presetId ? presets.find((x) => x.id === presetId) : null;
+    if (presetId && !preset) return setBuildError("That example couldn't be loaded.");
+    const main = await buildHere(true);
+    if (!main) return;
+    if (preset) loadPreset(preset, true);
+    else {
+      setType(s.buildingType);
+      setTemplateId(null);
+      setDefinitionId(null);
+      setName(s.genericName);
+      setDescription(s.explanation);
+      const st = statsToDraft(s.genericStats, {});
+      setStats(st);
+      markLoaded(s.genericName, s.explanation, st);
+      setBasedOn(null);
+    }
+    const next = gridDisk(here, 1).find((c) => c !== here) ?? here;
+    const [lat, lon] = cellToLatLng(next);
+    onTarget({ latitude: lat, longitude: lon, scenarioId: main.scenarioId, nonce: Date.now() });
+    onFocus(lat, lon);
+    setSupportNote(
+      `“${main.name}” is placed. Now previewing ${preset ? `“${preset.name}”` : `a ${s.genericName.toLowerCase()}`} in the neighbouring hexagon — place it (or pick another spot within ~${Math.round(s.reachKm)} km) to cover the shortfall.`,
+    );
+    setScrollToPreview(Date.now());
+  }
+  const [supportNote, setSupportNote] = useState<string | null>(null);
 
   const pickCandidate = (lat: number, lon: number) => {
     if (!scenario) return;
@@ -429,14 +485,15 @@ export default function BuildPanel(props: Props) {
   };
 
   const colour = `rgb(${typeColour(type).join(",")})`;
-  const canBuild = targetOk && !building && !errorCount && !siteErrors && (locFresh || !!locError);
+  const canBuild = targetOk && !building && !errorCount && (locFresh || !!locError);
 
   return (
     <>
       <section className="panel">
         <h2>Build</h2>
         <p className="subtitle">
-          Define a building, see where it meets your requirements, then place it in{" "}
+          Describe the building's specs. Every hexagon is checked against what it and its neighbouring hexagons can
+          provide — open land, fresh water, grid power and workers — so you see where it can be built, then place it in{" "}
           <strong>{scenario?.name ?? "a scenario"}</strong>.
         </p>
         {templatesError && <p className="small warn">Templates couldn't be loaded ({templatesError}); using built-in field lists.</p>}
@@ -500,7 +557,7 @@ export default function BuildPanel(props: Props) {
 
         {missing.length > 0 && (
           <div className="note">
-            <strong>Still needed for a conclusive assessment</strong>
+            <strong>Still needed to calculate everything</strong>
             <ul>
               {missing.map((m) => (
                 <li key={m}>{m}</li>
@@ -531,19 +588,40 @@ export default function BuildPanel(props: Props) {
         <p className="muted small">Saving is optional — you can place a building straight from this form.</p>
       </section>
 
-      {/* ---------------- 2. Requirements ---------------- */}
+      {/* ---------------- 2. What a site must provide ---------------- */}
       <section className="panel">
-        <h3 className="step">2 · Location requirements</h3>
-        <CriteriaEditor drafts={criteria} onChange={setCriteria} errors={crit.errors} catalogue={catalogue} currency={currency} periodDays={periodDays} />
+        <h3 className="step">2 · What a site must provide</h3>
+        <p className="muted small">
+          Worked out from the specs above — you don't enter anything about the site. Each location is checked against
+          what its hexagon and the surrounding hexagons can supply.
+        </p>
+        <ul className="site-needs">
+          {needs.map((x) => (
+            <li key={x.key}>
+              <strong>
+                {x.label}
+                {x.advisory && <span className="muted small"> (advisory)</span>}
+              </strong>
+              {x.from ? <span className="num">{x.from}</span> : <span className={x.key === "land" ? "warn" : "muted"}>{x.hint}</span>}
+            </li>
+          ))}
+        </ul>
+        <Section title="Your own extra limits" meta={crit.criteria.length ? `${crit.criteria.length} set` : "optional"} invalid={Object.keys(crit.errors).length}>
+          <p className="muted small">
+            Preferences on top of what the site provides, e.g. avoid high water stress or steep land, or keep within a
+            budget.
+          </p>
+          <CriteriaEditor drafts={criteria} onChange={setCriteria} errors={crit.errors} catalogue={catalogue} currency={currency} periodDays={periodDays} />
+        </Section>
       </section>
 
       {/* ---------------- 3. Find locations ---------------- */}
       <section className="panel">
         <h3 className="step">3 · Find locations</h3>
-        {crit.criteria.every((c) => !c.required) && (
+        {!needs[0].from && (
           <p className="note small">
-            No required location requirements yet, so every cell will show “More information needed”. Add one in step 2
-            (for example a water-stress or land-cover limit) to sort locations.
+            Enter the building's footprint in step 1: without it, whether a site has room for it can't be judged and
+            every hexagon will show “Can't tell yet”.
           </p>
         )}
         <fieldset className="radios">
@@ -585,13 +663,17 @@ export default function BuildPanel(props: Props) {
       {/* ---------------- 4. Preview and place ---------------- */}
       <section className="panel">
         <h3 className="step">4 · Preview and place</h3>
-        <p className="muted small">Choose a candidate above, or pick any exact point on the map. Failing or unknown locations can still be used.</p>
+        <p className="muted small">
+          Choose a candidate above, or pick any point on the map to see what that hexagon and its neighbours provide.
+          You can still place a building where the site falls short — the shortfall stays visible.
+        </p>
         <div className="actions tight">
           <button className={picking ? "active" : ""} aria-pressed={picking} disabled={!scenario} onClick={() => onPick(!picking)}>
             {picking ? "Click the map…" : "Pick on map"}
           </button>
         </div>
 
+        {supportNote && <p className="note small">{supportNote}</p>}
         {target && targetOk && (
           <div className="preview" ref={previewRef}>
             <div className="panel-head">
@@ -609,12 +691,16 @@ export default function BuildPanel(props: Props) {
 
             {locLoading && !locFresh && <p className="muted small">Assessing this location…</p>}
             {locError && <p className="warn small">Assessment unavailable: {locError}</p>}
-            {(errorCount > 0 || siteErrors > 0) && <p className="warn small">Fix the highlighted fields to assess this location.</p>}
+            {errorCount > 0 && <p className="warn small">Fix the highlighted fields to assess this location.</p>}
 
             {locFresh && (
               <>
-                <h4>Assessment</h4>
-                <AssessmentView assessment={loc!.value.assessment} />
+                <h4>Can it be built here?</h4>
+                <AssessmentView
+                  assessment={loc!.value.assessment}
+                  site={loc!.value.site}
+                  onSupport={canBuild ? placeWithSupport : undefined}
+                />
                 {(loc!.value.utilityPrices?.length ?? 0) > 0 && (
                   <>
                     <h4>Utility prices at this location</h4>
@@ -631,28 +717,10 @@ export default function BuildPanel(props: Props) {
               </>
             )}
 
-            <Section title="Site assumptions for this exact location" meta="optional" invalid={siteErrors}>
-              <p className="muted small">
-                What this exact point can provide. Each value you enter is checked against the building's demand (usable
-                area vs footprint, connected capacity vs peak demand, energy and water over the period). Never applied
-                to other candidates.
-              </p>
-              {SITE_FIELDS.map((f) => (
-                <Field
-                  key={f.key}
-                  label={f.label}
-                  unit={f.unit}
-                  value={siteDraft[f.key]}
-                  onChange={(v) => setSiteDraft({ ...siteDraft, [f.key]: v })}
-                  error={site.errors[f.key]}
-                />
-              ))}
-              <Field label="Note" value={siteDraft.note} onChange={(v) => setSiteDraft({ ...siteDraft, note: v })} numeric={false} placeholder="Basis for these values" />
-            </Section>
 
             {buildError && <p className="warn small">Not placed: {buildError}</p>}
             <div className="actions">
-              <button className="primary" onClick={buildHere} disabled={!canBuild}>
+              <button className="primary" onClick={() => buildHere()} disabled={!canBuild}>
                 {building ? "Placing…" : `Build here in ${scenario!.name}`}
               </button>
               <button onClick={() => onTarget(null)} disabled={building}>
@@ -682,7 +750,7 @@ function AreaResults({ area, periodDays, onPick }: { area: AreaAssessment; perio
             Candidates{" "}
             <span className="muted small">
               (first {area.candidates.length}
-              {area.cellCount > area.candidates.length ? ` of ${area.cellCount.toLocaleString()}` : ""}: meets, then more information needed, then fails)
+              {area.cellCount > area.candidates.length ? ` of ${area.cellCount.toLocaleString()}` : ""}: buildable, then can’t tell yet, then not buildable)
             </span>
           </h4>
           <ol className="list candidates">

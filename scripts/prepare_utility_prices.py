@@ -513,7 +513,7 @@ def main() -> None:
     fields = ["code", "metric", "price", "currency", "year", "usd", "fx_rate", "fx_year", "tax_basis",
               "includes_wastewater", "method", "source_name", "source_url", "notes"]
     with (OUT_DIR / "areas.csv").open("w", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=fields, extrasaction="ignore")
+        w = csv.DictWriter(f, fieldnames=fields, extrasaction="ignore", lineterminator="\n")
         w.writeheader()
         w.writerows(resolved)
     print(f"areas.csv: {len(resolved)} area × metric prices")

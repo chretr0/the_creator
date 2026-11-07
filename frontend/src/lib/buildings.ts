@@ -41,9 +41,13 @@ export type PowerStats = {
   provenance?: Provenance;
 };
 
+export type WaterSource = "fresh" | "seawater" | "wastewater";
+
 export type WaterStats = {
   inputM3PerHour?: number | null;
   outputM3PerHour?: number | null;
+  /** Where the intake comes from: only "fresh" draws on rivers and runoff. */
+  source?: WaterSource;
   basis?: string | null;
   provenance?: Provenance;
 };
@@ -302,9 +306,20 @@ export type BuildingResult = {
   demandBasis: "direct" | "derived";
 };
 
+/** Checks generated automatically from what the site (cell + neighbouring cells) can provide. */
+export type SiteCheckKind =
+  | "site_land"
+  | "site_water"
+  | "site_power"
+  | "site_grid_export"
+  | "site_workforce"
+  | "site_air"
+  | "site_light"
+  | "site_material";
+
 export type CheckResult = {
   criterionId: string;
-  kind: CriterionKind;
+  kind: CriterionKind | SiteCheckKind;
   label: string;
   required: boolean;
   status: CheckStatus;
@@ -316,7 +331,24 @@ export type CheckResult = {
   explanation: string;
 };
 
-export type Assessment = { state: AssessmentState; checks: CheckResult[]; summary: string };
+export type SuggestedPreset = { id: string; name: string; capacity: number; unit: string; count: number };
+
+/** A building that could be placed alongside to cover a shortfall the site can't (power, water, export). */
+export type SupportSuggestion = {
+  resource: "power" | "water" | "grid_export";
+  shortfall: number;
+  unit: string;
+  buildingType: BuildingType;
+  reachKm: number;
+  rings: number;
+  title: string;
+  explanation: string;
+  presets: SuggestedPreset[];
+  genericName: string;
+  genericStats: BuildingStats;
+};
+
+export type Assessment = { state: AssessmentState; checks: CheckResult[]; summary: string; suggestions?: SupportSuggestion[] };
 
 export type Bounds = { west: number; south: number; east: number; north: number };
 
@@ -355,7 +387,34 @@ export type LocationPriceOffer = {
   message: string;
 };
 
+export type SiteResourcePart = { label: string; value: number | null; unit: string; text: string | null };
+
+/** One resource the site can provide, estimated from prepared data (never typed in). */
+export type SiteResource = {
+  key: "land" | "water" | "power" | "workforce" | "air" | "light" | "materials";
+  label: string;
+  unit: string;
+  available: number | null; // null = unknown here
+  needed: number | null; // the building's own need, when its specs declare it
+  reach: string;
+  parts: SiteResourcePart[];
+  note: string | null;
+  /** Server-decided state when the numbers are not a simple "enough or not" (air, light, materials). */
+  status?: "pass" | "fail" | "unknown" | "none" | "advisory" | null;
+  /** Raw materials: they can be shipped, so this is shown for planning and never blocks a site. */
+  advisory?: boolean;
+};
+
+export type SiteCapacity = {
+  h3Id: string;
+  resources: SiteResource[];
+  neighbourCells: string[];
+  rings: Record<string, number>;
+  note: string;
+};
+
 export type LocationAssessment = {
+  site?: SiteCapacity | null;
   latitude: number;
   longitude: number;
   h3Id: string;
@@ -432,9 +491,9 @@ export type ScenarioEvaluation = {
 };
 
 export const STATE_LABEL: Record<AssessmentState, string> = {
-  meets_criteria: "Meets evaluated criteria",
-  fails_criteria: "Fails criteria",
-  insufficient_data: "More information needed",
+  meets_criteria: "Buildable",
+  fails_criteria: "Not buildable",
+  insufficient_data: "Can't tell yet",
 };
 
 export const STATE_COLOUR: Record<AssessmentState, [number, number, number]> = {

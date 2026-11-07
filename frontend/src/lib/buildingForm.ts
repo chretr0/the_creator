@@ -20,6 +20,7 @@ import {
   type Criterion,
   type CriterionKind,
   type MaterialItem,
+  type WaterSource,
   type ParamValue,
   type LocationPriceOffer,
   type Period,
@@ -173,6 +174,7 @@ export type StatsDraft = {
   operatingPeriod: Period;
   operatingKind: "total" | "fixed";
   demandBasis: "direct" | "derived";
+  waterSource: WaterSource;
   materials: MaterialDraft[];
   emissions: EmissionDraft[];
   provenance: Record<SectionKey, Provenance>;
@@ -235,6 +237,7 @@ export function statsToDraft(stats: BuildingStats | undefined | null, parameters
     operatingPeriod: s.costs?.operating?.period ?? "year",
     operatingKind: s.costs?.operating?.kind ?? "fixed",
     demandBasis: s.demandBasis ?? "direct",
+    waterSource: s.water?.source ?? "fresh",
     materials: (s.materials ?? []).map((m) => ({
       id: m.id || newId("mat"),
       name: m.name ?? "",
@@ -422,8 +425,10 @@ export function parseStats(draft: StatsDraft, templateParams: TemplateParam[], t
     else if (value !== null) parameters[p.key] = value;
   }
 
+  const base = out as BuildingStats;
   const stats = {
-    ...(out as BuildingStats),
+    ...base,
+    water: { ...(base.water ?? {}), source: draft.waterSource },
     materials,
     emissions,
     demandBasis: type && type !== "data_centre" ? "direct" : draft.demandBasis,
@@ -456,6 +461,80 @@ export function filledCount(draft: StatsDraft, paths: string[]): number {
  * Inputs that the enabled requirements depend on and that are still unknown. Only inputs some
  * check actually uses are listed, so the list matches what keeps the assessment inconclusive.
  */
+/** What the site must provide, and which of the building's specs drive each automatic check. */
+export type SiteNeed = {
+  key: "land" | "water" | "power" | "workforce" | "air" | "light" | "materials";
+  label: string;
+  from: string | null;
+  hint: string;
+  /** Raw materials can be shipped: shown, never required. */
+  advisory?: boolean;
+};
+
+/** Local air pollutants (mirrors the backend's site_capacity.is_air_pollutant). Greenhouse gases are not. */
+export function isAirPollutant(name: string): boolean {
+  const n = name.toLowerCase().replace(/₂/g, "2").replace(/ₓ/g, "x").replace(/₃/g, "3").replace(/[^a-z0-9]/g, "");
+  if (/^(co2|ch4|n2o|ghg|carbondioxide|methane)/.test(n)) return false;
+  if (n === "co") return true;
+  return /^(pm|particulate|nox|no2|nitrogenoxide|nitrogendioxide|so2|sox|sulphurdioxide|sulfurdioxide|voc|nmvoc|nh3|ammonia|carbonmonoxide|dust|smoke)/.test(n);
+}
+
+export function siteNeeds(stats: BuildingStats, parameters: Record<string, ParamValue>, type: BuildingType): SiteNeed[] {
+  const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : null);
+  const n = (v: number) => v.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  const kw = (v: number) => (Math.abs(v) >= 1000 ? `${n(v / 1000)} MW` : `${n(v)} kW`);
+  const hours = num(stats.operatingHoursPerDay);
+  const derived = type === "data_centre" && stats.demandBasis === "derived";
+  const fp = num(stats.footprintM2);
+  const wIn = num(stats.water?.inputM3PerHour);
+  const peak = num(stats.power?.peakDemandKw);
+  const avg = num(stats.power?.averageDemandKw);
+  const out = num(stats.power?.ratedOutputKw) ?? num(stats.power?.averageOutputKw);
+  const staff = num(stats.workers?.staffingRequired) ?? num(stats.workers?.capacity);
+  const itKw = num(parameters.itPowerKw);
+  let power: string | null = null;
+  if (out) power = `exports ${kw(out)} to the grid`;
+  else if (peak !== null) power = `${kw(peak)} peak`;
+  else if (derived && itKw !== null) power = `from IT power ${kw(itKw)} × load × PUE`;
+  else if (avg !== null) power = `${kw(avg)} average`;
+  const air = (stats.emissions ?? []).filter((e) => isAirPollutant(e.pollutant) && e.rateKgPerHour !== 0).map((e) => e.pollutant);
+  const lumens = num(stats.light?.upwardLumens);
+  const mats = [...new Set((stats.materials ?? []).map((m) => m.name.trim()).filter(Boolean))];
+  let water: string | null = null;
+  if (derived && num(parameters.wueLPerKwh) !== null) water = "from WUE × energy";
+  else if (wIn !== null) water = hours !== null ? `${n(wIn * hours)} m³/day (${n(wIn)} m³/h × ${n(hours)} h)` : `${n(wIn)} m³/h (set operating hours)`;
+  return [
+    { key: "land", label: "Open land", from: fp !== null ? `${n(fp)} m² footprint` : null, hint: "Enter the footprint — always checked" },
+    { key: "water", label: "Fresh water", from: water, hint: "No water use entered — not checked" },
+    { key: "power", label: "Grid power", from: power, hint: "No power demand or output entered — not checked" },
+    {
+      key: "workforce",
+      label: "Workforce",
+      from: staff !== null ? `${n(staff)} people` : null,
+      hint: "No staff or worker capacity entered — not checked",
+    },
+    {
+      key: "air",
+      label: "Clean-air headroom",
+      from: air.length ? `emits ${air.join(", ")}` : null,
+      hint: "No local air pollutants entered (CO₂ doesn't count) — not checked",
+    },
+    {
+      key: "light",
+      label: "Dark-sky zone",
+      from: lumens !== null && lumens > 0 ? `${n(lumens)} lm upward light` : null,
+      hint: "No upward light entered — not checked",
+    },
+    {
+      key: "materials",
+      label: "Raw materials nearby",
+      from: mats.length ? `${mats.join(", ")} — shown, never required (can be shipped)` : null,
+      hint: "No materials entered",
+      advisory: true,
+    },
+  ];
+}
+
 export function missingInputs(
   stats: BuildingStats,
   parameters: Record<string, ParamValue>,
@@ -467,7 +546,6 @@ export function missingInputs(
     if (!out.includes(s)) out.push(s);
   };
   const unknown = (v: unknown) => v === null || v === undefined || v === "";
-  if (criteria.length === 0) add("At least one location requirement");
 
   const derived = template.type === "data_centre" && stats.demandBasis === "derived";
   const param = (key: string, label: string) => {
