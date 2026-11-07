@@ -1,0 +1,29 @@
+{
+  "id": "AIR-02-arizona-20261107",
+  "catalogueSourceId": "AIR-02",
+  "provider": "Copernicus Atmosphere Monitoring Service (CAMS) / ECMWF",
+  "product": "CAMS global reanalysis (EAC4) monthly averaged fields: monthly_mean 2024 (pm2p5, pm10, tcno2, tcso2, tcco, aod550)",
+  "version": "EAC4 as served by the ADS",
+  "documentationUrl": "https://ads.atmosphere.copernicus.eu/datasets/cams-global-reanalysis-eac4-monthly",
+  "accessUrl": "https://ads.atmosphere.copernicus.eu/api",
+  "accessMethod": "api",
+  "evidenceType": "modelled",
+  "licence": {
+    "name": "CC BY 4.0",
+    "url": "https://creativecommons.org/licenses/by/4.0/",
+    "attribution": "Inness et al. (2019), CAMS global reanalysis (EAC4) monthly averaged fields. Copernicus Atmosphere Monitoring Service (CAMS) Atmosphere Data Store. DOI: 10.24381/d58bbf47. Contains modified Copernicus Atmosphere Monitoring Service information 2024.",
+    "reviewedAt": "2026-11-07",
+    "notes": "Auto-generated from catalogue; confirm against the release's own licence before publishing."
+  },
+  "region": "arizona",
+  "query": "region=arizona; bbox W,S,E,N=-113.5,31.3,-109.0,34.5",
+  "dataScope": "regional subset (data/README.md 'Data scope')",
+  "retrievedAt": "2026-11-07",
+  "files": [
+    {
+      "path": "cams_eac4_monthly_2024.nc",
+      "bytes": 76908,
+      "sha256": "520e6c13c76238706cbf7673d1e62ad7de233a875ad3ffeedab6e710ab29cea8"
+    }
+  ]
+}

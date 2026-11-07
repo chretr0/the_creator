@@ -1,0 +1,50 @@
+{
+  "id": "WATER-02-mascon-global-20261107",
+  "catalogueSourceId": "WATER-02",
+  "provider": "NASA Earthdata (POCLOUD)",
+  "product": "JPL GRACE and GRACE-FO Mascon Ocean, Ice, and Hydrology Equivalent Water Height Coastal Resolution Improvement (CRI) Filtered Release 06.3 Version 04",
+  "collectionShortName": "TELLUS_GRAC-GRFO_MASCON_CRI_GRID_RL06.3_V4",
+  "collectionConceptId": "C3195527175-POCLOUD",
+  "version": "RL06.3Mv04",
+  "doi": "10.5067/TEMSC-3JC634",
+  "documentationUrl": "https://grace.jpl.nasa.gov/data/get-data/jpl_global_mascons/",
+  "accessMethod": "earthaccess (CMR search + HTTPS download, Earthdata Login)",
+  "evidenceType": "satellite_retrieval",
+  "region": "global",
+  "dataScope": "global file < ~100 MB kept whole (data/README.md 'Data scope')",
+  "retrievedAt": "2026-11-07",
+  "accessUrl": "https://archive.podaac.earthdata.nasa.gov/podaac-ops-cumulus-protected/TELLUS_GRAC-GRFO_MASCON_CRI_GRID_RL06.3_V4/GRCTellus.JPL.200204_202608.GLO.RL06.3M.MSCNv04CRI.nc",
+  "licence": {
+    "name": "NASA open data",
+    "url": "https://science.data.nasa.gov/about/license",
+    "attribution": "D. N. Wiese, D.-N. Yuan, C. Boening, F. W. Landerer, M. M. Watkins. 2023. JPL GRACE and GRACE-FO Mascon Ocean, Ice, and Hydrology Equivalent Water Height CRI Filtered RL06.3Mv04. PO.DAAC. https://doi.org/10.5067/TEMSC-3JC634",
+    "reviewedAt": "2026-11-07",
+    "notes": "NASA Earth science data are open with no restriction on reuse; cite the product DOI. Collection citation in CMR still cites RL06 v02 text; cite the DOI above."
+  },
+  "query": "short_name=TELLUS_GRAC-GRFO_MASCON_CRI_GRID_RL06.3_V4 (single whole-record granule)",
+  "processing": "None (global ~44 MB NetCDF, kept whole).",
+  "granules": [
+    {
+      "granuleId": "GRCTellus.JPL.200204_202608.GLO.RL06.3M.MSCNv04CRI",
+      "beginDateTime": "2002-04-16T00:00:00.000Z",
+      "endDateTime": "2026-08-16T23:59:59.000Z",
+      "upstreamChecksum": {
+        "GRCTellus.JPL.200204_202608.GLO.RL06.3M.MSCNv04CRI.nc": "MD5 verified against CMR"
+      }
+    }
+  ],
+  "sanityStats": {
+    "lastTime": "2026-08-16",
+    "nTimes": 260,
+    "arizonaLweCmMin": -16.57244738036734,
+    "arizonaLweCmMax": -7.2531407290536425
+  },
+  "notes": "Monthly terrestrial water storage anomaly (equivalent water height, cm) relative to the 2004.0-2009.999 mean, 0.5 deg grid of ~3 deg equal-area mascons (CRI-filtered). Very coarse: apply the scale factors/land mask per the product docs; not a kilometre-scale aquifer measure. Gap months (e.g. GRACE to GRACE-FO 2017-2018) are absent, not zero.",
+  "files": [
+    {
+      "path": "GRCTellus.JPL.200204_202608.GLO.RL06.3M.MSCNv04CRI.nc",
+      "bytes": 46150171,
+      "sha256": "9f4e1570753cb2305881f69af6b06251f7f37a95ea65291c4a66b72b65a3d147"
+    }
+  ]
+}

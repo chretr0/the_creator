@@ -1,0 +1,834 @@
+{
+  "id": "OBS-06-mod13a3-uk-20261107",
+  "catalogueSourceId": "OBS-06",
+  "provider": "NASA LP DAAC (USGS EROS)",
+  "product": "MODIS/Terra Vegetation Indices Monthly L3 Global 1km SIN Grid V061 (MOD13A3)",
+  "collectionShortName": "MOD13A3",
+  "version": "061",
+  "collectionConceptId": "C2327962326-LPCLOUD",
+  "doi": "10.5067/MODIS/MOD13A3.061",
+  "documentationUrl": "https://lpdaac.usgs.gov/products/mod13a3v061/",
+  "accessUrl": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/",
+  "accessMethod": "earthaccess CMR search + whole-tile HTTPS download (tiles are already regional; no clip)",
+  "evidenceType": "satellite_retrieval",
+  "semantics": "Monthly 1 km NDVI/EVI composites on the MODIS sinusoidal grid (HDF4-EOS). SDS '1 km monthly NDVI' is int16 with scale factor 0.0001 (NDVI = DN * 0.0001; the in-file attribute scale_factor=10000 follows the MODIS convention physical = DN / scale_factor, so do not multiply by it), valid range -2000..10000, fill -3000. Use the '1 km monthly VI Quality' bit field (bits 0-1 MODLAND QA: 00 good, 01 check other QA, 10/11 cloudy/not produced) and 'pixel reliability' to screen pixels. Granule date AYYYYDDD is the first day of the month.",
+  "tilesIntersectingBox": {
+    "h17v02": 0.0665,
+    "h17v03": 0.7396,
+    "h17v04": 0.0148,
+    "h18v02": 0.0145,
+    "h18v03": 0.1613,
+    "h18v04": 0.0032
+  },
+  "tileNotes": "Fraction = share of a 0.01 deg lon/lat sample grid over the box falling in each tile; small fractions are edge slivers kept for completeness.",
+  "licence": {
+    "name": "NASA open data",
+    "url": "https://www.earthdata.nasa.gov/engage/open-data-services-software-policies/data-use-guidance",
+    "notes": "NASA Earth Science Data and Information Policy: no restrictions on reuse; cite the dataset DOI.",
+    "reviewedAt": "2026-11-07",
+    "attribution": "Kamel Didan. (2021). MODIS/Terra Vegetation Indices Monthly L3 Global 1km SIN Grid V061. NASA Land Processes Distributed Active Archive Center. https://doi.org/10.5067/MODIS/MOD13A3.061."
+  },
+  "citation": "Kamel Didan. (2021). MODIS/Terra Vegetation Indices Monthly L3 Global 1km SIN Grid V061. NASA Land Processes Distributed Active Archive Center. https://doi.org/10.5067/MODIS/MOD13A3.061.",
+  "region": "uk",
+  "dataScope": "regional subset (data/README.md 'Data scope')",
+  "query": "short_name=MOD13A3 version=061; bbox W,S,E,N=-8.7,49.8,1.9,60.9; temporal 2024-01-01..2024-12-31",
+  "processing": "None. Tiles kept exactly as downloaded (no clip/reprojection). Script: scripts/fetch_nasa_s5p_modis_smap.py modis.",
+  "granules": [
+    {
+      "granule": "MOD13A3.A2024001.h17v02.061.2024038042622",
+      "tile": "h17v02",
+      "date": "A2024001",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024001.h17v02.061.2024038042622/MOD13A3.A2024001.h17v02.061.2024038042622.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024001.h17v03.061.2024038043604",
+      "tile": "h17v03",
+      "date": "A2024001",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024001.h17v03.061.2024038043604/MOD13A3.A2024001.h17v03.061.2024038043604.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024001.h17v04.061.2024038043201",
+      "tile": "h17v04",
+      "date": "A2024001",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024001.h17v04.061.2024038043201/MOD13A3.A2024001.h17v04.061.2024038043201.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024001.h18v02.061.2024038042047",
+      "tile": "h18v02",
+      "date": "A2024001",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024001.h18v02.061.2024038042047/MOD13A3.A2024001.h18v02.061.2024038042047.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024001.h18v03.061.2024038042943",
+      "tile": "h18v03",
+      "date": "A2024001",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024001.h18v03.061.2024038042943/MOD13A3.A2024001.h18v03.061.2024038042943.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024001.h18v04.061.2024038042327",
+      "tile": "h18v04",
+      "date": "A2024001",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024001.h18v04.061.2024038042327/MOD13A3.A2024001.h18v04.061.2024038042327.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024032.h17v02.061.2024066073121",
+      "tile": "h17v02",
+      "date": "A2024032",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024032.h17v02.061.2024066073121/MOD13A3.A2024032.h17v02.061.2024066073121.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024032.h17v03.061.2024066072508",
+      "tile": "h17v03",
+      "date": "A2024032",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024032.h17v03.061.2024066072508/MOD13A3.A2024032.h17v03.061.2024066072508.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024032.h17v04.061.2024066072629",
+      "tile": "h17v04",
+      "date": "A2024032",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024032.h17v04.061.2024066072629/MOD13A3.A2024032.h17v04.061.2024066072629.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024032.h18v02.061.2024066072544",
+      "tile": "h18v02",
+      "date": "A2024032",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024032.h18v02.061.2024066072544/MOD13A3.A2024032.h18v02.061.2024066072544.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024032.h18v03.061.2024066072412",
+      "tile": "h18v03",
+      "date": "A2024032",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024032.h18v03.061.2024066072412/MOD13A3.A2024032.h18v03.061.2024066072412.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024032.h18v04.061.2024066073313",
+      "tile": "h18v04",
+      "date": "A2024032",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024032.h18v04.061.2024066073313/MOD13A3.A2024032.h18v04.061.2024066073313.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024061.h17v02.061.2024099110229",
+      "tile": "h17v02",
+      "date": "A2024061",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024061.h17v02.061.2024099110229/MOD13A3.A2024061.h17v02.061.2024099110229.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024061.h17v03.061.2024099105113",
+      "tile": "h17v03",
+      "date": "A2024061",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024061.h17v03.061.2024099105113/MOD13A3.A2024061.h17v03.061.2024099105113.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024061.h17v04.061.2024099105116",
+      "tile": "h17v04",
+      "date": "A2024061",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024061.h17v04.061.2024099105116/MOD13A3.A2024061.h17v04.061.2024099105116.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024061.h18v02.061.2024099105833",
+      "tile": "h18v02",
+      "date": "A2024061",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024061.h18v02.061.2024099105833/MOD13A3.A2024061.h18v02.061.2024099105833.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024061.h18v03.061.2024099105116",
+      "tile": "h18v03",
+      "date": "A2024061",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024061.h18v03.061.2024099105116/MOD13A3.A2024061.h18v03.061.2024099105116.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024061.h18v04.061.2024099104820",
+      "tile": "h18v04",
+      "date": "A2024061",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024061.h18v04.061.2024099104820/MOD13A3.A2024061.h18v04.061.2024099104820.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024092.h17v02.061.2024133221807",
+      "tile": "h17v02",
+      "date": "A2024092",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024092.h17v02.061.2024133221807/MOD13A3.A2024092.h17v02.061.2024133221807.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024092.h17v03.061.2024133221810",
+      "tile": "h17v03",
+      "date": "A2024092",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024092.h17v03.061.2024133221810/MOD13A3.A2024092.h17v03.061.2024133221810.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024092.h17v04.061.2024133221811",
+      "tile": "h17v04",
+      "date": "A2024092",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024092.h17v04.061.2024133221811/MOD13A3.A2024092.h17v04.061.2024133221811.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024092.h18v02.061.2024133221807",
+      "tile": "h18v02",
+      "date": "A2024092",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024092.h18v02.061.2024133221807/MOD13A3.A2024092.h18v02.061.2024133221807.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024092.h18v03.061.2024133221808",
+      "tile": "h18v03",
+      "date": "A2024092",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024092.h18v03.061.2024133221808/MOD13A3.A2024092.h18v03.061.2024133221808.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024092.h18v04.061.2024133221809",
+      "tile": "h18v04",
+      "date": "A2024092",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024092.h18v04.061.2024133221809/MOD13A3.A2024092.h18v04.061.2024133221809.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024122.h17v02.061.2024162173134",
+      "tile": "h17v02",
+      "date": "A2024122",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024122.h17v02.061.2024162173134/MOD13A3.A2024122.h17v02.061.2024162173134.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024122.h17v03.061.2024162172716",
+      "tile": "h17v03",
+      "date": "A2024122",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024122.h17v03.061.2024162172716/MOD13A3.A2024122.h17v03.061.2024162172716.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024122.h17v04.061.2024162171853",
+      "tile": "h17v04",
+      "date": "A2024122",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024122.h17v04.061.2024162171853/MOD13A3.A2024122.h17v04.061.2024162171853.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024122.h18v02.061.2024162172612",
+      "tile": "h18v02",
+      "date": "A2024122",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024122.h18v02.061.2024162172612/MOD13A3.A2024122.h18v02.061.2024162172612.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024122.h18v03.061.2024162173822",
+      "tile": "h18v03",
+      "date": "A2024122",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024122.h18v03.061.2024162173822/MOD13A3.A2024122.h18v03.061.2024162173822.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024122.h18v04.061.2024162172618",
+      "tile": "h18v04",
+      "date": "A2024122",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024122.h18v04.061.2024162172618/MOD13A3.A2024122.h18v04.061.2024162172618.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024153.h17v02.061.2024195024946",
+      "tile": "h17v02",
+      "date": "A2024153",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024153.h17v02.061.2024195024946/MOD13A3.A2024153.h17v02.061.2024195024946.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024153.h17v03.061.2024195023120",
+      "tile": "h17v03",
+      "date": "A2024153",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024153.h17v03.061.2024195023120/MOD13A3.A2024153.h17v03.061.2024195023120.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024153.h17v04.061.2024195023706",
+      "tile": "h17v04",
+      "date": "A2024153",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024153.h17v04.061.2024195023706/MOD13A3.A2024153.h17v04.061.2024195023706.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024153.h18v02.061.2024195023737",
+      "tile": "h18v02",
+      "date": "A2024153",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024153.h18v02.061.2024195023737/MOD13A3.A2024153.h18v02.061.2024195023737.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024153.h18v03.061.2024195022909",
+      "tile": "h18v03",
+      "date": "A2024153",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024153.h18v03.061.2024195022909/MOD13A3.A2024153.h18v03.061.2024195022909.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024153.h18v04.061.2024195023821",
+      "tile": "h18v04",
+      "date": "A2024153",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024153.h18v04.061.2024195023821/MOD13A3.A2024153.h18v04.061.2024195023821.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024183.h17v02.061.2024228025602",
+      "tile": "h17v02",
+      "date": "A2024183",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024183.h17v02.061.2024228025602/MOD13A3.A2024183.h17v02.061.2024228025602.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024183.h17v03.061.2024228023725",
+      "tile": "h17v03",
+      "date": "A2024183",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024183.h17v03.061.2024228023725/MOD13A3.A2024183.h17v03.061.2024228023725.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024183.h17v04.061.2024228023547",
+      "tile": "h17v04",
+      "date": "A2024183",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024183.h17v04.061.2024228023547/MOD13A3.A2024183.h17v04.061.2024228023547.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024183.h18v02.061.2024228030334",
+      "tile": "h18v02",
+      "date": "A2024183",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024183.h18v02.061.2024228030334/MOD13A3.A2024183.h18v02.061.2024228030334.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024183.h18v03.061.2024228024627",
+      "tile": "h18v03",
+      "date": "A2024183",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024183.h18v03.061.2024228024627/MOD13A3.A2024183.h18v03.061.2024228024627.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024183.h18v04.061.2024228024708",
+      "tile": "h18v04",
+      "date": "A2024183",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024183.h18v04.061.2024228024708/MOD13A3.A2024183.h18v04.061.2024228024708.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024214.h17v02.061.2024267145625",
+      "tile": "h17v02",
+      "date": "A2024214",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024214.h17v02.061.2024267145625/MOD13A3.A2024214.h17v02.061.2024267145625.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024214.h17v03.061.2024267145609",
+      "tile": "h17v03",
+      "date": "A2024214",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024214.h17v03.061.2024267145609/MOD13A3.A2024214.h17v03.061.2024267145609.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024214.h17v04.061.2024267145543",
+      "tile": "h17v04",
+      "date": "A2024214",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024214.h17v04.061.2024267145543/MOD13A3.A2024214.h17v04.061.2024267145543.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024214.h18v02.061.2024267145610",
+      "tile": "h18v02",
+      "date": "A2024214",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024214.h18v02.061.2024267145610/MOD13A3.A2024214.h18v02.061.2024267145610.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024214.h18v03.061.2024267145638",
+      "tile": "h18v03",
+      "date": "A2024214",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024214.h18v03.061.2024267145638/MOD13A3.A2024214.h18v03.061.2024267145638.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024214.h18v04.061.2024267145646",
+      "tile": "h18v04",
+      "date": "A2024214",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024214.h18v04.061.2024267145646/MOD13A3.A2024214.h18v04.061.2024267145646.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024245.h17v02.061.2024290025046",
+      "tile": "h17v02",
+      "date": "A2024245",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024245.h17v02.061.2024290025046/MOD13A3.A2024245.h17v02.061.2024290025046.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024245.h17v03.061.2024290025017",
+      "tile": "h17v03",
+      "date": "A2024245",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024245.h17v03.061.2024290025017/MOD13A3.A2024245.h17v03.061.2024290025017.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024245.h17v04.061.2024290025617",
+      "tile": "h17v04",
+      "date": "A2024245",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024245.h17v04.061.2024290025617/MOD13A3.A2024245.h17v04.061.2024290025617.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024245.h18v02.061.2024290025103",
+      "tile": "h18v02",
+      "date": "A2024245",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024245.h18v02.061.2024290025103/MOD13A3.A2024245.h18v02.061.2024290025103.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024245.h18v03.061.2024290025035",
+      "tile": "h18v03",
+      "date": "A2024245",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024245.h18v03.061.2024290025035/MOD13A3.A2024245.h18v03.061.2024290025035.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024245.h18v04.061.2024290025118",
+      "tile": "h18v04",
+      "date": "A2024245",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024245.h18v04.061.2024290025118/MOD13A3.A2024245.h18v04.061.2024290025118.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024275.h17v02.061.2024326215139",
+      "tile": "h17v02",
+      "date": "A2024275",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024275.h17v02.061.2024326215139/MOD13A3.A2024275.h17v02.061.2024326215139.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024275.h17v03.061.2024326215954",
+      "tile": "h17v03",
+      "date": "A2024275",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024275.h17v03.061.2024326215954/MOD13A3.A2024275.h17v03.061.2024326215954.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024275.h17v04.061.2024326215413",
+      "tile": "h17v04",
+      "date": "A2024275",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024275.h17v04.061.2024326215413/MOD13A3.A2024275.h17v04.061.2024326215413.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024275.h18v02.061.2024326215327",
+      "tile": "h18v02",
+      "date": "A2024275",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024275.h18v02.061.2024326215327/MOD13A3.A2024275.h18v02.061.2024326215327.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024275.h18v03.061.2024326220223",
+      "tile": "h18v03",
+      "date": "A2024275",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024275.h18v03.061.2024326220223/MOD13A3.A2024275.h18v03.061.2024326220223.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024275.h18v04.061.2024326220222",
+      "tile": "h18v04",
+      "date": "A2024275",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024275.h18v04.061.2024326220222/MOD13A3.A2024275.h18v04.061.2024326220222.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024306.h17v02.061.2024338114133",
+      "tile": "h17v02",
+      "date": "A2024306",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024306.h17v02.061.2024338114133/MOD13A3.A2024306.h17v02.061.2024338114133.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024306.h17v03.061.2024338113105",
+      "tile": "h17v03",
+      "date": "A2024306",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024306.h17v03.061.2024338113105/MOD13A3.A2024306.h17v03.061.2024338113105.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024306.h17v04.061.2024338113211",
+      "tile": "h17v04",
+      "date": "A2024306",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024306.h17v04.061.2024338113211/MOD13A3.A2024306.h17v04.061.2024338113211.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024306.h18v02.061.2024338112717",
+      "tile": "h18v02",
+      "date": "A2024306",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024306.h18v02.061.2024338112717/MOD13A3.A2024306.h18v02.061.2024338112717.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024306.h18v03.061.2024338112814",
+      "tile": "h18v03",
+      "date": "A2024306",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024306.h18v03.061.2024338112814/MOD13A3.A2024306.h18v03.061.2024338112814.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024306.h18v04.061.2024338112900",
+      "tile": "h18v04",
+      "date": "A2024306",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024306.h18v04.061.2024338112900/MOD13A3.A2024306.h18v04.061.2024338112900.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024336.h17v02.061.2025004001527",
+      "tile": "h17v02",
+      "date": "A2024336",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024336.h17v02.061.2025004001527/MOD13A3.A2024336.h17v02.061.2025004001527.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024336.h17v03.061.2025004001558",
+      "tile": "h17v03",
+      "date": "A2024336",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024336.h17v03.061.2025004001558/MOD13A3.A2024336.h17v03.061.2025004001558.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024336.h17v04.061.2025004001852",
+      "tile": "h17v04",
+      "date": "A2024336",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024336.h17v04.061.2025004001852/MOD13A3.A2024336.h17v04.061.2025004001852.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024336.h18v02.061.2025004001625",
+      "tile": "h18v02",
+      "date": "A2024336",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024336.h18v02.061.2025004001625/MOD13A3.A2024336.h18v02.061.2025004001625.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024336.h18v03.061.2025004021409",
+      "tile": "h18v03",
+      "date": "A2024336",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024336.h18v03.061.2025004021409/MOD13A3.A2024336.h18v03.061.2025004021409.hdf"
+    },
+    {
+      "granule": "MOD13A3.A2024336.h18v04.061.2025004021513",
+      "tile": "h18v04",
+      "date": "A2024336",
+      "url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13A3.061/MOD13A3.A2024336.h18v04.061.2025004021513/MOD13A3.A2024336.h18v04.061.2025004021513.hdf"
+    }
+  ],
+  "retrievedAt": "2026-11-07",
+  "files": [
+    {
+      "path": "MOD13A3.A2024001.h17v02.061.2024038042622.hdf",
+      "bytes": 3385533,
+      "sha256": "d637bec20f352eec54d96ff3b7c33df9d2c2a93366691cbd3ea6e7b8282497e6"
+    },
+    {
+      "path": "MOD13A3.A2024001.h17v03.061.2024038043604.hdf",
+      "bytes": 6816919,
+      "sha256": "2c806a44508b0fec6af6a8e5bd7b478e2e7e8b1ec69f3c7fa7501c5e2f6e620a"
+    },
+    {
+      "path": "MOD13A3.A2024001.h17v04.061.2024038043201.hdf",
+      "bytes": 7898438,
+      "sha256": "2855b4e92aff42096d969af002f82601abc1871284125d773e92fe7b9b8b9d5b"
+    },
+    {
+      "path": "MOD13A3.A2024001.h18v02.061.2024038042047.hdf",
+      "bytes": 10465375,
+      "sha256": "677b0a54b657b8f2f184b38f2027bcb468f217b06775ba1473c37fe4873c33e5"
+    },
+    {
+      "path": "MOD13A3.A2024001.h18v03.061.2024038042943.hdf",
+      "bytes": 13216925,
+      "sha256": "d4392807ddd153cd36fc24b5db5196d9acbcde4f9d027f1e3c0460bd284788a8"
+    },
+    {
+      "path": "MOD13A3.A2024001.h18v04.061.2024038042327.hdf",
+      "bytes": 16650133,
+      "sha256": "7228945944d2ad5a8489bd4f8fe7e731ab330aff92377ac97263a3391b65de69"
+    },
+    {
+      "path": "MOD13A3.A2024032.h17v02.061.2024066073121.hdf",
+      "bytes": 3974552,
+      "sha256": "47913aeec0e742bef8e7a3c3be2c450c7953a27e02f88cfbb9c99dbd282b3398"
+    },
+    {
+      "path": "MOD13A3.A2024032.h17v03.061.2024066072508.hdf",
+      "bytes": 6944145,
+      "sha256": "c600259609c053d5471cf543b18c42027c1ebe95fc72ac1cba731e82e836b534"
+    },
+    {
+      "path": "MOD13A3.A2024032.h17v04.061.2024066072629.hdf",
+      "bytes": 8030057,
+      "sha256": "dc906d8dc88d7a0114ace773f6496a7e2f848bf0c5ee992dc026a13bedf2182a"
+    },
+    {
+      "path": "MOD13A3.A2024032.h18v02.061.2024066072544.hdf",
+      "bytes": 13303073,
+      "sha256": "5c76af0752e2d5d0d0ef548ea264b988bb8e2dea4a9d4cf83ab3285c2a9f537a"
+    },
+    {
+      "path": "MOD13A3.A2024032.h18v03.061.2024066072412.hdf",
+      "bytes": 13237274,
+      "sha256": "c8b0f42cf0600a9f9d3d5b154070d2188722384c73f1aa551ff5e1985b01e5b5"
+    },
+    {
+      "path": "MOD13A3.A2024032.h18v04.061.2024066073313.hdf",
+      "bytes": 16789480,
+      "sha256": "2f7f13a095ffe727c2afe4a005dcedb08b214cb095713cff9174869223be393d"
+    },
+    {
+      "path": "MOD13A3.A2024061.h17v02.061.2024099110229.hdf",
+      "bytes": 3987811,
+      "sha256": "731007d0b6492743e0020806f8180b661530cbca480e26bc645e2cc6cf1bd84b"
+    },
+    {
+      "path": "MOD13A3.A2024061.h17v03.061.2024099105113.hdf",
+      "bytes": 7042215,
+      "sha256": "3c928879826c119834d6fd1833dbfbbb113f42fe58f9c10f3c2650980f956f33"
+    },
+    {
+      "path": "MOD13A3.A2024061.h17v04.061.2024099105116.hdf",
+      "bytes": 8107540,
+      "sha256": "de6700a917efe53bf242fe19c92912a701bbba7068f346fbaaf161ed5ca4a952"
+    },
+    {
+      "path": "MOD13A3.A2024061.h18v02.061.2024099105833.hdf",
+      "bytes": 13292075,
+      "sha256": "aba4354af74472088a21581cee82897e9001c2bc421bbd6b3a50ec7a9614a1c1"
+    },
+    {
+      "path": "MOD13A3.A2024061.h18v03.061.2024099105116.hdf",
+      "bytes": 12995360,
+      "sha256": "eb2b862e84cc02767d99f4aff46eecaec8e34a8ac905bacfb73752980376d2fb"
+    },
+    {
+      "path": "MOD13A3.A2024061.h18v04.061.2024099104820.hdf",
+      "bytes": 16690766,
+      "sha256": "e4f6ca8b6a2b940d016bcbfc13d1f6910cb1aa96db2df17ebefb483236e7c13a"
+    },
+    {
+      "path": "MOD13A3.A2024092.h17v02.061.2024133221807.hdf",
+      "bytes": 3985187,
+      "sha256": "e4c602e1aa8086257b1a073122fa2fd3af6b2567029ca8c8eb3da8637d1deb11"
+    },
+    {
+      "path": "MOD13A3.A2024092.h17v03.061.2024133221810.hdf",
+      "bytes": 6975853,
+      "sha256": "3f1d4b1ea2c83a9e67cf892a8e7f76ad9cd366a4ec787d101eef4a9073e143ae"
+    },
+    {
+      "path": "MOD13A3.A2024092.h17v04.061.2024133221811.hdf",
+      "bytes": 8046311,
+      "sha256": "5d71802d80970ebc394f2bbe7361153f5524b7a70f84355246f20003c915eb3f"
+    },
+    {
+      "path": "MOD13A3.A2024092.h18v02.061.2024133221807.hdf",
+      "bytes": 13163300,
+      "sha256": "f3d26d6c05c2f42b85a50a8ce4fd4d59915247ec46f32bf552c7caf5ae36106d"
+    },
+    {
+      "path": "MOD13A3.A2024092.h18v03.061.2024133221808.hdf",
+      "bytes": 13085845,
+      "sha256": "93e624f799a29c978e849f49bfccffc83b8199653639462f16304366ae3d32dd"
+    },
+    {
+      "path": "MOD13A3.A2024092.h18v04.061.2024133221809.hdf",
+      "bytes": 16811052,
+      "sha256": "b18ca361a64e971a46967da7b376e57eee8ba84dd075b71fe8d1869b167c358d"
+    },
+    {
+      "path": "MOD13A3.A2024122.h17v02.061.2024162173134.hdf",
+      "bytes": 4017836,
+      "sha256": "83b4f66413d26d22774a1ce753dc36b6de6886766c7e25cbb49050845648f919"
+    },
+    {
+      "path": "MOD13A3.A2024122.h17v03.061.2024162172716.hdf",
+      "bytes": 6819119,
+      "sha256": "d2994bd3ebad7378612d6d40567af0ce2fb3b1887dfd2dcd7bcfd3d324ec4f69"
+    },
+    {
+      "path": "MOD13A3.A2024122.h17v04.061.2024162171853.hdf",
+      "bytes": 8030549,
+      "sha256": "533ca22fcfeb7d33678a240ae1295a452dc79851d35f10a130f434ab589a8665"
+    },
+    {
+      "path": "MOD13A3.A2024122.h18v02.061.2024162172612.hdf",
+      "bytes": 12468852,
+      "sha256": "b16025fa6d161862c6d97864b12766702e0adc38b4bb1cd195d3b82133f80563"
+    },
+    {
+      "path": "MOD13A3.A2024122.h18v03.061.2024162173822.hdf",
+      "bytes": 12794593,
+      "sha256": "0d1d8cc7bfa5d4e12476eec2e9155f751d204afdc936c0e268f07c1f985a7265"
+    },
+    {
+      "path": "MOD13A3.A2024122.h18v04.061.2024162172618.hdf",
+      "bytes": 16829803,
+      "sha256": "7fe52515a663b252b3fa627c78e0e59705f4fff5030e828d89e34bfcbe7b299c"
+    },
+    {
+      "path": "MOD13A3.A2024153.h17v02.061.2024195024946.hdf",
+      "bytes": 3947164,
+      "sha256": "2fcb9b050bf6ff27fe7e964ac68b01f020f0514884ad811346bb1effd670e10a"
+    },
+    {
+      "path": "MOD13A3.A2024153.h17v03.061.2024195023120.hdf",
+      "bytes": 6976945,
+      "sha256": "70c3c5558d624d00ad89d67f227ce04585855b00b91e7ac0203c784a48c96432"
+    },
+    {
+      "path": "MOD13A3.A2024153.h17v04.061.2024195023706.hdf",
+      "bytes": 8234209,
+      "sha256": "dcd7c46c35b4b9942343d69fd57278d7510ab66f2208299adb3f54721b4506bc"
+    },
+    {
+      "path": "MOD13A3.A2024153.h18v02.061.2024195023737.hdf",
+      "bytes": 12285160,
+      "sha256": "f24be97ec36d91121226a30ad9910a67b9c6cdcbfc295af98622d5f389ee8d64"
+    },
+    {
+      "path": "MOD13A3.A2024153.h18v03.061.2024195022909.hdf",
+      "bytes": 12935114,
+      "sha256": "df186daa9b70507bd7b5c5e1dd87e3961d4b2c18f3e8fdf9c6de5f67a3dc5519"
+    },
+    {
+      "path": "MOD13A3.A2024153.h18v04.061.2024195023821.hdf",
+      "bytes": 16726223,
+      "sha256": "d0e3fac0c3f1d670b98f018ef5ac1a5d14b222c6af26f7ec52b21aa4131cb388"
+    },
+    {
+      "path": "MOD13A3.A2024183.h17v02.061.2024228025602.hdf",
+      "bytes": 3951223,
+      "sha256": "281643e267b80e6e6212f6dd2c40d7315c1d3c292c2f3cbe08b949ca41c08f2e"
+    },
+    {
+      "path": "MOD13A3.A2024183.h17v03.061.2024228023725.hdf",
+      "bytes": 6983766,
+      "sha256": "b89419906b8fd4afd60e8a20d2466e54a4c42055ef9a717bdddcd3a211aef5e4"
+    },
+    {
+      "path": "MOD13A3.A2024183.h17v04.061.2024228023547.hdf",
+      "bytes": 8115997,
+      "sha256": "e17401eddc2d36229aa0a99574bbf1fa7c9c0cf217395baf66b21ef4bc56ab36"
+    },
+    {
+      "path": "MOD13A3.A2024183.h18v02.061.2024228030334.hdf",
+      "bytes": 11975572,
+      "sha256": "6214b49480440c9358a8a20f28590b70f75774719f06f835c73790a484a58fa9"
+    },
+    {
+      "path": "MOD13A3.A2024183.h18v03.061.2024228024627.hdf",
+      "bytes": 12764971,
+      "sha256": "0454ed3dc3eec37cd03cf20a9b9bf8b758aff33801120b1aec128aebbba96a14"
+    },
+    {
+      "path": "MOD13A3.A2024183.h18v04.061.2024228024708.hdf",
+      "bytes": 16556655,
+      "sha256": "b9c6cd120194c9ce2aac1a9b9f4f6599463b73332e0992bc2a21f84aa2af8cad"
+    },
+    {
+      "path": "MOD13A3.A2024214.h17v02.061.2024267145625.hdf",
+      "bytes": 3920276,
+      "sha256": "f170f1aa8dec182e6c1e5f348cae1aa26d3938b9542f09292af41bef66c01872"
+    },
+    {
+      "path": "MOD13A3.A2024214.h17v03.061.2024267145609.hdf",
+      "bytes": 7020719,
+      "sha256": "e626d02103d0cbf1a71a02000fbbecbb68c1d06a333b76afc178c7d6fc4cf15a"
+    },
+    {
+      "path": "MOD13A3.A2024214.h17v04.061.2024267145543.hdf",
+      "bytes": 8149203,
+      "sha256": "c3dde4c1df57390b4aca5bf2367cc052d95f55bc0e1cdcbd767953a80c23157b"
+    },
+    {
+      "path": "MOD13A3.A2024214.h18v02.061.2024267145610.hdf",
+      "bytes": 12040559,
+      "sha256": "fa4d6d666bf305ebf89d1b1ffaa751b589da5cbf7c4f5a84bf2bd72a70ff5d24"
+    },
+    {
+      "path": "MOD13A3.A2024214.h18v03.061.2024267145638.hdf",
+      "bytes": 12746171,
+      "sha256": "9c2b26ebb3bdc6a59068a55e5c0dae73a27ae313c688e838284fcc61a23b1b67"
+    },
+    {
+      "path": "MOD13A3.A2024214.h18v04.061.2024267145646.hdf",
+      "bytes": 16525426,
+      "sha256": "26c78e4c7cf07b87f9bf5d64f4f0a622808b76c13d1cdb57db7e36d559f6c095"
+    },
+    {
+      "path": "MOD13A3.A2024245.h17v02.061.2024290025046.hdf",
+      "bytes": 3902525,
+      "sha256": "18e7986c0afeb63b0269b5c0cfeb542a201bfc622d5615de8c12239c323bd866"
+    },
+    {
+      "path": "MOD13A3.A2024245.h17v03.061.2024290025017.hdf",
+      "bytes": 6727594,
+      "sha256": "e332624e14abc4baf4c6dc0408c1e974c2935c1c91585942f00e647b34648031"
+    },
+    {
+      "path": "MOD13A3.A2024245.h17v04.061.2024290025617.hdf",
+      "bytes": 8006688,
+      "sha256": "745a2d77b95deb95957c12a355a0a48016e44428ec121ee68fa3dbeef10c864d"
+    },
+    {
+      "path": "MOD13A3.A2024245.h18v02.061.2024290025103.hdf",
+      "bytes": 11928950,
+      "sha256": "d4b93e94f569a6ba0468f91b8c13a8e32417da8ad94de87ab01d9fec3722c206"
+    },
+    {
+      "path": "MOD13A3.A2024245.h18v03.061.2024290025035.hdf",
+      "bytes": 12702379,
+      "sha256": "0f00311709f3fba3dc3216ec4b5b4483c4666c570b86790b13df80152ddaa709"
+    },
+    {
+      "path": "MOD13A3.A2024245.h18v04.061.2024290025118.hdf",
+      "bytes": 16440007,
+      "sha256": "8f53eea28a0867db25290e4a6bc6517aeb47fec58f595485de969af4ae9dbc72"
+    },
+    {
+      "path": "MOD13A3.A2024275.h17v02.061.2024326215139.hdf",
+      "bytes": 3977208,
+      "sha256": "9cc38b038f3b63dd2639cc725aa5d9909982650d093fc4545e2362875cb25d61"
+    },
+    {
+      "path": "MOD13A3.A2024275.h17v03.061.2024326215954.hdf",
+      "bytes": 6911684,
+      "sha256": "56904d87179e549f370b4a1c08da4ed1117434cd7b2f9e64edab99a9040cff7b"
+    },
+    {
+      "path": "MOD13A3.A2024275.h17v04.061.2024326215413.hdf",
+      "bytes": 8011075,
+      "sha256": "2959330156528599d27da892bcef10fddedcf42dd31154a07625e4ed3bd3df02"
+    },
+    {
+      "path": "MOD13A3.A2024275.h18v02.061.2024326215327.hdf",
+      "bytes": 12376453,
+      "sha256": "f7f2374fc9615cdd5404eda1115687f92925b9748ddc1900a83fcce723e31761"
+    },
+    {
+      "path": "MOD13A3.A2024275.h18v03.061.2024326220223.hdf",
+      "bytes": 12588013,
+      "sha256": "9d5643636b19f41088b9687518373366a792ea1c477c60fb4a7c1e288278529d"
+    },
+    {
+      "path": "MOD13A3.A2024275.h18v04.061.2024326220222.hdf",
+      "bytes": 16449510,
+      "sha256": "d3ececba4bd5b057c388a635bfe774715a8a634d7be67ff6017aac9763d6d166"
+    },
+    {
+      "path": "MOD13A3.A2024306.h17v02.061.2024338114133.hdf",
+      "bytes": 3926492,
+      "sha256": "ed9febee438c0c4982a5595eacbb65f9fb5c7d3e21c98cf7f847594ccd748d97"
+    },
+    {
+      "path": "MOD13A3.A2024306.h17v03.061.2024338113105.hdf",
+      "bytes": 6866904,
+      "sha256": "9f57eea4aa7d144ab7b2abcf3cbd733764cc43551598a3e1d8be38ed5f439ff9"
+    },
+    {
+      "path": "MOD13A3.A2024306.h17v04.061.2024338113211.hdf",
+      "bytes": 8110092,
+      "sha256": "00b203dd3798952c634d05037283f1dfda06211886b904c529d259041de745b3"
+    },
+    {
+      "path": "MOD13A3.A2024306.h18v02.061.2024338112717.hdf",
+      "bytes": 12760427,
+      "sha256": "bcf6c0e33e3813f6ea7042e46cf81e73843aee63a37a03927b45e2bef6f01f22"
+    },
+    {
+      "path": "MOD13A3.A2024306.h18v03.061.2024338112814.hdf",
+      "bytes": 12731486,
+      "sha256": "cc7dc4f8c33557a1f0372037b87c665743236ba9d1fbbbd92f8ab0752f09c539"
+    },
+    {
+      "path": "MOD13A3.A2024306.h18v04.061.2024338112900.hdf",
+      "bytes": 16579312,
+      "sha256": "628b9e2a0fc3096e40679c926424068db8ec7731c7f39516589ada4c209254f6"
+    },
+    {
+      "path": "MOD13A3.A2024336.h17v02.061.2025004001527.hdf",
+      "bytes": 3078895,
+      "sha256": "b1d4ee49e36ddb51f2f60097e1541afed48bd731092071ac54810c3ad36e1bcd"
+    },
+    {
+      "path": "MOD13A3.A2024336.h17v03.061.2025004001558.hdf",
+      "bytes": 6991481,
+      "sha256": "e6d30ea531ab0726d5c09b94b08bcb198f7d160dccfbae362f759be941d95e54"
+    },
+    {
+      "path": "MOD13A3.A2024336.h17v04.061.2025004001852.hdf",
+      "bytes": 7956402,
+      "sha256": "886de31e128d866a06017527ae3fa70e209fdb869416a8c15087ba049e670594"
+    },
+    {
+      "path": "MOD13A3.A2024336.h18v02.061.2025004001625.hdf",
+      "bytes": 8639430,
+      "sha256": "b59bb91ea9cb7f6b32d21b59af1df17bcc7372afd061b8ef1d98028383feeebc"
+    },
+    {
+      "path": "MOD13A3.A2024336.h18v03.061.2025004021409.hdf",
+      "bytes": 13074157,
+      "sha256": "4452fa40614027ee5fb2a9d5bb53fe878949a162da80fc9a6486d31a5596608a"
+    },
+    {
+      "path": "MOD13A3.A2024336.h18v04.061.2025004021513.hdf",
+      "bytes": 16624126,
+      "sha256": "ef84e02304fee6bf5c93e009abe72d7e17fc45071feb35d3df7faab0ec0631bf"
+    }
+  ],
+  "sanityCheck": "NDVI (DN*0.0001), pixels in bbox with MODLAND QA bits 0-1 <= 1: 2024-01 (n=331532): median 0.613, p5-p95 0.347-0.780; 2024-07: median 0.756, p5-p95 0.571-0.850"
+}

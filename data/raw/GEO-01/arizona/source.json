@@ -1,0 +1,143 @@
+{
+  "id": "GEO-01-emitl2bmin-arizona-20261107",
+  "catalogueSourceId": "GEO-01",
+  "provider": "NASA Earthdata (LPCLOUD)",
+  "product": "EMIT L2B Estimated Mineral Identification and Band Depth and Uncertainty 60 m V002",
+  "collectionShortName": "EMITL2BMIN",
+  "collectionConceptId": "C4079846859-LPCLOUD",
+  "version": "002",
+  "doi": "10.5067/EMIT/EMITL2BMIN.002",
+  "documentationUrl": "https://nasa.github.io/LPDAAC-Data-Resources/external/Working_with_EMIT_L2B_Mineralogy.html",
+  "accessMethod": "earthaccess (CMR search + HTTPS download, Earthdata Login)",
+  "evidenceType": "satellite_retrieval",
+  "region": "arizona",
+  "dataScope": "regional subset (data/README.md 'Data scope')",
+  "retrievedAt": "2026-11-07",
+  "accessUrl": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/EMITL2BMIN.002/",
+  "licence": {
+    "name": "NASA open data",
+    "url": "https://science.data.nasa.gov/about/license",
+    "attribution": "Philip Brodrick, Roger Clark, Gregg Swayze, Raymond Kokaly, John Meyer, James Montgomery, Dana Chadwick, Jeff Leach, Bethany Ehlman, Abigail Keebler, Winston Olson-Duvall, Sarah Lundeen, David Thompson, Robert Green. 2026. EMIT L2B Estimated Mineral Identification and Band Depth and Uncertainty 60 m V002. NASA Land Processes Distributed Active Archive Center. https://doi.org/10.5067/EMIT/EMITL2BMIN.002",
+    "reviewedAt": "2026-11-07",
+    "notes": "NASA Earth science data are open with no restriction on reuse; cite the product DOI."
+  },
+  "query": "short_name=EMITL2BMIN version=002; bbox W,S,E,N=-113.5,31.3,-109.0,34.5; temporal 2023-01-01..2025-12-31; selected the lowest-CMR-CloudCover scenes whose footprint contains Globe-Miami (-110.85,33.4), Ray (-110.98,33.16) or Morenci (-109.36,33.08)",
+  "processing": "None. Swath NetCDFs kept whole (already regional, ~100 MB each granule). Data are in sensor (downtrack x crosstrack) geometry and are NOT orthorectified: use the GLT (location/glt_x, glt_y and the GeoTransform/spatial_ref global attributes) to place pixels, see documentationUrl. Values: group_1/2_mineral_id index mineral_metadata/name; band depth is a spectral-feature strength, not mass concentration, ore grade or tonnage.",
+  "granules": [
+    {
+      "granuleId": "EMIT_L2B_MIN_002_20231027T170527",
+      "beginDateTime": "2023-10-27T17:05:27Z",
+      "cloudCoverPercent": 0,
+      "copperDistrictsInFootprint": [
+        "Globe-Miami",
+        "Ray"
+      ],
+      "orbit": "2330011",
+      "dataUrls": [
+        "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/EMITL2BMIN.002/EMIT_L2B_MIN_002_20231027T170527/EMIT_L2B_MIN_002_20231027T170527.nc",
+        "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/EMITL2BMIN.002/EMIT_L2B_MIN_002_20231027T170527/EMIT_L2B_MINUNCERT_002_20231027T170527.nc"
+      ],
+      "upstreamChecksum": {
+        "EMIT_L2B_MIN_002_20231027T170527.nc": "SHA-512 verified against CMR",
+        "EMIT_L2B_MINUNCERT_002_20231027T170527.nc": "SHA-512 verified against CMR"
+      },
+      "topMineralsByPixelCount": {
+        "fe3+_hematite.lg.gr.br34c": 346104,
+        "chlorite_cookeite-car-1.c": 280062,
+        "fe3+_goethite.nano-70nm": 200195,
+        "portlandite": 152651,
+        "talc+calcite.parkcity": 102288,
+        "fe3+_hematite.2+goethite.8hg2": 99481,
+        "chlorite_cookeite-car-1.a": 94123,
+        "smectite_ammonillsmec": 67347
+      }
+    },
+    {
+      "granuleId": "EMIT_L2B_MIN_002_20240404T174632",
+      "beginDateTime": "2024-04-04T17:46:32Z",
+      "cloudCoverPercent": 0,
+      "copperDistrictsInFootprint": [
+        "Morenci"
+      ],
+      "orbit": "2409512",
+      "dataUrls": [
+        "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/EMITL2BMIN.002/EMIT_L2B_MIN_002_20240404T174632/EMIT_L2B_MIN_002_20240404T174632.nc",
+        "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/EMITL2BMIN.002/EMIT_L2B_MIN_002_20240404T174632/EMIT_L2B_MINUNCERT_002_20240404T174632.nc"
+      ],
+      "upstreamChecksum": {
+        "EMIT_L2B_MIN_002_20240404T174632.nc": "SHA-512 verified against CMR",
+        "EMIT_L2B_MINUNCERT_002_20240404T174632.nc": "SHA-512 verified against CMR"
+      },
+      "topMineralsByPixelCount": {
+        "fe3+_goethite.nano-70nm": 139495,
+        "talc+calcite.parkcity": 79315,
+        "fe3+_hematite.lg.gr.br34c": 57727,
+        "fe3+_goeth+jarosite": 52620,
+        "chlorite_cookeite-car-1.a": 44212,
+        "portlandite": 35629,
+        "fe3+_hematite.2+goethite.8hg2": 18572,
+        "chrysotile.gypsum.wtc01-8": 15115
+      }
+    },
+    {
+      "granuleId": "EMIT_L2B_MIN_002_20230526T220606",
+      "beginDateTime": "2023-05-26T22:06:06Z",
+      "cloudCoverPercent": 0,
+      "copperDistrictsInFootprint": [
+        "Globe-Miami"
+      ],
+      "orbit": "2314615",
+      "dataUrls": [
+        "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/EMITL2BMIN.002/EMIT_L2B_MIN_002_20230526T220606/EMIT_L2B_MIN_002_20230526T220606.nc",
+        "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/EMITL2BMIN.002/EMIT_L2B_MIN_002_20230526T220606/EMIT_L2B_MINUNCERT_002_20230526T220606.nc"
+      ],
+      "upstreamChecksum": {
+        "EMIT_L2B_MIN_002_20230526T220606.nc": "SHA-512 verified against CMR",
+        "EMIT_L2B_MINUNCERT_002_20230526T220606.nc": "SHA-512 verified against CMR"
+      },
+      "topMineralsByPixelCount": {
+        "fe3+_goethite.nano-70nm": 207268,
+        "chlorite_cookeite-car-1.c": 57853,
+        "fe3+_hematite.lg.gr.br34c": 33808,
+        "chlorite_cookeite-car-1.a": 21186,
+        "fe3+_hematite.2+goethite.8hg2": 17626,
+        "portlandite": 9495,
+        "talc+calcite.parkcity": 6352,
+        "sulfate_kalun150c": 4666
+      }
+    }
+  ],
+  "notes": "Surface spectral signature of exposed material only. CloudCover is the whole-scene CMR value; always apply the L2A mask before aggregating. UK not fetched (vegetated/cloudy, little value).",
+  "files": [
+    {
+      "path": "EMIT_L2B_MINUNCERT_002_20230526T220606.nc",
+      "bytes": 41846534,
+      "sha256": "2178020b775a3164538cdc491459cfe559c39d580685265382966f816b9188cc"
+    },
+    {
+      "path": "EMIT_L2B_MINUNCERT_002_20231027T170527.nc",
+      "bytes": 48628902,
+      "sha256": "ed3c5d3be734371a48038cb01e3683f0829c978e5fd07febd36fefebebed6b44"
+    },
+    {
+      "path": "EMIT_L2B_MINUNCERT_002_20240404T174632.nc",
+      "bytes": 43123399,
+      "sha256": "1ff2c7747366e6f3009bf325df18555ca38ae852ccabde487af06944dd2afa7b"
+    },
+    {
+      "path": "EMIT_L2B_MIN_002_20230526T220606.nc",
+      "bytes": 40485235,
+      "sha256": "c4be0148a8d9d1bdf66edb1445ce492e53fdd795e009e8e3d8ad13a72ff94a03"
+    },
+    {
+      "path": "EMIT_L2B_MIN_002_20231027T170527.nc",
+      "bytes": 43570937,
+      "sha256": "6a0ac0b469aadd2d81337b8307adbb2e409c60d46f4b5a13ebbb5103bdd1769a"
+    },
+    {
+      "path": "EMIT_L2B_MIN_002_20240404T174632.nc",
+      "bytes": 41022984,
+      "sha256": "7647c165d7211df545595a5dd69d36ced25934d82b136afebedb0717cebdddfc"
+    }
+  ]
+}

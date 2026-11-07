@@ -1,0 +1,37 @@
+{
+  "layer": "era5land_2024_arizona",
+  "sourceId": "CTX-01",
+  "provider": "Copernicus Climate Change Service (C3S) / ECMWF",
+  "product": "ERA5-Land monthly averaged data from 1950 to present: monthly_averaged_reanalysis 2024 (t2m, d2m, tp, e, ssrd, u10, v10, swvl1)",
+  "version": "as served by the CDS (see file history attribute)",
+  "licence": "CC BY 4.0",
+  "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+  "attribution": "Muñoz Sabater, J. (2019): ERA5-Land monthly averaged data from 1950 to present. Copernicus Climate Change Service (C3S) Climate Data Store (CDS). DOI: 10.24381/cds.68d2bb30. Contains modified Copernicus Climate Change Service information 2024.",
+  "evidenceType": "modelled",
+  "retrievedAt": "2026-11-07",
+  "method": "Each res-6 cell whose centre lies in the region box takes the value of the grid pixel containing its centre (nearest-pixel sampling, as for the NASA POWER layers); neighbouring cells repeat values. Monthly means of 2024; accumulated fields (tp, e, ssrd) are ERA5-Land's mean daily accumulation for the month. Evaporation sign flipped so evaporation is positive. ERA5-Land is land-only, so sea cells are absent.",
+  "nativeResolution": "0.1° (~9 km)",
+  "sampling": "nearest grid pixel at each cell centre",
+  "period": "2024, monthly",
+  "h3Resolution": 6,
+  "units": {
+    "t2m_*": "°C",
+    "tp_*": "mm/day",
+    "evap_*": "mm/day",
+    "ssrd_*": "kWh/m²/day",
+    "swvl1_*": "m³/m³"
+  },
+  "region": "arizona",
+  "regionBbox": [
+    -113.5,
+    31.3,
+    -109.0,
+    34.5
+  ],
+  "inputFiles": [
+    "era5land_monthly_2024.nc"
+  ],
+  "rowCount": 3558,
+  "generatedAt": "2026-11-07T16:45:28+00:00",
+  "script": "scripts/prepare_observation_h3.py"
+}

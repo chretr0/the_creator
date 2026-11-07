@@ -1,0 +1,989 @@
+{
+  "id": "WATER-02-gracedadm-uk-20261107",
+  "catalogueSourceId": "WATER-02",
+  "provider": "NASA Earthdata (GES_DISC)",
+  "product": "Groundwater and Soil Moisture Conditions from GRACE and GRACE-FO Data Assimilation L4 7-days 0.25 x 0.25 degree Global V3.0 (GRACEDADM_CLSM025GL_7D)",
+  "collectionShortName": "GRACEDADM_CLSM025GL_7D",
+  "collectionConceptId": "C2283200566-GES_DISC",
+  "version": "3.0",
+  "doi": "10.5067/SZYMDFZ7TJ4H",
+  "documentationUrl": "https://docserver.gesdisc.eosdis.nasa.gov/public/project/hydrology/README_GRACEDADM3GL.pdf",
+  "accessMethod": "earthaccess (CMR search + HTTPS download, Earthdata Login)",
+  "evidenceType": "model_output",
+  "region": "uk",
+  "dataScope": "regional subset (data/README.md 'Data scope')",
+  "retrievedAt": "2026-11-07",
+  "accessUrl": "https://hydro1.gesdisc.eosdis.nasa.gov/data/GRACEDA/GRACEDADM_CLSM025GL_7D.3.0/",
+  "licence": {
+    "name": "NASA open data",
+    "url": "https://science.data.nasa.gov/about/license",
+    "attribution": "Matthew Rodell, Bailing Li, A. Getirana, and Hiroko Kato Beaudoing, NASA/GSFC/HSL. 2022. Groundwater and Soil Moisture Conditions from GRACE and GRACE-FO Data Assimilation L4 7-days 0.25 x 0.25 degree Global V3.0. Goddard Earth Sciences Data and Information Services Center (GES DISC). https://doi.org/10.5067/SZYMDFZ7TJ4H",
+    "reviewedAt": "2026-11-07",
+    "notes": "NASA Earth science data are open with no restriction on reuse; cite the product DOI."
+  },
+  "query": "short_name=GRACEDADM_CLSM025GL_7D version=3.0; temporal 2024-01-01..2024-12-31 (53 weekly granules); region=uk; bbox W,S,E,N=-8.7,49.8,1.9,60.9",
+  "processing": "Each global weekly NetCDF-4 subset with xarray .sel to the 0.25 deg cells intersecting the box (box padded by half a cell), keeping gws_inst (groundwater), rtzsm_inst (root-zone soil moisture) and sfsm_inst (surface soil moisture) percentiles; global originals deleted. Upstream size and sha256 recorded per granule.",
+  "granules": [
+    {
+      "granuleId": "GRACEDADM_CLSM025GL_7D.3.0:GRACEDADM_CLSM025GL_7D.A20240101.030.nc4",
+      "beginDateTime": "2024-01-01T00:00:00.000Z",
+      "endDateTime": "2024-01-07T23:59:59.000Z",
+      "upstreamBytes": 2150134,
+      "upstreamSha256": "09e3f097ab1557213f14083fbd1db8694c11710894c6928b852c93f071a88bd9"
+    },
+    {
+      "granuleId": "GRACEDADM_CLSM025GL_7D.3.0:GRACEDADM_CLSM025GL_7D.A20240108.030.nc4",
+      "beginDateTime": "2024-01-08T00:00:00.000Z",
+      "endDateTime": "2024-01-14T23:59:59.000Z",
+      "upstreamBytes": 2131640,
+      "upstreamSha256": "3895b5eb7b87c90914ff20efdb82ac60e7553640b1ddc8df3ac87bea64756375"
+    },
+    {
+      "granuleId": "GRACEDADM_CLSM025GL_7D.3.0:GRACEDADM_CLSM025GL_7D.A20240115.030.nc4",
+      "beginDateTime": "2024-01-15T00:00:00.000Z",
+      "endDateTime": "2024-01-21T23:59:59.000Z",
+      "upstreamBytes": 2136319,
+      "upstreamSha256": "b49bfa903f016c8ca230dd4be85a853fccb4557d0636e6d1e2d453d7ea7a9f09"
+    },
+    {
+      "granuleId": "GRACEDADM_CLSM025GL_7D.3.0:GRACEDADM_CLSM025GL_7D.A20240122.030.nc4",
+      "beginDateTime": "2024-01-22T00:00:00.000Z",
+      "endDateTime": "2024-01-28T23:59:59.000Z",
+      "upstreamBytes": 2124802,
+      "upstreamSha256": "a09399754f11a2179e204100e7456188eda9c7bd677edd98e06adc2810848aeb"
+    },
+    {
+      "granuleId": "GRACEDADM_CLSM025GL_7D.3.0:GRACEDADM_CLSM025GL_7D.A20240129.030.nc4",
+      "beginDateTime": "2024-01-29T00:00:00.000Z",
+      "endDateTime": "2024-02-04T23:59:59.000Z",
+      "upstreamBytes": 2175605,
+      "upstreamSha256": "9ef9e03d083427f84df3ae74a7282338660e9850a5e7cd4fbafa09b0a644cb48"
+    },
+    {
+      "granuleId": "GRACEDADM_CLSM025GL_7D.3.0:GRACEDADM_CLSM025GL_7D.A20240205.030.nc4",
+      "beginDateTime": "2024-02-05T00:00:00.000Z",
+      "endDateTime": "2024-02-11T23:59:59.000Z",
+      "upstreamBytes": 2214554,
+      "upstreamSha256": "dae56831a2a6d5b79121db70e48a4b3a35305bcb591ca2f4e264196a163c9d18"
+    },
+    {
+      "granuleId": "GRACEDADM_CLSM025GL_7D.3.0:GRACEDADM_CLSM025GL_7D.A20240212.030.nc4",
+      "beginDateTime": "2024-02-12T00:00:00.000Z",
+      "endDateTime": "2024-02-18T23:59:59.000Z",
+      "upstreamBytes": 2214837,
+      "upstreamSha256": "26e0159682b520e2fb2d93ff8edfda6f6caca0637f093f44f1485cbedc490c19"
+    },
+    {
+      "granuleId": "GRACEDADM_CLSM025GL_7D.3.0:GRACEDADM_CLSM025GL_7D.A20240219.030.nc4",
+      "beginDateTime": "2024-02-19T00:00:00.000Z",
+      "endDateTime": "2024-02-25T23:59:59.000Z",
+      "upstreamBytes": 2219851,
+      "upstreamSha256": "9b7da53779ca861b8d0c925928fc93222cf7d4b16d65371c60d56bd3de802303"
+    },
+    {
+      "granuleId": "GRACEDADM_CLSM025GL_7D.3.0:GRACEDADM_CLSM025GL_7D.A20240226.030.nc4",
+      "beginDateTime": "2024-02-26T00:00:00.000Z",
+      "endDateTime": "2024-03-03T23:59:59.000Z",
+      "upstreamBytes": 2216561,
+      "upstreamSha256": "0b5e2caf44012bb1f2da63f1a0ec864111b1a75b5968ec41504f87352db1e2b1"
+    },
+    {
+      "granuleId": "GRACEDADM_CLSM025GL_7D.3.0:GRACEDADM_CLSM025GL_7D.A20240304.030.nc4",
+      "beginDateTime": "2024-03-04T00:00:00.000Z",
+      "endDateTime": "2024-03-10T23:59:59.000Z",
+      "upstreamBytes": 2219781,
+      "upstreamSha256": "4f42bf213946e70459c7927bb39156304504555d8011d89a355682589cb98d0e"
+    },
+    {
+      "granuleId": "GRACEDADM_CLSM025GL_7D.3.0:GRACEDADM_CLSM025GL_7D.A20240311.030.nc4",
+      "beginDateTime": "2024-03-11T00:00:00.000Z",
+      "endDateTime": "2024-03-17T23:59:59.000Z",
+      "upstreamBytes": 2228103,
+      "upstreamSha256": "0a9163f727becc56dc984eadb16e4576b803dfa48fadedfde33a3633a350721f"
+    },
+    {
+      "granuleId": "GRACEDADM_CLSM025GL_7D.3.0:GRACEDADM_CLSM025GL_7D.A20240318.030.nc4",
+      "beginDateTime": "2024-03-18T00:00:00.000Z",
+      "endDateTime": "2024-03-24T23:59:59.000Z",
+      "upstreamBytes": 2225451,
+      "upstreamSha256": "9ea0e75eef450c9fc875363ddeed13af0a6e38c1e810b87037ba2c143c6b065b"
+    },
+    {
+      "granuleId": "GRACEDADM_CLSM025GL_7D.3.0:GRACEDADM_CLSM025GL_7D.A20240325.030.nc4",
+      "beginDateTime": "2024-03-25T00:00:00.000Z",
+      "endDateTime": "2024-03-31T23:59:59.000Z",
+      "upstreamBytes": 2235858,
+      "upstreamSha256": "60fb50e0d8d20de9ed17e3a7a51957c896324d5b395f8d18cf3dfe5206977170"
+    },
+    {
+      "granuleId": "GRACEDADM_CLSM025GL_7D.3.0:GRACEDADM_CLSM025GL_7D.A20240401.030.nc4",
+      "beginDateTime": "2024-04-01T00:00:00.000Z",
+      "endDateTime": "2024-04-07T23:59:59.000Z",
+      "upstreamBytes": 2244501,
+      "upstreamSha256": "a11788555584660eedaaf5687fa1467c910dc5d90fa9858729df5e338061141e"
+    },
+    {
+      "granuleId": "GRACEDADM_CLSM025GL_7D.3.0:GRACEDADM_CLSM025GL_7D.A20240408.030.nc4",
+      "beginDateTime": "2024-04-08T00:00:00.000Z",
+      "endDateTime": "2024-04-14T23:59:59.000Z",
+      "upstreamBytes": 2247327,
+      "upstreamSha256": "663d76118f921747189925591c5a4e51420b80e64a5f856c8303a4365ea9d435"
+    },
+    {
+      "granuleId": "GRACEDADM_CLSM025GL_7D.3.0:GRACEDADM_CLSM025GL_7D.A20240415.030.nc4",
+      "beginDateTime": "2024-04-15T00:00:00.000Z",
+      "endDateTime": "2024-04-21T23:59:59.000Z",
+      "upstreamBytes": 2252440,
+      "upstreamSha256": "d4db749e5fad731bef35ca747d278a1b6934d431ab4f12affc8b04419886edc6"
+    },
+    {
+      "granuleId": "GRACEDADM_CLSM025GL_7D.3.0:GRACEDADM_CLSM025GL_7D.A20240422.030.nc4",
+      "beginDateTime": "2024-04-22T00:00:00.000Z",
+      "endDateTime": "2024-04-28T23:59:59.000Z",
+      "upstreamBytes": 2264235,
+      "upstreamSha256": "e77e4a5567343e04c933a19d3c9ccbe6fde2b8c4f2ecd9b26bc564233c26ea20"
+    },
+    {
+      "granuleId": "GRACEDADM_CLSM025GL_7D.3.0:GRACEDADM_CLSM025GL_7D.A20240429.030.nc4",
+      "beginDateTime": "2024-04-29T00:00:00.000Z",
+      "endDateTime": "2024-05-05T23:59:59.000Z",
+      "upstreamBytes": 2267203,
+      "upstreamSha256": "99c8f8856a9c69841d2435697ab49b16dd12d3f1f06b4ef744b1f240637a3385"
+    },
+    {
+      "granuleId": "GRACEDADM_CLSM025GL_7D.3.0:GRACEDADM_CLSM025GL_7D.A20240506.030.nc4",
+      "beginDateTime": "2024-05-06T00:00:00.000Z",
+      "endDateTime": "2024-05-12T23:59:59.000Z",
+      "upstreamBytes": 2275400,
+      "upstreamSha256": "ead9152b2bc9ec4715eb179b94130f7b29b884747122257ce71324eb51fd8bc4"
+    },
+    {
+      "granuleId": "GRACEDADM_CLSM025GL_7D.3.0:GRACEDADM_CLSM025GL_7D.A20240513.030.nc4",
+      "beginDateTime": "2024-05-13T00:00:00.000Z",
+      "endDateTime": "2024-05-19T23:59:59.000Z",
+      "upstreamBytes": 2282489,
+      "upstreamSha256": "f674c9e773e92a75aeab6d24f02a1cfbffb07510143a8bc0509dad3b76d989ec"
+    },
+    {
+      "granuleId": "GRACEDADM_CLSM025GL_7D.3.0:GRACEDADM_CLSM025GL_7D.A20240520.030.nc4",
+      "beginDateTime": "2024-05-20T00:00:00.000Z",
+      "endDateTime": "2024-05-26T23:59:59.000Z",
+      "upstreamBytes": 2285159,
+      "upstreamSha256": "641670723a0221a6539d32d3ca15e51fd978fbc572aa14607cde56cf60fb5142"
+    },
+    {
+      "granuleId": "GRACEDADM_CLSM025GL_7D.3.0:GRACEDADM_CLSM025GL_7D.A20240527.030.nc4",
+      "beginDateTime": "2024-05-27T00:00:00.000Z",
+      "endDateTime": "2024-06-02T23:59:59.000Z",
+      "upstreamBytes": 2292643,
+      "upstreamSha256": "b44f5e4c0de49312d7190974d5ace770be057b33e848f702375734b92db6fa25"
+    },
+    {
+      "granuleId": "GRACEDADM_CLSM025GL_7D.3.0:GRACEDADM_CLSM025GL_7D.A20240603.030.nc4",
+      "beginDateTime": "2024-06-03T00:00:00.000Z",
+      "endDateTime": "2024-06-09T23:59:59.000Z",
+      "upstreamBytes": 2296618,
+      "upstreamSha256": "3de8d7eb87ac55b325f645589f61fc638be0a0256e24027cdd157f9f8d044e59"
+    },
+    {
+      "granuleId": "GRACEDADM_CLSM025GL_7D.3.0:GRACEDADM_CLSM025GL_7D.A20240610.030.nc4",
+      "beginDateTime": "2024-06-10T00:00:00.000Z",
+      "endDateTime": "2024-06-16T23:59:59.000Z",
+      "upstreamBytes": 2293496,
+      "upstreamSha256": "fdbe62256d19785794acb17e3a3c44fcb3011d89569d9421279657a9a49a0417"
+    },
+    {
+      "granuleId": "GRACEDADM_CLSM025GL_7D.3.0:GRACEDADM_CLSM025GL_7D.A20240617.030.nc4",
+      "beginDateTime": "2024-06-17T00:00:00.000Z",
+      "endDateTime": "2024-06-23T23:59:59.000Z",
+      "upstreamBytes": 2290238,
+      "upstreamSha256": "966b9cc026879b3e0a7f1e19c63da2501b64c752a49e85d820287e78c06fe934"
+    },
+    {
+      "granuleId": "GRACEDADM_CLSM025GL_7D.3.0:GRACEDADM_CLSM025GL_7D.A20240624.030.nc4",
+      "beginDateTime": "2024-06-24T00:00:00.000Z",
+      "endDateTime": "2024-06-30T23:59:59.000Z",
+      "upstreamBytes": 2289559,
+      "upstreamSha256": "98cf0a6b41f9b2c5885ed3673ebe40513057c14ba739fe38206c19de821accdf"
+    },
+    {
+      "granuleId": "GRACEDADM_CLSM025GL_7D.3.0:GRACEDADM_CLSM025GL_7D.A20240701.030.nc4",
+      "beginDateTime": "2024-07-01T00:00:00.000Z",
+      "endDateTime": "2024-07-07T23:59:59.000Z",
+      "upstreamBytes": 2274687,
+      "upstreamSha256": "116664007b41a36955bdcb597dd161530399ab5d8166f9a090d1890017cf36de"
+    },
+    {
+      "granuleId": "GRACEDADM_CLSM025GL_7D.3.0:GRACEDADM_CLSM025GL_7D.A20240708.030.nc4",
+      "beginDateTime": "2024-07-08T00:00:00.000Z",
+      "endDateTime": "2024-07-14T23:59:59.000Z",
+      "upstreamBytes": 2269578,
+      "upstreamSha256": "c0ab35a157e11cf65e0ae96f623ed2c51331cb80ef57029cf3d1d3bfa6cf10ef"
+    },
+    {
+      "granuleId": "GRACEDADM_CLSM025GL_7D.3.0:GRACEDADM_CLSM025GL_7D.A20240715.030.nc4",
+      "beginDateTime": "2024-07-15T00:00:00.000Z",
+      "endDateTime": "2024-07-21T23:59:59.000Z",
+      "upstreamBytes": 2272300,
+      "upstreamSha256": "dfc32d12bc011e0a93b5235c72162fd4dd86c8ed2b983f77f5689df9c3ba2049"
+    },
+    {
+      "granuleId": "GRACEDADM_CLSM025GL_7D.3.0:GRACEDADM_CLSM025GL_7D.A20240722.030.nc4",
+      "beginDateTime": "2024-07-22T00:00:00.000Z",
+      "endDateTime": "2024-07-28T23:59:59.000Z",
+      "upstreamBytes": 2284944,
+      "upstreamSha256": "3430e1a565f62e5df609a0ed4c1e27f112e4bfa48156571ea68c1723c7ca30d0"
+    },
+    {
+      "granuleId": "GRACEDADM_CLSM025GL_7D.3.0:GRACEDADM_CLSM025GL_7D.A20240729.030.nc4",
+      "beginDateTime": "2024-07-29T00:00:00.000Z",
+      "endDateTime": "2024-08-04T23:59:59.000Z",
+      "upstreamBytes": 2286115,
+      "upstreamSha256": "1f149cde7767dc620e378f80b21a146b2aa801b50f170866a61aae2788983916"
+    },
+    {
+      "granuleId": "GRACEDADM_CLSM025GL_7D.3.0:GRACEDADM_CLSM025GL_7D.A20240805.030.nc4",
+      "beginDateTime": "2024-08-05T00:00:00.000Z",
+      "endDateTime": "2024-08-11T23:59:59.000Z",
+      "upstreamBytes": 2277597,
+      "upstreamSha256": "28c26bfeb09e084014f83219ab0b65aaabceced09e513a2197dd433c3c7e6f30"
+    },
+    {
+      "granuleId": "GRACEDADM_CLSM025GL_7D.3.0:GRACEDADM_CLSM025GL_7D.A20240812.030.nc4",
+      "beginDateTime": "2024-08-12T00:00:00.000Z",
+      "endDateTime": "2024-08-18T23:59:59.000Z",
+      "upstreamBytes": 2259782,
+      "upstreamSha256": "021e66533914098526250aa20bfad58760e5d0352337b839156e2b1e211987f6"
+    },
+    {
+      "granuleId": "GRACEDADM_CLSM025GL_7D.3.0:GRACEDADM_CLSM025GL_7D.A20240819.030.nc4",
+      "beginDateTime": "2024-08-19T00:00:00.000Z",
+      "endDateTime": "2024-08-25T23:59:59.000Z",
+      "upstreamBytes": 2250737,
+      "upstreamSha256": "5563b032042dfb2309130c8a239c73c0afc3a8be14d9e30c42a9276cab208fb0"
+    },
+    {
+      "granuleId": "GRACEDADM_CLSM025GL_7D.3.0:GRACEDADM_CLSM025GL_7D.A20240826.030.nc4",
+      "beginDateTime": "2024-08-26T00:00:00.000Z",
+      "endDateTime": "2024-09-01T23:59:59.000Z",
+      "upstreamBytes": 2259463,
+      "upstreamSha256": "1b4f38aa4e938f07d4b5e34f56c52e812609082e51d472037a82a37adc855f18"
+    },
+    {
+      "granuleId": "GRACEDADM_CLSM025GL_7D.3.0:GRACEDADM_CLSM025GL_7D.A20240902.030.nc4",
+      "beginDateTime": "2024-09-02T00:00:00.000Z",
+      "endDateTime": "2024-09-08T23:59:59.000Z",
+      "upstreamBytes": 2243364,
+      "upstreamSha256": "925afe2fe4d715d6f98e29fc04d9483e57ace2c6bfb959309bf4c4fa47f0506c"
+    },
+    {
+      "granuleId": "GRACEDADM_CLSM025GL_7D.3.0:GRACEDADM_CLSM025GL_7D.A20240909.030.nc4",
+      "beginDateTime": "2024-09-09T00:00:00.000Z",
+      "endDateTime": "2024-09-15T23:59:59.000Z",
+      "upstreamBytes": 2229581,
+      "upstreamSha256": "4e46914790e9b3cae9a7fe81e3f627965dbf84f3a5b30ef6ce53c7098ed18cc2"
+    },
+    {
+      "granuleId": "GRACEDADM_CLSM025GL_7D.3.0:GRACEDADM_CLSM025GL_7D.A20240916.030.nc4",
+      "beginDateTime": "2024-09-16T00:00:00.000Z",
+      "endDateTime": "2024-09-22T23:59:59.000Z",
+      "upstreamBytes": 2215233,
+      "upstreamSha256": "19b19041f862182a1e2d2d09526e9bc458d4b1d798659df8670674f5422762f4"
+    },
+    {
+      "granuleId": "GRACEDADM_CLSM025GL_7D.3.0:GRACEDADM_CLSM025GL_7D.A20240923.030.nc4",
+      "beginDateTime": "2024-09-23T00:00:00.000Z",
+      "endDateTime": "2024-09-29T23:59:59.000Z",
+      "upstreamBytes": 2186809,
+      "upstreamSha256": "1cc2eddce558cf13a92abb2c74a9358bc0847bd5eec672d3bd9c47e7730a23be"
+    },
+    {
+      "granuleId": "GRACEDADM_CLSM025GL_7D.3.0:GRACEDADM_CLSM025GL_7D.A20240930.030.nc4",
+      "beginDateTime": "2024-09-30T00:00:00.000Z",
+      "endDateTime": "2024-10-06T23:59:59.000Z",
+      "upstreamBytes": 2193575,
+      "upstreamSha256": "3ade513003073e32e419fa2f5c4a3c5b1fe055c83a36cc634ef9bc44eeba5040"
+    },
+    {
+      "granuleId": "GRACEDADM_CLSM025GL_7D.3.0:GRACEDADM_CLSM025GL_7D.A20241007.030.nc4",
+      "beginDateTime": "2024-10-07T00:00:00.000Z",
+      "endDateTime": "2024-10-13T23:59:59.000Z",
+      "upstreamBytes": 2186686,
+      "upstreamSha256": "262cc621687a8db6ae3a7a7d85a9e86e5e1b8b63ba96afa2f73c91e9fbe0d1e1"
+    },
+    {
+      "granuleId": "GRACEDADM_CLSM025GL_7D.3.0:GRACEDADM_CLSM025GL_7D.A20241014.030.nc4",
+      "beginDateTime": "2024-10-14T00:00:00.000Z",
+      "endDateTime": "2024-10-20T23:59:59.000Z",
+      "upstreamBytes": 2183477,
+      "upstreamSha256": "d831679527f0c0f7e64b79184409b230ba1fb16963a06bd072fe66419558fab4"
+    },
+    {
+      "granuleId": "GRACEDADM_CLSM025GL_7D.3.0:GRACEDADM_CLSM025GL_7D.A20241021.030.nc4",
+      "beginDateTime": "2024-10-21T00:00:00.000Z",
+      "endDateTime": "2024-10-27T23:59:59.000Z",
+      "upstreamBytes": 2170969,
+      "upstreamSha256": "55cd68fa68b676d2477ca9006d5db5d35ebf98c7b792b18a6fb8c6b889040a8f"
+    },
+    {
+      "granuleId": "GRACEDADM_CLSM025GL_7D.3.0:GRACEDADM_CLSM025GL_7D.A20241028.030.nc4",
+      "beginDateTime": "2024-10-28T00:00:00.000Z",
+      "endDateTime": "2024-11-03T23:59:59.000Z",
+      "upstreamBytes": 2163690,
+      "upstreamSha256": "dd38bd844aee935f2df527a141705b84a2b736aa5c9f28fd8f9de2ebaeed0cda"
+    },
+    {
+      "granuleId": "GRACEDADM_CLSM025GL_7D.3.0:GRACEDADM_CLSM025GL_7D.A20241104.030.nc4",
+      "beginDateTime": "2024-11-04T00:00:00.000Z",
+      "endDateTime": "2024-11-10T23:59:59.000Z",
+      "upstreamBytes": 2164642,
+      "upstreamSha256": "3465f6c8914dd818453cc0cb5e520326eb645f3c3fa708dc40473202526a8531"
+    },
+    {
+      "granuleId": "GRACEDADM_CLSM025GL_7D.3.0:GRACEDADM_CLSM025GL_7D.A20241111.030.nc4",
+      "beginDateTime": "2024-11-11T00:00:00.000Z",
+      "endDateTime": "2024-11-17T23:59:59.000Z",
+      "upstreamBytes": 2149166,
+      "upstreamSha256": "14bb8a86a2fc2ba548e87e02390343e1064a25ca9058e6582f3e2fa6e1aed8e2"
+    },
+    {
+      "granuleId": "GRACEDADM_CLSM025GL_7D.3.0:GRACEDADM_CLSM025GL_7D.A20241118.030.nc4",
+      "beginDateTime": "2024-11-18T00:00:00.000Z",
+      "endDateTime": "2024-11-24T23:59:59.000Z",
+      "upstreamBytes": 2148789,
+      "upstreamSha256": "3194d4fc466e0b8d09f118e1a3dde048865f1beee74e67f366d87602d6d8b5c2"
+    },
+    {
+      "granuleId": "GRACEDADM_CLSM025GL_7D.3.0:GRACEDADM_CLSM025GL_7D.A20241125.030.nc4",
+      "beginDateTime": "2024-11-25T00:00:00.000Z",
+      "endDateTime": "2024-12-01T23:59:59.000Z",
+      "upstreamBytes": 2145247,
+      "upstreamSha256": "400d3c9102062dc0504e32d48bae4f95a061e968d4b91ca19addbfce55fac337"
+    },
+    {
+      "granuleId": "GRACEDADM_CLSM025GL_7D.3.0:GRACEDADM_CLSM025GL_7D.A20241202.030.nc4",
+      "beginDateTime": "2024-12-02T00:00:00.000Z",
+      "endDateTime": "2024-12-08T23:59:59.000Z",
+      "upstreamBytes": 2134242,
+      "upstreamSha256": "d1c0d837f55a7a35c9aa14bc0d375bcc956addcee1058a4fb6607d4387189f9f"
+    },
+    {
+      "granuleId": "GRACEDADM_CLSM025GL_7D.3.0:GRACEDADM_CLSM025GL_7D.A20241209.030.nc4",
+      "beginDateTime": "2024-12-09T00:00:00.000Z",
+      "endDateTime": "2024-12-15T23:59:59.000Z",
+      "upstreamBytes": 2125037,
+      "upstreamSha256": "f7b6d8e0543c7cd0334be710c32de72703c970a95c3fcddb09cb495c9a12f559"
+    },
+    {
+      "granuleId": "GRACEDADM_CLSM025GL_7D.3.0:GRACEDADM_CLSM025GL_7D.A20241216.030.nc4",
+      "beginDateTime": "2024-12-16T00:00:00.000Z",
+      "endDateTime": "2024-12-22T23:59:59.000Z",
+      "upstreamBytes": 2120202,
+      "upstreamSha256": "2041ac0ab67ec254e8d636fdff01c99e2a2d933217527321d7fda42b1ad1a1a4"
+    },
+    {
+      "granuleId": "GRACEDADM_CLSM025GL_7D.3.0:GRACEDADM_CLSM025GL_7D.A20241223.030.nc4",
+      "beginDateTime": "2024-12-23T00:00:00.000Z",
+      "endDateTime": "2024-12-29T23:59:59.000Z",
+      "upstreamBytes": 2118724,
+      "upstreamSha256": "dc654529180089841a98240c2bba4c27d1dc0ceb4d07f106d49627283753f74e"
+    },
+    {
+      "granuleId": "GRACEDADM_CLSM025GL_7D.3.0:GRACEDADM_CLSM025GL_7D.A20241230.030.nc4",
+      "beginDateTime": "2024-12-30T00:00:00.000Z",
+      "endDateTime": "2025-01-05T23:59:59.000Z",
+      "upstreamBytes": 2130089,
+      "upstreamSha256": "ca08be66ff999bfbf9665ed2ace3ea4635e50aef28f15108ade98640fb3a5a6e"
+    }
+  ],
+  "sanityStats": {
+    "gws_inst_percentile_by_week": {
+      "A20240101": {
+        "gwsPctMin": 45.8859977722168,
+        "gwsPctMax": 100.0,
+        "validCells": 655,
+        "cells": 1935
+      },
+      "A20240108": {
+        "gwsPctMin": 48.0439567565918,
+        "gwsPctMax": 100.0,
+        "validCells": 655,
+        "cells": 1935
+      },
+      "A20240115": {
+        "gwsPctMin": 21.135841369628906,
+        "gwsPctMax": 100.0,
+        "validCells": 655,
+        "cells": 1935
+      },
+      "A20240122": {
+        "gwsPctMin": 27.717666625976562,
+        "gwsPctMax": 100.0,
+        "validCells": 655,
+        "cells": 1935
+      },
+      "A20240129": {
+        "gwsPctMin": 22.772201538085938,
+        "gwsPctMax": 100.0,
+        "validCells": 655,
+        "cells": 1935
+      },
+      "A20240205": {
+        "gwsPctMin": 24.344301223754883,
+        "gwsPctMax": 100.0,
+        "validCells": 655,
+        "cells": 1935
+      },
+      "A20240212": {
+        "gwsPctMin": 39.446624755859375,
+        "gwsPctMax": 100.0,
+        "validCells": 655,
+        "cells": 1935
+      },
+      "A20240219": {
+        "gwsPctMin": 47.25513458251953,
+        "gwsPctMax": 100.0,
+        "validCells": 655,
+        "cells": 1935
+      },
+      "A20240226": {
+        "gwsPctMin": 47.62385940551758,
+        "gwsPctMax": 100.0,
+        "validCells": 655,
+        "cells": 1935
+      },
+      "A20240304": {
+        "gwsPctMin": 37.668270111083984,
+        "gwsPctMax": 100.0,
+        "validCells": 655,
+        "cells": 1935
+      },
+      "A20240311": {
+        "gwsPctMin": 12.087912559509277,
+        "gwsPctMax": 100.0,
+        "validCells": 655,
+        "cells": 1935
+      },
+      "A20240318": {
+        "gwsPctMin": 31.827531814575195,
+        "gwsPctMax": 100.0,
+        "validCells": 655,
+        "cells": 1935
+      },
+      "A20240325": {
+        "gwsPctMin": 28.288572311401367,
+        "gwsPctMax": 100.0,
+        "validCells": 655,
+        "cells": 1935
+      },
+      "A20240401": {
+        "gwsPctMin": 26.130733489990234,
+        "gwsPctMax": 100.0,
+        "validCells": 655,
+        "cells": 1935
+      },
+      "A20240408": {
+        "gwsPctMin": 19.261524200439453,
+        "gwsPctMax": 100.0,
+        "validCells": 655,
+        "cells": 1935
+      },
+      "A20240415": {
+        "gwsPctMin": 24.205236434936523,
+        "gwsPctMax": 100.0,
+        "validCells": 655,
+        "cells": 1935
+      },
+      "A20240422": {
+        "gwsPctMin": 23.7691707611084,
+        "gwsPctMax": 100.0,
+        "validCells": 655,
+        "cells": 1935
+      },
+      "A20240429": {
+        "gwsPctMin": 27.468839645385742,
+        "gwsPctMax": 100.0,
+        "validCells": 655,
+        "cells": 1935
+      },
+      "A20240506": {
+        "gwsPctMin": 25.153263092041016,
+        "gwsPctMax": 100.0,
+        "validCells": 655,
+        "cells": 1935
+      },
+      "A20240513": {
+        "gwsPctMin": 23.8721981048584,
+        "gwsPctMax": 100.0,
+        "validCells": 655,
+        "cells": 1935
+      },
+      "A20240520": {
+        "gwsPctMin": 15.193480491638184,
+        "gwsPctMax": 100.0,
+        "validCells": 655,
+        "cells": 1935
+      },
+      "A20240527": {
+        "gwsPctMin": 27.97982406616211,
+        "gwsPctMax": 100.0,
+        "validCells": 655,
+        "cells": 1935
+      },
+      "A20240603": {
+        "gwsPctMin": 22.744178771972656,
+        "gwsPctMax": 100.0,
+        "validCells": 655,
+        "cells": 1935
+      },
+      "A20240610": {
+        "gwsPctMin": 29.25663948059082,
+        "gwsPctMax": 100.0,
+        "validCells": 655,
+        "cells": 1935
+      },
+      "A20240617": {
+        "gwsPctMin": 30.809261322021484,
+        "gwsPctMax": 100.0,
+        "validCells": 655,
+        "cells": 1935
+      },
+      "A20240624": {
+        "gwsPctMin": 28.893905639648438,
+        "gwsPctMax": 100.0,
+        "validCells": 655,
+        "cells": 1935
+      },
+      "A20240701": {
+        "gwsPctMin": 18.476343154907227,
+        "gwsPctMax": 100.0,
+        "validCells": 655,
+        "cells": 1935
+      },
+      "A20240708": {
+        "gwsPctMin": 24.671537399291992,
+        "gwsPctMax": 100.0,
+        "validCells": 655,
+        "cells": 1935
+      },
+      "A20240715": {
+        "gwsPctMin": 30.733612060546875,
+        "gwsPctMax": 100.0,
+        "validCells": 655,
+        "cells": 1935
+      },
+      "A20240722": {
+        "gwsPctMin": 36.59111404418945,
+        "gwsPctMax": 100.0,
+        "validCells": 655,
+        "cells": 1935
+      },
+      "A20240729": {
+        "gwsPctMin": 35.76314926147461,
+        "gwsPctMax": 100.0,
+        "validCells": 655,
+        "cells": 1935
+      },
+      "A20240805": {
+        "gwsPctMin": 29.78175163269043,
+        "gwsPctMax": 100.0,
+        "validCells": 655,
+        "cells": 1935
+      },
+      "A20240812": {
+        "gwsPctMin": 26.153846740722656,
+        "gwsPctMax": 100.0,
+        "validCells": 655,
+        "cells": 1935
+      },
+      "A20240819": {
+        "gwsPctMin": 21.303585052490234,
+        "gwsPctMax": 100.0,
+        "validCells": 655,
+        "cells": 1935
+      },
+      "A20240826": {
+        "gwsPctMin": 14.0291109085083,
+        "gwsPctMax": 100.0,
+        "validCells": 655,
+        "cells": 1935
+      },
+      "A20240902": {
+        "gwsPctMin": 13.84615421295166,
+        "gwsPctMax": 100.0,
+        "validCells": 655,
+        "cells": 1935
+      },
+      "A20240909": {
+        "gwsPctMin": 15.483762741088867,
+        "gwsPctMax": 100.0,
+        "validCells": 655,
+        "cells": 1935
+      },
+      "A20240916": {
+        "gwsPctMin": 16.923076629638672,
+        "gwsPctMax": 100.0,
+        "validCells": 655,
+        "cells": 1935
+      },
+      "A20240923": {
+        "gwsPctMin": 16.923076629638672,
+        "gwsPctMax": 100.0,
+        "validCells": 655,
+        "cells": 1935
+      },
+      "A20240930": {
+        "gwsPctMin": 1.9780219793319702,
+        "gwsPctMax": 100.0,
+        "validCells": 655,
+        "cells": 1935
+      },
+      "A20241007": {
+        "gwsPctMin": 1.7604247331619263,
+        "gwsPctMax": 100.0,
+        "validCells": 655,
+        "cells": 1935
+      },
+      "A20241014": {
+        "gwsPctMin": 16.47918701171875,
+        "gwsPctMax": 100.0,
+        "validCells": 655,
+        "cells": 1935
+      },
+      "A20241021": {
+        "gwsPctMin": 31.246379852294922,
+        "gwsPctMax": 100.0,
+        "validCells": 655,
+        "cells": 1935
+      },
+      "A20241028": {
+        "gwsPctMin": 33.519386291503906,
+        "gwsPctMax": 100.0,
+        "validCells": 655,
+        "cells": 1935
+      },
+      "A20241104": {
+        "gwsPctMin": 19.167129516601562,
+        "gwsPctMax": 100.0,
+        "validCells": 655,
+        "cells": 1935
+      },
+      "A20241111": {
+        "gwsPctMin": 10.443328857421875,
+        "gwsPctMax": 100.0,
+        "validCells": 655,
+        "cells": 1935
+      },
+      "A20241118": {
+        "gwsPctMin": 1.5384615659713745,
+        "gwsPctMax": 100.0,
+        "validCells": 655,
+        "cells": 1935
+      },
+      "A20241125": {
+        "gwsPctMin": 15.817037582397461,
+        "gwsPctMax": 100.0,
+        "validCells": 655,
+        "cells": 1935
+      },
+      "A20241202": {
+        "gwsPctMin": 19.660429000854492,
+        "gwsPctMax": 100.0,
+        "validCells": 655,
+        "cells": 1935
+      },
+      "A20241209": {
+        "gwsPctMin": 29.822345733642578,
+        "gwsPctMax": 100.0,
+        "validCells": 655,
+        "cells": 1935
+      },
+      "A20241216": {
+        "gwsPctMin": 18.681318283081055,
+        "gwsPctMax": 100.0,
+        "validCells": 655,
+        "cells": 1935
+      },
+      "A20241223": {
+        "gwsPctMin": 12.045907974243164,
+        "gwsPctMax": 100.0,
+        "validCells": 655,
+        "cells": 1935
+      },
+      "A20241230": {
+        "gwsPctMin": 7.893979549407959,
+        "gwsPctMax": 100.0,
+        "validCells": 655,
+        "cells": 1935
+      }
+    }
+  },
+  "notes": "Wetness percentiles (0-100) relative to the 1948-2014 open-loop Catchment model climatology, from CLSM assimilating GRACE/GRACE-FO TWS: a drought indicator, not a volume or allocatable supply. Ocean/no-data cells are missing, not zero.",
+  "files": [
+    {
+      "path": "GRACEDADM_CLSM025GL_7D.A20240101.030_uk.nc4",
+      "bytes": 53064,
+      "sha256": "cc0bdbe3fef098c9dd8cb7cb43d8c3b1ceddc0529354fd5c24062a1aa39dae5f"
+    },
+    {
+      "path": "GRACEDADM_CLSM025GL_7D.A20240108.030_uk.nc4",
+      "bytes": 53323,
+      "sha256": "c8c33b6a38a1dab5fc69fce753daca1dcb92931fa3ef85ba583990790380a7c2"
+    },
+    {
+      "path": "GRACEDADM_CLSM025GL_7D.A20240115.030_uk.nc4",
+      "bytes": 54175,
+      "sha256": "dc94a4ffb790b96d3bba6c3797c4a88f3613eca16127f7d115687d541a04685d"
+    },
+    {
+      "path": "GRACEDADM_CLSM025GL_7D.A20240122.030_uk.nc4",
+      "bytes": 53996,
+      "sha256": "dac600040fa91ccf9c391413e85942ee85e3a6c69e23f4bb190824d61bf61553"
+    },
+    {
+      "path": "GRACEDADM_CLSM025GL_7D.A20240129.030_uk.nc4",
+      "bytes": 54175,
+      "sha256": "b77f25987c18b4ac5ef0859d848c67e93e7474d2ff9c05fc237e256970999606"
+    },
+    {
+      "path": "GRACEDADM_CLSM025GL_7D.A20240205.030_uk.nc4",
+      "bytes": 54160,
+      "sha256": "a9500fa0b40268b312e5d44c98cd2ed2e7e2cbfb1475f1b5941ebb9cc6bae215"
+    },
+    {
+      "path": "GRACEDADM_CLSM025GL_7D.A20240212.030_uk.nc4",
+      "bytes": 54136,
+      "sha256": "405dec0f74f023f1295a995ca55a37ee09f592bf8c968944ca951fa97292eea6"
+    },
+    {
+      "path": "GRACEDADM_CLSM025GL_7D.A20240219.030_uk.nc4",
+      "bytes": 53684,
+      "sha256": "0bd8d95ae1311cae7f8d90f8acb7141c0bd4afd99a99f234d4071ec1bdf23830"
+    },
+    {
+      "path": "GRACEDADM_CLSM025GL_7D.A20240226.030_uk.nc4",
+      "bytes": 53814,
+      "sha256": "1c75a28eba38cfc1989c7912463ba8de6a08906377dd6205778c2e7bb07f4d46"
+    },
+    {
+      "path": "GRACEDADM_CLSM025GL_7D.A20240304.030_uk.nc4",
+      "bytes": 53841,
+      "sha256": "cf4f51870cb83534cc157e40c923d3f9cfadb3adc701deac6138097d84de950e"
+    },
+    {
+      "path": "GRACEDADM_CLSM025GL_7D.A20240311.030_uk.nc4",
+      "bytes": 54165,
+      "sha256": "48715c6bdf247180cc2438a5819aec76a5f273576f1c8ea8d9c05ea172522ebd"
+    },
+    {
+      "path": "GRACEDADM_CLSM025GL_7D.A20240318.030_uk.nc4",
+      "bytes": 53792,
+      "sha256": "f1a65976ef53af4193b1d7701a76548beed10906c6caf3151c986f9665b5cb4a"
+    },
+    {
+      "path": "GRACEDADM_CLSM025GL_7D.A20240325.030_uk.nc4",
+      "bytes": 53613,
+      "sha256": "a83f3003efa0006719fa6bf1624e6abb1db1d0af7ad6f58a9710f5bef86c78e1"
+    },
+    {
+      "path": "GRACEDADM_CLSM025GL_7D.A20240401.030_uk.nc4",
+      "bytes": 53505,
+      "sha256": "e7eb0e021543a3dd4e06cddaf2ce9e0201239dd5927828f575acc2b5f846f888"
+    },
+    {
+      "path": "GRACEDADM_CLSM025GL_7D.A20240408.030_uk.nc4",
+      "bytes": 53164,
+      "sha256": "cd271761a8c90d501fa239d92c18c352855440a3e3b76d45c4fd873748572075"
+    },
+    {
+      "path": "GRACEDADM_CLSM025GL_7D.A20240415.030_uk.nc4",
+      "bytes": 52753,
+      "sha256": "121006d871574b354908f14fb88525ff0a90e8e87264a333e600dc3256fa67f5"
+    },
+    {
+      "path": "GRACEDADM_CLSM025GL_7D.A20240422.030_uk.nc4",
+      "bytes": 53407,
+      "sha256": "662906c5441e2f515c6187bda3ceaa17c970718aa7e5dca2bc7adf4c7268b497"
+    },
+    {
+      "path": "GRACEDADM_CLSM025GL_7D.A20240429.030_uk.nc4",
+      "bytes": 53780,
+      "sha256": "11d29e83a2ee39e0172a84bb84f8ca0e30fcc4bd7bb23232fa385548714a76a0"
+    },
+    {
+      "path": "GRACEDADM_CLSM025GL_7D.A20240506.030_uk.nc4",
+      "bytes": 54009,
+      "sha256": "375d379a2b6031230ab96ad7c5a327aa346978c021822c9666fbcca818014442"
+    },
+    {
+      "path": "GRACEDADM_CLSM025GL_7D.A20240513.030_uk.nc4",
+      "bytes": 54211,
+      "sha256": "d21a786e32614b796068437cc1f03cfc79bcc6c327ca09ee1d4357c7101d2864"
+    },
+    {
+      "path": "GRACEDADM_CLSM025GL_7D.A20240520.030_uk.nc4",
+      "bytes": 54268,
+      "sha256": "3d7e83022977e06f9634ea95344fff9cc29764a55ede3621dc651c6c6caf01f7"
+    },
+    {
+      "path": "GRACEDADM_CLSM025GL_7D.A20240527.030_uk.nc4",
+      "bytes": 54005,
+      "sha256": "4a6639b410812a518df737fd7f216b6fe17d4cf07bd961207055ee404eb6311d"
+    },
+    {
+      "path": "GRACEDADM_CLSM025GL_7D.A20240603.030_uk.nc4",
+      "bytes": 54109,
+      "sha256": "ba896a00dee323f0d8a3143aa9e93974f06e178aeed90566d15e421470c339b9"
+    },
+    {
+      "path": "GRACEDADM_CLSM025GL_7D.A20240610.030_uk.nc4",
+      "bytes": 54163,
+      "sha256": "4f31790835931fc1a4fbb29bfd590fab7257eb01bb7fedd9dfa6f00c6a0fa200"
+    },
+    {
+      "path": "GRACEDADM_CLSM025GL_7D.A20240617.030_uk.nc4",
+      "bytes": 53983,
+      "sha256": "f04cbc23678390c89be17cbaeccc4eea936812fd2017c0353b37c02e1e381bde"
+    },
+    {
+      "path": "GRACEDADM_CLSM025GL_7D.A20240624.030_uk.nc4",
+      "bytes": 54188,
+      "sha256": "ef1cd84e020974519fae44d7223fde3d5ef434e1cd5a820ff5c4dc6acf2eb531"
+    },
+    {
+      "path": "GRACEDADM_CLSM025GL_7D.A20240701.030_uk.nc4",
+      "bytes": 54206,
+      "sha256": "c9fb5b5800396cd37d1744385dae4bcf31914248578b65d378c7ee7423586c48"
+    },
+    {
+      "path": "GRACEDADM_CLSM025GL_7D.A20240708.030_uk.nc4",
+      "bytes": 53914,
+      "sha256": "9060cae74c6fdfc98a1784f6672a4f9b5c5581443ea4f3296f10d780889dad8c"
+    },
+    {
+      "path": "GRACEDADM_CLSM025GL_7D.A20240715.030_uk.nc4",
+      "bytes": 54007,
+      "sha256": "d01341e37a90e27f1b3a37f6d9931e19663e940889b321ef8d2bb10004ac8572"
+    },
+    {
+      "path": "GRACEDADM_CLSM025GL_7D.A20240722.030_uk.nc4",
+      "bytes": 54043,
+      "sha256": "b0e941337ac98b15d00eb0b23c61b2df7aae70e844f192232c8d2ee19e02b4c9"
+    },
+    {
+      "path": "GRACEDADM_CLSM025GL_7D.A20240729.030_uk.nc4",
+      "bytes": 54130,
+      "sha256": "ac305d8724ca2c61e77e7b2ab7e9df462763dae530da2f359175482970837765"
+    },
+    {
+      "path": "GRACEDADM_CLSM025GL_7D.A20240805.030_uk.nc4",
+      "bytes": 54164,
+      "sha256": "bce027c3d54a5e1eb031931d8b482ff7b9c8fd14b8c43251fa6625255e346557"
+    },
+    {
+      "path": "GRACEDADM_CLSM025GL_7D.A20240812.030_uk.nc4",
+      "bytes": 54197,
+      "sha256": "33b5843b6bbac24008ea5944929512e8a31959741e37273d43872733d9451e0d"
+    },
+    {
+      "path": "GRACEDADM_CLSM025GL_7D.A20240819.030_uk.nc4",
+      "bytes": 54242,
+      "sha256": "6948cd8c8e2b90f13c79d31a353b2116da1bb6012f0a9728d6f64e797d19b880"
+    },
+    {
+      "path": "GRACEDADM_CLSM025GL_7D.A20240826.030_uk.nc4",
+      "bytes": 54051,
+      "sha256": "24833045d6ca79ccfacd5e8de7b626ef3b3128abbd75b9e800332889410f656f"
+    },
+    {
+      "path": "GRACEDADM_CLSM025GL_7D.A20240902.030_uk.nc4",
+      "bytes": 54098,
+      "sha256": "8dbd777b6ffa93905ad82e560b6352bf82fb60343db5dcc6a2107aa2433b08d5"
+    },
+    {
+      "path": "GRACEDADM_CLSM025GL_7D.A20240909.030_uk.nc4",
+      "bytes": 54174,
+      "sha256": "d58bee38ce7c4bab95888308805b047a973d7239abf2e57af9a4975d0aef2b2b"
+    },
+    {
+      "path": "GRACEDADM_CLSM025GL_7D.A20240916.030_uk.nc4",
+      "bytes": 54202,
+      "sha256": "56ed44eb4879d2599b2d45bd419158b4864d5421d0c1fd53b9e071d20fcfc507"
+    },
+    {
+      "path": "GRACEDADM_CLSM025GL_7D.A20240923.030_uk.nc4",
+      "bytes": 54192,
+      "sha256": "22be3dc992cc13dc2a122d9453b27f722bf1131ebcfd3f84a9b9841b9ced2548"
+    },
+    {
+      "path": "GRACEDADM_CLSM025GL_7D.A20240930.030_uk.nc4",
+      "bytes": 54107,
+      "sha256": "d12ba056da62dff46c3a1bfd02712559ccc96896164633376b2f3a2fb8985d61"
+    },
+    {
+      "path": "GRACEDADM_CLSM025GL_7D.A20241007.030_uk.nc4",
+      "bytes": 54244,
+      "sha256": "67f9f8afbb24cc8ba7dd10b3496df65f2cfae3dd98177b867427d3ec99179804"
+    },
+    {
+      "path": "GRACEDADM_CLSM025GL_7D.A20241014.030_uk.nc4",
+      "bytes": 54141,
+      "sha256": "790d6f176562306466572502a676a2fdbb14eb1f7faf9f0e6f498f9efd2a10dc"
+    },
+    {
+      "path": "GRACEDADM_CLSM025GL_7D.A20241021.030_uk.nc4",
+      "bytes": 53781,
+      "sha256": "b5ca7b67e0b8edc0f1a21bc02f14595a3c2a0e40b8dad1b9e86a8eb1566d1cd0"
+    },
+    {
+      "path": "GRACEDADM_CLSM025GL_7D.A20241028.030_uk.nc4",
+      "bytes": 53898,
+      "sha256": "6ce87809ab1608a9c45687d5ce623a82ecd3edf56fc2b841a909b813627a8258"
+    },
+    {
+      "path": "GRACEDADM_CLSM025GL_7D.A20241104.030_uk.nc4",
+      "bytes": 54231,
+      "sha256": "1a0ce9d4bf207699a57e182c79cae00e2b13cadd3e0728e334ed32c5849cf410"
+    },
+    {
+      "path": "GRACEDADM_CLSM025GL_7D.A20241111.030_uk.nc4",
+      "bytes": 54354,
+      "sha256": "48214e9589a41ba28f5c87663401cbb15e7ec341b4cfd64eb25d748439c8d984"
+    },
+    {
+      "path": "GRACEDADM_CLSM025GL_7D.A20241118.030_uk.nc4",
+      "bytes": 54429,
+      "sha256": "e7f025118d2b93f39181ec5a4e816dd48ca8a5333f1ac6a5df9a812591f9f18e"
+    },
+    {
+      "path": "GRACEDADM_CLSM025GL_7D.A20241125.030_uk.nc4",
+      "bytes": 54128,
+      "sha256": "cddca1d0e303b4cf95c8cf9bd7b669f542db166298f86113e08bce0efd8f18dc"
+    },
+    {
+      "path": "GRACEDADM_CLSM025GL_7D.A20241202.030_uk.nc4",
+      "bytes": 54159,
+      "sha256": "5016ce4cd21c8cf991c6c9011bbeb41ecda857b59b1643d9a61fe1ffb98dd14c"
+    },
+    {
+      "path": "GRACEDADM_CLSM025GL_7D.A20241209.030_uk.nc4",
+      "bytes": 54146,
+      "sha256": "bbd51ba05b6c3313b4b2579dbba71c0f53832e4282595bc574b1253bd4c7bc66"
+    },
+    {
+      "path": "GRACEDADM_CLSM025GL_7D.A20241216.030_uk.nc4",
+      "bytes": 54239,
+      "sha256": "7487daf953bea9f62b602356cac899fe4926f3b74862c8e6424a807c7658b759"
+    },
+    {
+      "path": "GRACEDADM_CLSM025GL_7D.A20241223.030_uk.nc4",
+      "bytes": 54249,
+      "sha256": "9a69053d0c7f9f9052a0312489520e5ab8599eef53c268b27dffc44091dc5f51"
+    },
+    {
+      "path": "GRACEDADM_CLSM025GL_7D.A20241230.030_uk.nc4",
+      "bytes": 54265,
+      "sha256": "adcbdf373f3a5fcfdb39dd8cdf2bd7f652e70ae1e165f3471a8982a22fc36d3c"
+    }
+  ]
+}

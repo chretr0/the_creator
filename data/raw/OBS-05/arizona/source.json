@@ -1,0 +1,523 @@
+{
+  "id": "OBS-05-arizona-20261107",
+  "catalogueSourceId": "OBS-05",
+  "provider": "NASA JPL / NASA Land Processes DAAC (LP DAAC)",
+  "product": "ECOSTRESS Tiled Land Surface Temperature and Emissivity Instantaneous L2 Global 70 m",
+  "collection": {
+    "shortName": "ECO_L2T_LSTE",
+    "version": "002",
+    "conceptId": "C2076090826-LPCLOUD"
+  },
+  "version": "002 (collection 0713, PGE per granule)",
+  "doi": "10.5067/ECOSTRESS/ECO_L2T_LSTE.002",
+  "documentationUrl": "https://doi.org/10.5067/ECOSTRESS/ECO_L2T_LSTE.002",
+  "accessUrl": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/ECO_L2T_LSTE.002/",
+  "accessMethod": "earthaccess (NASA Earthdata Cloud HTTPS, Earthdata Login)",
+  "evidenceType": "satellite retrieval",
+  "retrievedAt": "2026-11-07",
+  "licence": {
+    "name": "NASA open data",
+    "url": "https://earthdata.nasa.gov/earth-observation-data/data-use-policy",
+    "attribution": "Hook, S., Hulley, G. (2022). ECOSTRESS Tiled Land Surface Temperature and Emissivity Instantaneous L2 Global 70 m V002. NASA Land Processes Distributed Active Archive Center. https://doi.org/10.5067/ECOSTRESS/ECO_L2T_LSTE.002",
+    "reviewedAt": "2026-11-07",
+    "notes": "NASA Earth science data are openly shared without restriction on use; cite the collection DOI and acknowledge the DAAC."
+  },
+  "region": "arizona",
+  "dataScope": "regional subset (data/README.md 'Data scope')",
+  "query": {
+    "regionBboxWGS84": [
+      -113.5,
+      31.3,
+      -109.0,
+      34.5
+    ],
+    "searchPoint_lonlat": [
+      -112.07,
+      33.45
+    ],
+    "temporal": "2025-06-01/2025-08-31",
+    "criteria": "daytime granules intersecting the city point, local solar time 11:00-15:00, lowest cloud and most complete swath coverage in a +/-15 km window around the city (from the granule's own cloud mask and LST NaN pattern); 3 overpass dates; both MGRS tiles that contain the point kept for each date",
+    "layers": [
+      "LST",
+      "LST_err",
+      "QC",
+      "cloud",
+      "water"
+    ]
+  },
+  "processing": "None. Files are the provider's per-layer Cloud-Optimized GeoTIFFs as delivered (70 m MGRS/UTM tiles, 1568 x 1568 px). Other layers of the granule (EmisWB, height, view_zenith) were not downloaded.",
+  "semantics": {
+    "LST": "land surface (radiometric skin) temperature in kelvin; NOT near-surface air temperature. NaN = no retrieval (outside swath / failed).",
+    "LST_err": "LST uncertainty, kelvin",
+    "QC": "16-bit quality flags (bit definitions in the ECO_L2T_LSTE user guide)",
+    "cloud": "cloud mask (1 = cloud, 0 = clear); applied separately, LST is not cloud-masked",
+    "water": "water mask (1 = water)",
+    "sampling": "ISS orbit is precessing and irregular: overpass time of day differs per date, revisits are intermittent, and these are single instantaneous snapshots, not daily maxima or means."
+  },
+  "granules": [
+    {
+      "granuleId": "ECOv002_L2T_LSTE_39319_011_12SUC_20250612T214059_0713_01",
+      "orbit": 39319,
+      "scene": "011",
+      "mgrsTile": "12SUC",
+      "overpassStartUTC": "2025-06-12T21:40:59.169Z",
+      "overpassEndUTC": "2025-06-12T21:41:51.138Z",
+      "approxLocalSolarTime": "14:13",
+      "dayNightFlag": "Day",
+      "pgeVersion": "v1.14.0",
+      "bboxWGS84": {
+        "WestBoundingCoordinate": -113.17378006048254,
+        "EastBoundingCoordinate": -111.96980924294873,
+        "NorthBoundingCoordinate": 34.33773312439149,
+        "SouthBoundingCoordinate": 33.33312764840095
+      },
+      "accessUrls": [
+        "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/ECO_L2T_LSTE.002/ECOv002_L2T_LSTE_39319_011_12SUC_20250612T214059_0713_01/ECOv002_L2T_LSTE_39319_011_12SUC_20250612T214059_0713_01_water.tif",
+        "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/ECO_L2T_LSTE.002/ECOv002_L2T_LSTE_39319_011_12SUC_20250612T214059_0713_01/ECOv002_L2T_LSTE_39319_011_12SUC_20250612T214059_0713_01_cloud.tif",
+        "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/ECO_L2T_LSTE.002/ECOv002_L2T_LSTE_39319_011_12SUC_20250612T214059_0713_01/ECOv002_L2T_LSTE_39319_011_12SUC_20250612T214059_0713_01_QC.tif",
+        "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/ECO_L2T_LSTE.002/ECOv002_L2T_LSTE_39319_011_12SUC_20250612T214059_0713_01/ECOv002_L2T_LSTE_39319_011_12SUC_20250612T214059_0713_01_LST.tif",
+        "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/ECO_L2T_LSTE.002/ECOv002_L2T_LSTE_39319_011_12SUC_20250612T214059_0713_01/ECOv002_L2T_LSTE_39319_011_12SUC_20250612T214059_0713_01_LST_err.tif"
+      ],
+      "cityBoxSummary": {
+        "cityBoxWGS84": [
+          -112.45,
+          33.25,
+          -111.6,
+          33.75
+        ],
+        "windowPixels": 413445,
+        "fractionWithLST": 0.971,
+        "cloudFractionOfObserved": 0.0,
+        "clearLandLST_degC": {
+          "min": 33.2,
+          "p1": 36.6,
+          "p50": 53.7,
+          "p99": 59.8,
+          "max": 64.5
+        }
+      }
+    },
+    {
+      "granuleId": "ECOv002_L2T_LSTE_39319_011_12SVC_20250612T214059_0713_01",
+      "orbit": 39319,
+      "scene": "011",
+      "mgrsTile": "12SVC",
+      "overpassStartUTC": "2025-06-12T21:40:59.169Z",
+      "overpassEndUTC": "2025-06-12T21:41:51.138Z",
+      "approxLocalSolarTime": "14:13",
+      "dayNightFlag": "Day",
+      "pgeVersion": "v1.14.0",
+      "bboxWGS84": {
+        "WestBoundingCoordinate": -112.08758328379379,
+        "EastBoundingCoordinate": -110.8943208664615,
+        "NorthBoundingCoordinate": 34.341617854685914,
+        "SouthBoundingCoordinate": 33.34706803032019
+      },
+      "accessUrls": [
+        "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/ECO_L2T_LSTE.002/ECOv002_L2T_LSTE_39319_011_12SVC_20250612T214059_0713_01/ECOv002_L2T_LSTE_39319_011_12SVC_20250612T214059_0713_01_water.tif",
+        "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/ECO_L2T_LSTE.002/ECOv002_L2T_LSTE_39319_011_12SVC_20250612T214059_0713_01/ECOv002_L2T_LSTE_39319_011_12SVC_20250612T214059_0713_01_cloud.tif",
+        "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/ECO_L2T_LSTE.002/ECOv002_L2T_LSTE_39319_011_12SVC_20250612T214059_0713_01/ECOv002_L2T_LSTE_39319_011_12SVC_20250612T214059_0713_01_QC.tif",
+        "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/ECO_L2T_LSTE.002/ECOv002_L2T_LSTE_39319_011_12SVC_20250612T214059_0713_01/ECOv002_L2T_LSTE_39319_011_12SVC_20250612T214059_0713_01_LST.tif",
+        "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/ECO_L2T_LSTE.002/ECOv002_L2T_LSTE_39319_011_12SVC_20250612T214059_0713_01/ECOv002_L2T_LSTE_39319_011_12SVC_20250612T214059_0713_01_LST_err.tif"
+      ],
+      "cityBoxSummary": {
+        "cityBoxWGS84": [
+          -112.45,
+          33.25,
+          -111.6,
+          33.75
+        ],
+        "windowPixels": 409575,
+        "fractionWithLST": 1.0,
+        "cloudFractionOfObserved": 0.0,
+        "clearLandLST_degC": {
+          "min": 35.9,
+          "p1": 45.4,
+          "p50": 55.0,
+          "p99": 59.9,
+          "max": 65.4
+        }
+      }
+    },
+    {
+      "granuleId": "ECOv002_L2T_LSTE_40050_005_12SUC_20250729T193648_0713_01",
+      "orbit": 40050,
+      "scene": "005",
+      "mgrsTile": "12SUC",
+      "overpassStartUTC": "2025-07-29T19:36:48.475Z",
+      "overpassEndUTC": "2025-07-29T19:37:40.444Z",
+      "approxLocalSolarTime": "12:09",
+      "dayNightFlag": "Day",
+      "pgeVersion": "v1.14.1",
+      "bboxWGS84": {
+        "WestBoundingCoordinate": -113.17378006048254,
+        "EastBoundingCoordinate": -111.96980924294873,
+        "NorthBoundingCoordinate": 34.33773312439149,
+        "SouthBoundingCoordinate": 33.33312764840095
+      },
+      "accessUrls": [
+        "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/ECO_L2T_LSTE.002/ECOv002_L2T_LSTE_40050_005_12SUC_20250729T193648_0713_01/ECOv002_L2T_LSTE_40050_005_12SUC_20250729T193648_0713_01_water.tif",
+        "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/ECO_L2T_LSTE.002/ECOv002_L2T_LSTE_40050_005_12SUC_20250729T193648_0713_01/ECOv002_L2T_LSTE_40050_005_12SUC_20250729T193648_0713_01_cloud.tif",
+        "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/ECO_L2T_LSTE.002/ECOv002_L2T_LSTE_40050_005_12SUC_20250729T193648_0713_01/ECOv002_L2T_LSTE_40050_005_12SUC_20250729T193648_0713_01_QC.tif",
+        "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/ECO_L2T_LSTE.002/ECOv002_L2T_LSTE_40050_005_12SUC_20250729T193648_0713_01/ECOv002_L2T_LSTE_40050_005_12SUC_20250729T193648_0713_01_LST.tif",
+        "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/ECO_L2T_LSTE.002/ECOv002_L2T_LSTE_40050_005_12SUC_20250729T193648_0713_01/ECOv002_L2T_LSTE_40050_005_12SUC_20250729T193648_0713_01_LST_err.tif"
+      ],
+      "cityBoxSummary": {
+        "cityBoxWGS84": [
+          -112.45,
+          33.25,
+          -111.6,
+          33.75
+        ],
+        "windowPixels": 413445,
+        "fractionWithLST": 0.661,
+        "cloudFractionOfObserved": 0.0,
+        "clearLandLST_degC": {
+          "min": 41.2,
+          "p1": 51.2,
+          "p50": 57.4,
+          "p99": 61.7,
+          "max": 64.0
+        }
+      }
+    },
+    {
+      "granuleId": "ECOv002_L2T_LSTE_40050_005_12SVC_20250729T193648_0713_01",
+      "orbit": 40050,
+      "scene": "005",
+      "mgrsTile": "12SVC",
+      "overpassStartUTC": "2025-07-29T19:36:48.475Z",
+      "overpassEndUTC": "2025-07-29T19:37:40.444Z",
+      "approxLocalSolarTime": "12:09",
+      "dayNightFlag": "Day",
+      "pgeVersion": "v1.14.1",
+      "bboxWGS84": {
+        "WestBoundingCoordinate": -112.08758328379379,
+        "EastBoundingCoordinate": -110.8943208664615,
+        "NorthBoundingCoordinate": 34.341617854685914,
+        "SouthBoundingCoordinate": 33.34706803032019
+      },
+      "accessUrls": [
+        "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/ECO_L2T_LSTE.002/ECOv002_L2T_LSTE_40050_005_12SVC_20250729T193648_0713_01/ECOv002_L2T_LSTE_40050_005_12SVC_20250729T193648_0713_01_water.tif",
+        "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/ECO_L2T_LSTE.002/ECOv002_L2T_LSTE_40050_005_12SVC_20250729T193648_0713_01/ECOv002_L2T_LSTE_40050_005_12SVC_20250729T193648_0713_01_cloud.tif",
+        "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/ECO_L2T_LSTE.002/ECOv002_L2T_LSTE_40050_005_12SVC_20250729T193648_0713_01/ECOv002_L2T_LSTE_40050_005_12SVC_20250729T193648_0713_01_QC.tif",
+        "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/ECO_L2T_LSTE.002/ECOv002_L2T_LSTE_40050_005_12SVC_20250729T193648_0713_01/ECOv002_L2T_LSTE_40050_005_12SVC_20250729T193648_0713_01_LST.tif",
+        "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/ECO_L2T_LSTE.002/ECOv002_L2T_LSTE_40050_005_12SVC_20250729T193648_0713_01/ECOv002_L2T_LSTE_40050_005_12SVC_20250729T193648_0713_01_LST_err.tif"
+      ],
+      "cityBoxSummary": {
+        "cityBoxWGS84": [
+          -112.45,
+          33.25,
+          -111.6,
+          33.75
+        ],
+        "windowPixels": 409575,
+        "fractionWithLST": 0.998,
+        "cloudFractionOfObserved": 0.0,
+        "clearLandLST_degC": {
+          "min": 36.3,
+          "p1": 48.0,
+          "p50": 56.2,
+          "p99": 61.5,
+          "max": 66.7
+        }
+      }
+    },
+    {
+      "granuleId": "ECOv002_L2T_LSTE_40314_012_12SUC_20250815T202416_0713_01",
+      "orbit": 40314,
+      "scene": "012",
+      "mgrsTile": "12SUC",
+      "overpassStartUTC": "2025-08-15T20:24:16.227Z",
+      "overpassEndUTC": "2025-08-15T20:25:08.196Z",
+      "approxLocalSolarTime": "12:56",
+      "dayNightFlag": "Day",
+      "pgeVersion": "v1.14.1",
+      "bboxWGS84": {
+        "WestBoundingCoordinate": -113.17378006048254,
+        "EastBoundingCoordinate": -111.96980924294873,
+        "NorthBoundingCoordinate": 34.33773312439149,
+        "SouthBoundingCoordinate": 33.33312764840095
+      },
+      "accessUrls": [
+        "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/ECO_L2T_LSTE.002/ECOv002_L2T_LSTE_40314_012_12SUC_20250815T202416_0713_01/ECOv002_L2T_LSTE_40314_012_12SUC_20250815T202416_0713_01_water.tif",
+        "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/ECO_L2T_LSTE.002/ECOv002_L2T_LSTE_40314_012_12SUC_20250815T202416_0713_01/ECOv002_L2T_LSTE_40314_012_12SUC_20250815T202416_0713_01_cloud.tif",
+        "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/ECO_L2T_LSTE.002/ECOv002_L2T_LSTE_40314_012_12SUC_20250815T202416_0713_01/ECOv002_L2T_LSTE_40314_012_12SUC_20250815T202416_0713_01_QC.tif",
+        "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/ECO_L2T_LSTE.002/ECOv002_L2T_LSTE_40314_012_12SUC_20250815T202416_0713_01/ECOv002_L2T_LSTE_40314_012_12SUC_20250815T202416_0713_01_LST.tif",
+        "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/ECO_L2T_LSTE.002/ECOv002_L2T_LSTE_40314_012_12SUC_20250815T202416_0713_01/ECOv002_L2T_LSTE_40314_012_12SUC_20250815T202416_0713_01_LST_err.tif"
+      ],
+      "cityBoxSummary": {
+        "cityBoxWGS84": [
+          -112.45,
+          33.25,
+          -111.6,
+          33.75
+        ],
+        "windowPixels": 413445,
+        "fractionWithLST": 1.0,
+        "cloudFractionOfObserved": 0.0,
+        "clearLandLST_degC": {
+          "min": 33.7,
+          "p1": 41.9,
+          "p50": 51.4,
+          "p99": 56.6,
+          "max": 60.0
+        }
+      }
+    },
+    {
+      "granuleId": "ECOv002_L2T_LSTE_40314_012_12SVC_20250815T202416_0713_01",
+      "orbit": 40314,
+      "scene": "012",
+      "mgrsTile": "12SVC",
+      "overpassStartUTC": "2025-08-15T20:24:16.227Z",
+      "overpassEndUTC": "2025-08-15T20:25:08.196Z",
+      "approxLocalSolarTime": "12:56",
+      "dayNightFlag": "Day",
+      "pgeVersion": "v1.14.1",
+      "bboxWGS84": {
+        "WestBoundingCoordinate": -112.08758328379379,
+        "EastBoundingCoordinate": -110.8943208664615,
+        "NorthBoundingCoordinate": 34.341617854685914,
+        "SouthBoundingCoordinate": 33.34706803032019
+      },
+      "accessUrls": [
+        "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/ECO_L2T_LSTE.002/ECOv002_L2T_LSTE_40314_012_12SVC_20250815T202416_0713_01/ECOv002_L2T_LSTE_40314_012_12SVC_20250815T202416_0713_01_water.tif",
+        "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/ECO_L2T_LSTE.002/ECOv002_L2T_LSTE_40314_012_12SVC_20250815T202416_0713_01/ECOv002_L2T_LSTE_40314_012_12SVC_20250815T202416_0713_01_cloud.tif",
+        "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/ECO_L2T_LSTE.002/ECOv002_L2T_LSTE_40314_012_12SVC_20250815T202416_0713_01/ECOv002_L2T_LSTE_40314_012_12SVC_20250815T202416_0713_01_QC.tif",
+        "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/ECO_L2T_LSTE.002/ECOv002_L2T_LSTE_40314_012_12SVC_20250815T202416_0713_01/ECOv002_L2T_LSTE_40314_012_12SVC_20250815T202416_0713_01_LST.tif",
+        "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/ECO_L2T_LSTE.002/ECOv002_L2T_LSTE_40314_012_12SVC_20250815T202416_0713_01/ECOv002_L2T_LSTE_40314_012_12SVC_20250815T202416_0713_01_LST_err.tif"
+      ],
+      "cityBoxSummary": {
+        "cityBoxWGS84": [
+          -112.45,
+          33.25,
+          -111.6,
+          33.75
+        ],
+        "windowPixels": 409575,
+        "fractionWithLST": 1.0,
+        "cloudFractionOfObserved": 0.0,
+        "clearLandLST_degC": {
+          "min": 25.7,
+          "p1": 39.6,
+          "p50": 47.9,
+          "p99": 55.3,
+          "max": 63.5
+        }
+      }
+    }
+  ],
+  "files": [
+    {
+      "path": "ECOv002_L2T_LSTE_39319_011_12SUC_20250612T214059_0713_01_water.tif",
+      "bytes": 6840,
+      "sha256": "5745481ba2b8238cb817efc6f9838bc807611702ae8a5b137a5be3bb3c0120fa",
+      "granuleId": "ECOv002_L2T_LSTE_39319_011_12SUC_20250612T214059_0713_01",
+      "layer": "water"
+    },
+    {
+      "path": "ECOv002_L2T_LSTE_39319_011_12SUC_20250612T214059_0713_01_cloud.tif",
+      "bytes": 17904,
+      "sha256": "07928c4166ef6dfcb9dc28a0ef23459bf784898c6ba958c70fcf6bc2ae8513f2",
+      "granuleId": "ECOv002_L2T_LSTE_39319_011_12SUC_20250612T214059_0713_01",
+      "layer": "cloud"
+    },
+    {
+      "path": "ECOv002_L2T_LSTE_39319_011_12SUC_20250612T214059_0713_01_QC.tif",
+      "bytes": 340121,
+      "sha256": "41f901a1f8568c500fb45824289d6eda2cbe86947818c8cffddadd56e7641ec3",
+      "granuleId": "ECOv002_L2T_LSTE_39319_011_12SUC_20250612T214059_0713_01",
+      "layer": "QC"
+    },
+    {
+      "path": "ECOv002_L2T_LSTE_39319_011_12SUC_20250612T214059_0713_01_LST.tif",
+      "bytes": 3507921,
+      "sha256": "4180cc14dc2a8234932042ca02e647f054f89724b942a25368304e339e700623",
+      "granuleId": "ECOv002_L2T_LSTE_39319_011_12SUC_20250612T214059_0713_01",
+      "layer": "LST"
+    },
+    {
+      "path": "ECOv002_L2T_LSTE_39319_011_12SUC_20250612T214059_0713_01_LST_err.tif",
+      "bytes": 160215,
+      "sha256": "8473a594d2f6142c224a089f314d1a68762fd4058d8b6323d051aba10c717657",
+      "granuleId": "ECOv002_L2T_LSTE_39319_011_12SUC_20250612T214059_0713_01",
+      "layer": "LST_err"
+    },
+    {
+      "path": "ECOv002_L2T_LSTE_39319_011_12SVC_20250612T214059_0713_01_water.tif",
+      "bytes": 8010,
+      "sha256": "09a8d79466d96250efdc1fe8c132f6fca567790d6a817643750bc4a8e681318f",
+      "granuleId": "ECOv002_L2T_LSTE_39319_011_12SVC_20250612T214059_0713_01",
+      "layer": "water"
+    },
+    {
+      "path": "ECOv002_L2T_LSTE_39319_011_12SVC_20250612T214059_0713_01_cloud.tif",
+      "bytes": 14306,
+      "sha256": "a97c4c5f028af2f9ecc424c3fefa28ee4a7d78595bb1c4e9eaddccd0dff961e3",
+      "granuleId": "ECOv002_L2T_LSTE_39319_011_12SVC_20250612T214059_0713_01",
+      "layer": "cloud"
+    },
+    {
+      "path": "ECOv002_L2T_LSTE_39319_011_12SVC_20250612T214059_0713_01_QC.tif",
+      "bytes": 264109,
+      "sha256": "58e42596424960f4a94362d2b28a10bb8bffa7ea80ef5279c456262f186aa1e7",
+      "granuleId": "ECOv002_L2T_LSTE_39319_011_12SVC_20250612T214059_0713_01",
+      "layer": "QC"
+    },
+    {
+      "path": "ECOv002_L2T_LSTE_39319_011_12SVC_20250612T214059_0713_01_LST.tif",
+      "bytes": 3655094,
+      "sha256": "20211cb5676cf905b15c8a3ebac3dcd6e4acd0baf3d71e7383bfc4127cbcc717",
+      "granuleId": "ECOv002_L2T_LSTE_39319_011_12SVC_20250612T214059_0713_01",
+      "layer": "LST"
+    },
+    {
+      "path": "ECOv002_L2T_LSTE_39319_011_12SVC_20250612T214059_0713_01_LST_err.tif",
+      "bytes": 153708,
+      "sha256": "a328c716f36c5587232cc7899d57b15314748ee6352f93848561f0f87b23eb90",
+      "granuleId": "ECOv002_L2T_LSTE_39319_011_12SVC_20250612T214059_0713_01",
+      "layer": "LST_err"
+    },
+    {
+      "path": "ECOv002_L2T_LSTE_40050_005_12SUC_20250729T193648_0713_01_water.tif",
+      "bytes": 6719,
+      "sha256": "84c5d25b5d10a1582d3f5ce11dafedc673348ee7156b66ba0383be4aaf42dd85",
+      "granuleId": "ECOv002_L2T_LSTE_40050_005_12SUC_20250729T193648_0713_01",
+      "layer": "water"
+    },
+    {
+      "path": "ECOv002_L2T_LSTE_40050_005_12SUC_20250729T193648_0713_01_cloud.tif",
+      "bytes": 5645,
+      "sha256": "fcd2a2dbc28b8aa3a1eae2e80e10f26196a820b1b8fdf92ba8e7096da4cef08f",
+      "granuleId": "ECOv002_L2T_LSTE_40050_005_12SUC_20250729T193648_0713_01",
+      "layer": "cloud"
+    },
+    {
+      "path": "ECOv002_L2T_LSTE_40050_005_12SUC_20250729T193648_0713_01_QC.tif",
+      "bytes": 145565,
+      "sha256": "a4d6bec4167807979ff993a2ce661f80062f4f1998145910357d17b62895ada9",
+      "granuleId": "ECOv002_L2T_LSTE_40050_005_12SUC_20250729T193648_0713_01",
+      "layer": "QC"
+    },
+    {
+      "path": "ECOv002_L2T_LSTE_40050_005_12SUC_20250729T193648_0713_01_LST.tif",
+      "bytes": 2009457,
+      "sha256": "a4f3d173118c1b217fbe48de0dadb5d3dc8925af78ab6814feac147d911a7815",
+      "granuleId": "ECOv002_L2T_LSTE_40050_005_12SUC_20250729T193648_0713_01",
+      "layer": "LST"
+    },
+    {
+      "path": "ECOv002_L2T_LSTE_40050_005_12SUC_20250729T193648_0713_01_LST_err.tif",
+      "bytes": 104583,
+      "sha256": "b7caa220ac3f86def3ac6f1b19ebc0b59483213dfb9a0f9e2029f4aeb17a5e26",
+      "granuleId": "ECOv002_L2T_LSTE_40050_005_12SUC_20250729T193648_0713_01",
+      "layer": "LST_err"
+    },
+    {
+      "path": "ECOv002_L2T_LSTE_40050_005_12SVC_20250729T193648_0713_01_water.tif",
+      "bytes": 7093,
+      "sha256": "dbb9988564e6a5cb2cef9c3bf656b93f4565b42d508504a79bca044febebcee6",
+      "granuleId": "ECOv002_L2T_LSTE_40050_005_12SVC_20250729T193648_0713_01",
+      "layer": "water"
+    },
+    {
+      "path": "ECOv002_L2T_LSTE_40050_005_12SVC_20250729T193648_0713_01_cloud.tif",
+      "bytes": 5968,
+      "sha256": "c411d03d2db12e2acf7db0a5559d37ac130aa0c434162f5717076df973bbd34b",
+      "granuleId": "ECOv002_L2T_LSTE_40050_005_12SVC_20250729T193648_0713_01",
+      "layer": "cloud"
+    },
+    {
+      "path": "ECOv002_L2T_LSTE_40050_005_12SVC_20250729T193648_0713_01_QC.tif",
+      "bytes": 238301,
+      "sha256": "5973e6c466204c82bc86b9b72e2bcb7eaedd1aeefe233758238a5faf2366abb7",
+      "granuleId": "ECOv002_L2T_LSTE_40050_005_12SVC_20250729T193648_0713_01",
+      "layer": "QC"
+    },
+    {
+      "path": "ECOv002_L2T_LSTE_40050_005_12SVC_20250729T193648_0713_01_LST.tif",
+      "bytes": 2985060,
+      "sha256": "5049ef9d947f7ff953262fdfd3ebd7f30f08d792f916692b655b73b20a23e9e2",
+      "granuleId": "ECOv002_L2T_LSTE_40050_005_12SVC_20250729T193648_0713_01",
+      "layer": "LST"
+    },
+    {
+      "path": "ECOv002_L2T_LSTE_40050_005_12SVC_20250729T193648_0713_01_LST_err.tif",
+      "bytes": 127071,
+      "sha256": "b328165b60415393b3471d8160260b6238fd40cd26d60f550ef36d6b2186ce1f",
+      "granuleId": "ECOv002_L2T_LSTE_40050_005_12SVC_20250729T193648_0713_01",
+      "layer": "LST_err"
+    },
+    {
+      "path": "ECOv002_L2T_LSTE_40314_012_12SUC_20250815T202416_0713_01_water.tif",
+      "bytes": 6850,
+      "sha256": "cd1c6f99e97b9b3b2ba43e6257069fdee5246b9756a806962741ccd6a41b1ba2",
+      "granuleId": "ECOv002_L2T_LSTE_40314_012_12SUC_20250815T202416_0713_01",
+      "layer": "water"
+    },
+    {
+      "path": "ECOv002_L2T_LSTE_40314_012_12SUC_20250815T202416_0713_01_cloud.tif",
+      "bytes": 11272,
+      "sha256": "4979729c5dfca196c93168cfa14324af62d0a07d3712384fb041fb2b25042c25",
+      "granuleId": "ECOv002_L2T_LSTE_40314_012_12SUC_20250815T202416_0713_01",
+      "layer": "cloud"
+    },
+    {
+      "path": "ECOv002_L2T_LSTE_40314_012_12SUC_20250815T202416_0713_01_QC.tif",
+      "bytes": 354076,
+      "sha256": "2baa0d08b09578f0afdda1dcc617f41ff7bf4cba1d2d1c066be63b6a80ed93a7",
+      "granuleId": "ECOv002_L2T_LSTE_40314_012_12SUC_20250815T202416_0713_01",
+      "layer": "QC"
+    },
+    {
+      "path": "ECOv002_L2T_LSTE_40314_012_12SUC_20250815T202416_0713_01_LST.tif",
+      "bytes": 3710025,
+      "sha256": "68dcec9a31b4b4e9a8dcfd920306bf6c1832919c738013aaa52f931b740b8183",
+      "granuleId": "ECOv002_L2T_LSTE_40314_012_12SUC_20250815T202416_0713_01",
+      "layer": "LST"
+    },
+    {
+      "path": "ECOv002_L2T_LSTE_40314_012_12SUC_20250815T202416_0713_01_LST_err.tif",
+      "bytes": 179626,
+      "sha256": "0a303b364c895a73f22e84d7da42f5ee444969ff1f406c9396d188779fe6533c",
+      "granuleId": "ECOv002_L2T_LSTE_40314_012_12SUC_20250815T202416_0713_01",
+      "layer": "LST_err"
+    },
+    {
+      "path": "ECOv002_L2T_LSTE_40314_012_12SVC_20250815T202416_0713_01_water.tif",
+      "bytes": 8049,
+      "sha256": "d14026a24679bd8f91705ff8162d35274809b6f5aedc9ed8e4363c9d7a9a31f7",
+      "granuleId": "ECOv002_L2T_LSTE_40314_012_12SVC_20250815T202416_0713_01",
+      "layer": "water"
+    },
+    {
+      "path": "ECOv002_L2T_LSTE_40314_012_12SVC_20250815T202416_0713_01_cloud.tif",
+      "bytes": 41906,
+      "sha256": "02f553a36eb381edd9303b35a1c811187bb714303a3e451657092fe7844ab253",
+      "granuleId": "ECOv002_L2T_LSTE_40314_012_12SVC_20250815T202416_0713_01",
+      "layer": "cloud"
+    },
+    {
+      "path": "ECOv002_L2T_LSTE_40314_012_12SVC_20250815T202416_0713_01_QC.tif",
+      "bytes": 404625,
+      "sha256": "dae24a29250e616a43b49c43c683ad735fcaaa34aaab349753721895de21242d",
+      "granuleId": "ECOv002_L2T_LSTE_40314_012_12SVC_20250815T202416_0713_01",
+      "layer": "QC"
+    },
+    {
+      "path": "ECOv002_L2T_LSTE_40314_012_12SVC_20250815T202416_0713_01_LST.tif",
+      "bytes": 3422914,
+      "sha256": "ecc72a2b4afc2e2e261cbfc8beebf3b58e8101ca9cd74868eeb4788c97802e82",
+      "granuleId": "ECOv002_L2T_LSTE_40314_012_12SVC_20250815T202416_0713_01",
+      "layer": "LST"
+    },
+    {
+      "path": "ECOv002_L2T_LSTE_40314_012_12SVC_20250815T202416_0713_01_LST_err.tif",
+      "bytes": 211773,
+      "sha256": "35fbeeb455f5408fed489c90fe75a055786112bc6fc7d218b909bee22a9bc363",
+      "granuleId": "ECOv002_L2T_LSTE_40314_012_12SVC_20250815T202416_0713_01",
+      "layer": "LST_err"
+    }
+  ]
+}

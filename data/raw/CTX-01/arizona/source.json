@@ -1,0 +1,29 @@
+{
+  "id": "CTX-01-arizona-20261107",
+  "catalogueSourceId": "CTX-01",
+  "provider": "Copernicus Climate Change Service (C3S) / ECMWF",
+  "product": "ERA5-Land monthly averaged data from 1950 to present: monthly_averaged_reanalysis 2024 (t2m, d2m, tp, e, ssrd, u10, v10, swvl1)",
+  "version": "as served by the CDS (see file history attribute)",
+  "documentationUrl": "https://cds.climate.copernicus.eu/datasets/reanalysis-era5-land-monthly-means",
+  "accessUrl": "https://cds.climate.copernicus.eu/api",
+  "accessMethod": "api",
+  "evidenceType": "modelled",
+  "licence": {
+    "name": "CC BY 4.0",
+    "url": "https://creativecommons.org/licenses/by/4.0/",
+    "attribution": "Mu\u00f1oz Sabater, J. (2019): ERA5-Land monthly averaged data from 1950 to present. Copernicus Climate Change Service (C3S) Climate Data Store (CDS). DOI: 10.24381/cds.68d2bb30. Contains modified Copernicus Climate Change Service information 2024.",
+    "reviewedAt": "2026-11-07",
+    "notes": "Auto-generated from catalogue; confirm against the release's own licence before publishing."
+  },
+  "region": "arizona",
+  "query": "region=arizona; bbox W,S,E,N=-113.5,31.3,-109.0,34.5",
+  "dataScope": "regional subset (data/README.md 'Data scope')",
+  "retrievedAt": "2026-11-07",
+  "files": [
+    {
+      "path": "era5land_monthly_2024.nc",
+      "bytes": 417306,
+      "sha256": "ddbc684a803f7ab5b811fe352fac51fbaf3789b40e93e60bf81c208c30e360b2"
+    }
+  ]
+}

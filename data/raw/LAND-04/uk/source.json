@@ -1,0 +1,89 @@
+{
+  "id": "LAND-04-gedil4b-uk-20261107",
+  "catalogueSourceId": "LAND-04",
+  "provider": "NASA Earthdata (ORNL_CLOUD)",
+  "product": "GEDI L4B Gridded Aboveground Biomass Density v2.1 (1 km): MU and SE layers",
+  "collectionShortName": "GEDI_L4B_Gridded_Biomass_V2_1_2299",
+  "collectionConceptId": "C2792577683-ORNL_CLOUD",
+  "version": "2.1",
+  "doi": "10.3334/ORNLDAAC/2299",
+  "documentationUrl": "https://daac.ornl.gov/GEDI/guides/GEDI_L4B_Gridded_Biomass_V2_1.html",
+  "accessMethod": "earthaccess (CMR search + HTTPS download, Earthdata Login)",
+  "evidenceType": "model_output",
+  "region": "uk",
+  "dataScope": "regional subset (data/README.md 'Data scope')",
+  "retrievedAt": "2026-11-07",
+  "accessUrl": "https://data.ornldaac.earthdata.nasa.gov/protected/gedi/GEDI_L4B_Gridded_Biomass_V2_1/data/",
+  "licence": {
+    "name": "NASA open data",
+    "url": "https://science.data.nasa.gov/about/license",
+    "attribution": "Dubayah, R.O., J. Armston, S.P. Healey, Z. Yang, P.L. Patterson, S. Saarela, G. Stahl, L. Duncanson, J.R. Kellner, J. Bruening, and A. Pascual. 2023. GEDI L4B Gridded Aboveground Biomass Density, Version 2.1. ORNL DAAC, Oak Ridge, Tennessee, USA. https://doi.org/10.3334/ORNLDAAC/2299",
+    "reviewedAt": "2026-11-07",
+    "notes": "NASA Earth science data are open with no restriction on reuse; cite the product DOI. ORNL DAAC data use policy: https://science.nasa.gov/earth-science/earth-science-data/data-information-policy"
+  },
+  "query": "short_name=GEDI_L4B_Gridded_Biomass_V2_1_2299; layers MU, SE; region=uk; bbox W,S,E,N=-8.7,49.8,1.9,60.9",
+  "processing": "Global 1 km GeoTIFFs (EASE-Grid 2.0, EPSG:6933) clipped by scripts/clip_to_bbox.py raster (native grid window of the box's projected bounds, deflate); global originals deleted. Units Mg/ha; nodata -9999.",
+  "granules": [
+    {
+      "granuleId": "GEDI_L4B_Gridded_Biomass_V2_1.GEDI04_B_MW019MW223_02_002_02_R01000M_MU.tif",
+      "layer": "MU",
+      "meaning": "mean aboveground biomass density (AGBD), Mg/ha",
+      "beginDateTime": "2019-04-18T00:00:00.000Z",
+      "endDateTime": "2023-03-16T23:59:59.000Z",
+      "dataUrls": [
+        "https://data.ornldaac.earthdata.nasa.gov/protected/gedi/GEDI_L4B_Gridded_Biomass_V2_1/data/GEDI04_B_MW019MW223_02_002_02_R01000M_MU.tif"
+      ],
+      "upstreamBytes": 503162920,
+      "upstreamChecksum": "sha256 verified against ORNL .sha256 sidecar"
+    },
+    {
+      "granuleId": "GEDI_L4B_Gridded_Biomass_V2_1.GEDI04_B_MW019MW223_02_002_02_R01000M_SE.tif",
+      "layer": "SE",
+      "meaning": "standard error of mean AGBD, Mg/ha",
+      "beginDateTime": "2019-04-18T00:00:00.000Z",
+      "endDateTime": "2023-03-16T23:59:59.000Z",
+      "dataUrls": [
+        "https://data.ornldaac.earthdata.nasa.gov/protected/gedi/GEDI_L4B_Gridded_Biomass_V2_1/data/GEDI04_B_MW019MW223_02_002_02_R01000M_SE.tif"
+      ],
+      "upstreamBytes": 503270716,
+      "upstreamChecksum": "sha256 verified against ORNL .sha256 sidecar"
+    }
+  ],
+  "sanityStats": {
+    "MU": {
+      "validPixels": 72674,
+      "totalPixels": 827820,
+      "min": 0.0,
+      "p01": 1.1022370493412017,
+      "median": 33.428287506103516,
+      "p99": 137.84217895507823,
+      "max": 638.0826416015625,
+      "crs": "EPSG:6933",
+      "nodata": -9999.0
+    },
+    "SE": {
+      "validPixels": 72674,
+      "totalPixels": 827820,
+      "min": 0.0,
+      "p01": 0.4314973440766334,
+      "median": 3.4020856618881226,
+      "p99": 35.001490859985495,
+      "max": 642.7804565429688,
+      "crs": "EPSG:6933",
+      "nodata": -9999.0
+    }
+  },
+  "notes": "GEDI samples only ~51.6 S to 51.6 N (ISS orbit) over Apr 2019 - Mar 2023. Cells north of ~51.6 N (most of the UK box) and unsampled cells are nodata = no coverage, never zero biomass. Gridded mean of footprint estimates, model-based (L4A models), not a wall-to-wall measurement; read SE (and the QF/NS layers, not fetched) before use.",
+  "files": [
+    {
+      "path": "GEDI04_B_MW019MW223_02_002_02_R01000M_MU_uk.tif",
+      "bytes": 273459,
+      "sha256": "588751f176d37649e261db9544bc41917113615a4ec4d5c1d326eb6715f00a1f"
+    },
+    {
+      "path": "GEDI04_B_MW019MW223_02_002_02_R01000M_SE_uk.tif",
+      "bytes": 271419,
+      "sha256": "989dace0dcae5fcbbbdc481b1674a9efb64e9121c5b7e2dc347f52194d576fd6"
+    }
+  ]
+}
