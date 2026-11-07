@@ -1,0 +1,44 @@
+{
+  "layer": "swot_water_uk",
+  "sourceId": "WATER-03",
+  "provider": "NASA JPL / CNES SWOT mission; distributed by NASA PO.DAAC",
+  "product": "SWOT Level 2 Water Mask Raster Image 100m Data Product",
+  "version": "D (CRID in each granule name, e.g. PID0)",
+  "licence": "NASA open data",
+  "licenceUrl": "https://earthdata.nasa.gov/earth-observation-data/data-use-policy",
+  "attribution": "SWOT (2025). SWOT Level 2 Water Mask Raster Image 100m Data Product, Version D. Ver. D. PO.DAAC, CA, USA. https://doi.org/10.5067/SWOT-RASTER-D. SWOT is a joint NASA/CNES mission with contributions from CSA and UKSA.",
+  "evidenceType": "satellite retrieval",
+  "retrievedAt": "2026-11-07",
+  "method": "Mean of valid pixels whose centres fall in each res-6 cell inside the region box. SWOT L2 HR Raster 100 m: water_frac is the mean water fraction of observed pixels with water_area_qual ≤ 1 (suspect or better) over all passes; wse is the mean water-surface elevation of pixels with wse_qual ≤ 1 and water_frac > 0.5. Single-pass snapshots.",
+  "nativeResolution": "100 m",
+  "sampling": "mean of pixel centres in cell",
+  "period": "Jul-Aug 2025 passes",
+  "h3Resolution": 6,
+  "units": {
+    "water_frac": "fraction of observed area",
+    "wse": "m above EGM2008 geoid",
+    "n_pixels": "count of observed 100 m pixels"
+  },
+  "region": "uk",
+  "regionBbox": [
+    -8.7,
+    49.8,
+    1.9,
+    60.9
+  ],
+  "inputFiles": [
+    "SWOT_L2_HR_Raster_100m_UTM30U_N_x_x_x_036_014_032F_20250720T231046_20250720T231107_PID0_01.nc",
+    "SWOT_L2_HR_Raster_100m_UTM30U_N_x_x_x_036_141_123F_20250725T123455_20250725T123516_PID0_01.nc",
+    "SWOT_L2_HR_Raster_100m_UTM30V_N_x_x_x_036_014_026F_20250720T230845_20250720T230907_PID0_01.nc",
+    "SWOT_L2_HR_Raster_100m_UTM30V_N_x_x_x_036_014_027F_20250720T230905_20250720T230927_PID0_01.nc",
+    "SWOT_L2_HR_Raster_100m_UTM30V_N_x_x_x_036_225_128F_20250728T123808_20250728T123829_PID0_01.nc",
+    "SWOT_L2_HR_Raster_100m_UTM30V_N_x_x_x_036_320_027F_20250731T213153_20250731T213214_PID0_01.nc",
+    "SWOT_L2_HR_Raster_100m_UTM30V_N_x_x_x_036_531_128F_20250808T110055_20250808T110116_PID0_01.nc",
+    "SWOT_L2_HR_Raster_100m_UTM30V_N_x_x_x_036_531_129F_20250808T110115_20250808T110136_PID0_01.nc",
+    "SWOT_L2_HR_Raster_100m_UTM31U_N_x_x_x_036_292_032F_20250730T213302_20250730T213323_PID0_01.nc",
+    "SWOT_L2_HR_Raster_100m_UTM31U_N_x_x_x_036_419_123F_20250804T105711_20250804T105732_PID0_01.nc"
+  ],
+  "rowCount": 2756,
+  "generatedAt": "2026-11-07T16:48:39+00:00",
+  "script": "scripts/prepare_observation_h3.py"
+}

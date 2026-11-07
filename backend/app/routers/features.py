@@ -97,16 +97,21 @@ def feature_layer(
 
 @router.get("/cells/{h3_id}/features")
 def cell_features(h3_id: str, radius_km: float = Query(25, gt=0, le=200), nearest: int = Query(5, ge=0, le=25)):
-    """Vector context for one resolution-6 cell: polygons containing its centre, rivers crossing it,
-    and for point layers the count inside the cell plus the nearest records within `radius_km`."""
+    """Vector context for one cell (resolution 0-6): polygons containing its centre, rivers crossing it,
+    and for point layers the count inside the cell plus the nearest records within `radius_km` of its
+    centre."""
     try:
         h3_id = geo.validate_cell(h3_id)
     except geo.InvalidCell as exc:
         raise HTTPException(404, str(exc)) from exc
-    if h3.get_resolution(h3_id) != 6:
-        raise HTTPException(422, "Use a resolution-6 simulation cell.")
+    if h3.get_resolution(h3_id) > 6:
+        raise HTTPException(422, "Use a cell of resolution 0 to 6.")
     lat, lon = h3.cell_to_latlng(h3_id)
-    cell_poly = Polygon([(p[1], p[0]) for p in h3.cell_to_boundary(h3_id)])
+    ring = [(p[1], p[0]) for p in h3.cell_to_boundary(h3_id)]
+    lons = [p[0] for p in ring]
+    if max(lons) - min(lons) > 180:  # crosses the antimeridian: unwrap so the polygon stays valid
+        ring = [(x + 360 if x < 0 else x, y) for x, y in ring]
+    cell_poly = Polygon(ring)
 
     out = []
     for meta in features.manifest()["layers"]:

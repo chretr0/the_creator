@@ -1,0 +1,38 @@
+{
+  "layer": "emit_minerals",
+  "sourceId": "GEO-01",
+  "provider": "NASA Earthdata (LPCLOUD)",
+  "product": "EMIT L3 Aggregated Mineral Spectral Abundance and Uncertainty 0.5 Deg V002",
+  "version": "002",
+  "licence": "NASA open data",
+  "licenceUrl": "https://science.data.nasa.gov/about/license",
+  "attribution": "Robert Green. 2025. EMIT L3 Aggregated Mineral Spectral Abundance and Uncertainty 0.5 Deg V002. NASA Land Processes Distributed Active Archive Center. https://doi.org/10.5067/EMIT/EMITL3ASA.002",
+  "evidenceType": "satellite_retrieval",
+  "retrievedAt": "2026-11-07",
+  "method": "Each res-6 cell whose centre lies in the region box takes the value of the grid pixel containing its centre (nearest-pixel sampling, as for the NASA POWER layers); neighbouring cells repeat values. EMIT L3 aggregated spectral abundance (baseline estimate) per mineral; only pixels EMIT observed carry values.",
+  "nativeResolution": "0.5° (~55 km)",
+  "sampling": "nearest grid pixel at each cell centre",
+  "period": "EMIT mission to date (2022-)",
+  "h3Resolution": 6,
+  "units": {
+    "calcite": "spectral abundance (fraction)",
+    "chlorite": "spectral abundance (fraction)",
+    "dolomite": "spectral abundance (fraction)",
+    "goethite": "spectral abundance (fraction)",
+    "gypsum": "spectral abundance (fraction)",
+    "hematite": "spectral abundance (fraction)",
+    "illite_muscovite": "spectral abundance (fraction)",
+    "kaolinite": "spectral abundance (fraction)",
+    "montmorillonite": "spectral abundance (fraction)",
+    "vermiculite": "spectral abundance (fraction)",
+    "quartz_feldspar": "spectral abundance (fraction)"
+  },
+  "region": "global",
+  "regionBbox": null,
+  "inputFiles": [
+    "EMIT_L3_ASA_002.nc"
+  ],
+  "rowCount": 984149,
+  "generatedAt": "2026-11-07T16:48:53+00:00",
+  "script": "scripts/prepare_observation_h3.py"
+}

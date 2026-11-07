@@ -1,8 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   dataApi,
+  EVIDENCE_LABEL,
   formatValue,
   type CellFeatureContext,
+  type CellSource,
   type CellProfile,
   type FeatureLayerMeta,
   type FeatureProps,
@@ -18,7 +20,7 @@ type Props = {
 
 const MONTHS = "JFMAMJJASOND".split("");
 
-/** Everything the prepared baseline layers know about one resolution-6 cell. */
+/** Everything the prepared baseline layers know about one cell (a zoomed-out hexagon aggregates its children). */
 export default function BaselineBlock({ h3Id, manifest, onShowLayer, onGoTo }: Props) {
   const [profile, setProfile] = useState<CellProfile | null>(null);
   const [context, setContext] = useState<CellFeatureContext | null>(null);
@@ -52,11 +54,17 @@ export default function BaselineBlock({ h3Id, manifest, onShowLayer, onGoTo }: P
     <>
       {error && <p className="warn small">{error}</p>}
       {!profile && !error && <p className="muted small">Loading…</p>}
+      {profile && !profile.region && !profile.layers.some((l) => l.coverage === "regions") && (
+        <p className="no-coverage small" role="status">
+          <strong>No baseline data for this area.</strong> Regional layers (terrain, land cover, water stress,
+          satellite observations) are only prepared for Arizona and the UK; the global layers below still apply.
+        </p>
+      )}
       {groups.map(([category, layers]) => (
         <div key={category} className="baseline-group">
           <div className="baseline-cat">{category}</div>
           {layers.map((l) => (
-            <BaselineRow key={l.layer} layer={l} onShow={onShowLayer} />
+            <BaselineRow key={l.layer} layer={l} onShow={onShowLayer} total={profile?.simulationCells ?? 1} />
           ))}
         </div>
       ))}
@@ -67,28 +75,59 @@ export default function BaselineBlock({ h3Id, manifest, onShowLayer, onGoTo }: P
   );
 }
 
-function BaselineRow({ layer, onShow }: { layer: CellProfile["layers"][number]; onShow: Props["onShowLayer"] }) {
+/** "120 of 343 cells" when a zoomed-out hexagon's value only rests on some of its simulation cells. */
+function Coverage({ values, total }: { values: ProfileValue[]; total: number }) {
+  const n = Math.max(0, ...values.map((v) => v.cellsWithData ?? 0));
+  if (total <= 1 || n === 0 || n >= total) return null;
+  return (
+    <span className="muted small coverage" title="Simulation cells inside this hexagon that have data">
+      {n.toLocaleString()} of {total.toLocaleString()} cells
+    </span>
+  );
+}
+
+function BaselineRow({
+  layer,
+  onShow,
+  total,
+}: {
+  layer: CellProfile["layers"][number];
+  onShow: Props["onShowLayer"];
+  total: number;
+}) {
   const first = layer.values[0];
   const monthly = layer.values.filter((v) => /-\d{2}$/.test(v.slice));
   const clim = monthly.filter((v) => v.slice.startsWith("clim-"));
   const y2024 = monthly.filter((v) => v.slice.startsWith("2024-"));
 
   if (layer.categorical) {
-    const dom = layer.values.find((v) => v.slice === "dominant");
-    const cat = layer.categories?.find((c) => c.value === Math.round(dom?.value ?? -1));
+    const dom = layer.values.find((v) => v.categorical) ?? layer.values.find((v) => v.slice === "dominant");
+    const cat = dom?.value == null ? undefined : layer.categories?.find((c) => c.value === Math.round(dom.value!));
     const fractions = layer.values
-      .filter((v) => v.slice !== "dominant" && (v.display ?? 0) > 0)
+      .filter((v) => v !== dom && v.units === "% of cell" && (v.display ?? 0) > 0)
       .sort((a, b) => (b.display ?? 0) - (a.display ?? 0));
+    const others = layer.values.filter((v) => v !== dom && v.units !== "% of cell");
     const colourOf = (slice: string) => {
       const label = layer.values.find((v) => v.slice === slice)?.label;
       return layer.categories?.find((c) => c.label === label)?.colour ?? "#94a3b8";
     };
     return (
       <div className="baseline-row">
-        <button className="link inline" onClick={() => onShow(layer.layer, "dominant")} title="Show on map">
+        <button className="link inline" onClick={() => onShow(layer.layer, dom?.slice)} title="Show on map">
           {layer.name}
         </button>
-        <span className="value">{cat ? cat.label : "no data"}</span>
+        <span className="value">
+          {cat && <span className="swatch" style={{ background: cat.colour, marginRight: 6 }} />}
+          {cat ? cat.label : "no data"}
+          {others.map((v) => (
+            <span key={v.slice} className="muted small">
+              {" "}
+              · {v.label} {formatValue(v.display, v.label.includes("(") ? null : v.units)}
+            </span>
+          ))}
+        </span>
+        <Coverage values={layer.values} total={total} />
+        <Attributes layer={layer} />
         {fractions.length > 0 && (
           <>
             <div className="stack" role="img" aria-label="Land-cover shares">
@@ -110,6 +149,7 @@ function BaselineRow({ layer, onShow }: { layer: CellProfile["layers"][number]; 
             </ul>
           </>
         )}
+        <SourceDetails source={layer.source} units={dom?.rawUnits ?? null} />
       </div>
     );
   }
@@ -133,8 +173,73 @@ function BaselineRow({ layer, onShow }: { layer: CellProfile["layers"][number]; 
           ))}
         </span>
       )}
+      <Coverage values={layer.values} total={total} />
+      <Attributes layer={layer} />
       {clim.length === 12 && <MonthlyBars clim={clim} y2024={y2024.length === 12 ? y2024 : null} />}
+      {clim.length !== 12 && y2024.length === 12 && <MonthlyBars clim={y2024} y2024={null} barLabel="2024" />}
+      <SourceDetails source={layer.source} units={first?.units ?? null} />
     </div>
+  );
+}
+
+function Attributes({ layer }: { layer: CellProfile["layers"][number] }) {
+  if (!layer.attributes?.length) return null;
+  return (
+    <dl className="kv small">
+      {layer.attributes.map((a) => (
+        <div key={a.key} className="kv-pair">
+          <dt>{a.label}</dt>
+          <dd>{String(a.value)}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+/** Units, period, native resolution, evidence type, caveats, licence and attribution for one layer. */
+function SourceDetails({ source, units }: { source?: CellSource; units: string | null }) {
+  if (!source) return null;
+  const rows: [string, ReactNode][] = [];
+  if (units && units !== "class") rows.push(["Units", units]);
+  if (source.period) rows.push(["Period", source.period]);
+  if (source.nativeResolution) rows.push(["Native resolution", source.nativeResolution]);
+  if (source.sampling) rows.push(["Sampling", source.sampling]);
+  if (source.evidenceType) rows.push(["Evidence", EVIDENCE_LABEL[source.evidenceType] ?? source.evidenceType.replace(/_/g, " ")]);
+  rows.push(["Source", [source.provider, source.product].filter(Boolean).join(" · ") || source.sourceId]);
+  rows.push([
+    "Licence",
+    source.licenceUrl ? (
+      <a href={source.licenceUrl} target="_blank" rel="noreferrer">
+        {source.licence ?? "licence"}
+      </a>
+    ) : (
+      (source.licence ?? "see source record")
+    ),
+  ]);
+  if (source.attribution) rows.push(["Attribution", source.attribution]);
+  if (source.retrievedAt) rows.push(["Retrieved", source.retrievedAt]);
+  return (
+    <details className="source-details small">
+      <summary>
+        Source · {source.licence ?? source.sourceId}
+        {source.evidenceType ? ` · ${EVIDENCE_LABEL[source.evidenceType] ?? source.evidenceType.replace(/_/g, " ")}` : ""}
+      </summary>
+      <dl className="kv">
+        {rows.map(([k, v]) => (
+          <div key={k} className="kv-pair">
+            <dt>{k}</dt>
+            <dd>{v}</dd>
+          </div>
+        ))}
+      </dl>
+      {source.limitations.length > 0 && (
+        <ul className="limitations muted">
+          {source.limitations.map((l) => (
+            <li key={l}>{l}</li>
+          ))}
+        </ul>
+      )}
+    </details>
   );
 }
 
@@ -152,7 +257,15 @@ function headline(v: ProfileValue | undefined) {
 }
 
 /** Twelve monthly long-term means as bars, 2024 as dots on the same axis. */
-function MonthlyBars({ clim, y2024 }: { clim: ProfileValue[]; y2024: ProfileValue[] | null }) {
+function MonthlyBars({
+  clim,
+  y2024,
+  barLabel = "average",
+}: {
+  clim: ProfileValue[];
+  y2024: ProfileValue[] | null;
+  barLabel?: string;
+}) {
   const vals = [...clim, ...(y2024 ?? [])].map((v) => v.display).filter((v): v is number => v !== null);
   if (!vals.length) return null;
   const lo = Math.min(0, ...vals);
@@ -178,7 +291,7 @@ function MonthlyBars({ clim, y2024 }: { clim: ProfileValue[]; y2024: ProfileValu
                 rx={2}
                 className="bar"
               >
-                <title>{`${v.label} long-term: ${formatValue(v.display, units)}${y2024?.[i]?.display != null ? ` · 2024: ${formatValue(y2024[i].display, units)}` : ""}`}</title>
+                <title>{`${v.label}${barLabel === "average" ? " long-term" : ""}: ${formatValue(v.display, units)}${y2024?.[i]?.display != null ? ` · 2024: ${formatValue(y2024[i].display, units)}` : ""}`}</title>
               </rect>
             </g>
           ),
@@ -197,7 +310,7 @@ function MonthlyBars({ clim, y2024 }: { clim: ProfileValue[]; y2024: ProfileValu
         ))}
       </svg>
       <figcaption className="muted small">
-        <span className="key bar" /> average {y2024 && (<><span className="key dot" /> 2024</>)} · {units}
+        <span className="key bar" /> {barLabel} {y2024 && (<><span className="key dot" /> 2024</>)} · {units}
       </figcaption>
     </figure>
   );

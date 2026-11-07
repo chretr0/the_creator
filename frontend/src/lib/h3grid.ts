@@ -8,7 +8,9 @@
 import {
   POLYGON_TO_CELLS_FLAGS,
   cellToChildren,
+  cellToParent,
   getHexagonAreaAvg,
+  getResolution,
   getRes0Cells,
   latLngToCell,
   polygonToCellsExperimental,
@@ -53,6 +55,19 @@ export function normaliseLongitude(lng: number): number {
 export function simulationCell(latitude: number, longitude: number): string {
   if (!(latitude >= -90 && latitude <= 90)) throw new RangeError(`latitude ${latitude} out of range`);
   return latLngToCell(latitude, normaliseLongitude(longitude), SIMULATION_RESOLUTION);
+}
+
+/** The cell at `resolution` (0–6) containing a point: the hexagon drawn there at that display resolution. */
+export function displayCell(latitude: number, longitude: number, resolution: number): string {
+  if (!(latitude >= -90 && latitude <= 90)) throw new RangeError(`latitude ${latitude} out of range`);
+  const res = Math.max(0, Math.min(SIMULATION_RESOLUTION, Math.round(resolution)));
+  return latLngToCell(latitude, normaliseLongitude(longitude), res);
+}
+
+/** True when the resolution-6 cell `child` lies inside `cell` (or is it). */
+export function cellContains(cell: string, child: string): boolean {
+  const res = getResolution(cell);
+  return res === getResolution(child) ? cell === child : cellToParent(child, res) === cell;
 }
 
 function clampBounds(b: Bounds): Bounds {

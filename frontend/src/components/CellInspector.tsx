@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { cellArea, UNITS } from "h3-js";
+import { cellArea, cellToBoundary, cellToChildrenSize, getResolution, UNITS } from "h3-js";
+import { SIMULATION_RESOLUTION } from "../lib/h3grid";
 import type { Project } from "../lib/api";
 import { PROJECT_TYPE_BY_ID } from "../lib/projectTypes";
 import {
@@ -31,7 +32,19 @@ type Props = {
   featureManifest: FeatureLayerMeta[];
   onShowLayer: (layerId: string, sliceId?: string) => void;
   onGoTo: (lat: number, lon: number) => void;
+  /** Narrow a zoomed-out hexagon selection to the resolution-6 cell at the clicked point. */
+  onSelectSimulationCell: () => void;
+  onZoomToCell: (bbox: [number, number, number, number]) => void;
 };
+
+/** [west, south, east, north] of a cell, unwrapped across the antimeridian. */
+function cellBBox(h3Id: string): [number, number, number, number] {
+  const ring = cellToBoundary(h3Id);
+  const lats = ring.map((p) => p[0]);
+  let lons = ring.map((p) => p[1]);
+  if (Math.max(...lons) - Math.min(...lons) > 180) lons = lons.map((l) => (l < 0 ? l + 360 : l));
+  return [Math.min(...lons), Math.min(...lats), Math.max(...lons), Math.max(...lats)];
+}
 
 const coord = (lat: number, lon: number) =>
   `${Math.abs(lat).toFixed(4)}° ${lat >= 0 ? "N" : "S"}, ${Math.abs(lon).toFixed(4)}° ${lon >= 0 ? "E" : "W"}`;
@@ -57,13 +70,33 @@ export default function CellInspector(props: Props) {
       ? "Selected location"
       : "Locating…";
   const area = cellArea(selection.h3Id, UNITS.km2);
+  const res = getResolution(selection.h3Id);
+  const coarse = res < SIMULATION_RESOLUTION;
 
   return (
     <section className="panel">
-      <h2>{place}</h2>
+      <h2>{coarse ? `Hexagon · ${place}` : place}</h2>
       <p className="subtitle num">
-        {coord(selection.latitude, selection.longitude)} · {area.toFixed(0)} km² cell
+        {coord(selection.latitude, selection.longitude)} · {Math.round(area).toLocaleString()} km²{" "}
+        {coarse ? `hexagon (resolution ${res})` : "cell"}
       </p>
+      {coarse && (
+        <>
+          <p className="muted small">
+            Values below combine the {cellToChildrenSize(selection.h3Id, SIMULATION_RESOLUTION).toLocaleString()}{" "}
+            simulation cells inside it: the mean (totals as density, land cover as the most common class) of the
+            cells that have data.
+          </p>
+          <div className="actions tight">
+            <button className="chip" onClick={() => props.onZoomToCell(cellBBox(selection.h3Id))}>
+              Zoom to hexagon
+            </button>
+            <button className="chip" onClick={props.onSelectSimulationCell}>
+              Inspect the simulation cell here
+            </button>
+          </div>
+        </>
+      )}
 
       <RegionStats region={region} facilities={props.facilities} onFilterRegion={props.onFilterRegion} />
 

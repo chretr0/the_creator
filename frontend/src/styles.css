@@ -175,6 +175,9 @@ input[type="checkbox"] { accent-color: var(--accent); width: 16px; height: 16px;
 /* ---------- Swatches & legends ---------- */
 .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
 .swatch { width: 12px; height: 12px; border-radius: 3px; display: inline-block; flex-shrink: 0; border: 1px solid rgba(127, 127, 127, 0.3); }
+.swatch.no-data { background: rgba(100, 116, 139, 0.08); border-style: dashed; vertical-align: -1px; }
+.no-coverage { margin: 12px 0; padding: 10px 12px; border-radius: 8px; border: 1px dashed var(--border); background: color-mix(in srgb, var(--muted) 8%, transparent); }
+.no-coverage p { margin: 4px 0 8px; }
 .line-swatch { width: 14px; height: 3px; border-radius: 2px; background: rgb(42, 120, 214); display: inline-block; flex-shrink: 0; }
 .legend { list-style: none; margin: 8px 0 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; font-size: 13px; }
 .legend li { display: flex; align-items: center; gap: 8px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -202,6 +205,10 @@ input[type="checkbox"] { accent-color: var(--accent); width: 16px; height: 16px;
 .baseline-cat { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin: 14px 0 2px; }
 .baseline-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 12px; padding: 7px 0; border-bottom: 1px solid var(--border); }
 .baseline-row:last-child { border-bottom: none; }
+.baseline-row .source-details { flex-basis: 100%; color: var(--muted); }
+.source-details summary { cursor: pointer; list-style-position: inside; }
+.source-details .kv { margin-top: 6px; grid-template-columns: 110px 1fr; color: var(--text, inherit); }
+.source-details .limitations { margin: 6px 0 0; padding-left: 18px; }
 .baseline-row .value { margin-left: auto; text-align: right; font-variant-numeric: tabular-nums; font-weight: 500; }
 .baseline-row .value.multi { display: flex; flex-direction: column; align-items: flex-end; font-weight: 400; }
 .baseline-row .kv, .baseline-row .stack, .baseline-row .legend, .baseline-row figure, .baseline-row .nearest { flex-basis: 100%; }
@@ -323,3 +330,19 @@ details[open] > summary { margin-bottom: 6px; }
   .place-search { width: 100%; }
   .hint { bottom: 12px; }
 }
+
+/* Map credits: basemap licence plus every active data source, always visible. */
+.map-credits {
+  position: absolute; right: 0; bottom: 0; z-index: 2; max-width: min(70%, 760px);
+  padding: 2px 8px; border-top-left-radius: 6px; font-size: 11px; line-height: 1.5; color: var(--muted);
+  background: color-mix(in srgb, var(--surface) 85%, transparent); text-align: right;
+}
+.map-credits a { color: inherit; }
+.map-credits button.link { font-size: inherit; padding: 0; color: var(--accent, inherit); }
+.map-wrap .maplibregl-ctrl-bottom-right { bottom: 22px; }
+.credits li.inactive summary { opacity: 0.75; }
+.credits summary { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.credits .dot { width: 8px; height: 8px; border-radius: 50%; border: 1px solid var(--muted); flex-shrink: 0; }
+.credits .dot.on { background: var(--muted); }
+.credits .kv { margin: 6px 0; }
+.credits .limitations { margin: 4px 0 8px; padding-left: 18px; }

@@ -1,0 +1,132 @@
+{
+  "id": "water_stress_baseline",
+  "title": "Baseline water stress (Aqueduct 4.0)",
+  "group": "Water",
+  "evidenceType": "modelled",
+  "variable": {
+    "name": "bws_score",
+    "meaning": "Baseline water stress: ratio of total water withdrawals to available renewable surface and groundwater supply, as a 0–5 score of the sub-basin it belongs to (higher = more competition for water). Category labels give the withdrawal-to-supply ratio band."
+  },
+  "units": "score 0–5",
+  "period": {
+    "label": "Aqueduct 4.0 baseline (hydrology 1979–2019)",
+    "start": "1979-01-01",
+    "end": "2019-12-31"
+  },
+  "nativeResolution": "HydroBASINS level-6 sub-basins split by admin-1 boundaries (Aqueduct 4.0 units)",
+  "aggregation": {
+    "toRes6": "Each cell takes the Aqueduct unit polygon containing its centre (no averaging or splitting of the index).",
+    "coarser": "mode"
+  },
+  "colourScale": "sequential",
+  "valueDomain": [
+    0,
+    5
+  ],
+  "missingData": "No row: the cell centre is outside every Aqueduct unit (sea). Null value with bws_label 'No Data': Aqueduct publishes no score for that basin.",
+  "caveats": [
+    "A basin-level risk index, not a measured water volume: it cannot be reduced by a project's water use or turned into available supply.",
+    "Every cell in a basin repeats the same score; neighbouring cells are not independent observations.",
+    "'Arid and Low Water Use' basins are scored 5 by Aqueduct; read the label as well as the score."
+  ],
+  "attributes": [
+    {
+      "column": "bws_label",
+      "label": "Category"
+    },
+    {
+      "column": "pfaf_id",
+      "label": "HydroBASINS Pfafstetter ID"
+    },
+    {
+      "column": "string_id",
+      "label": "Aqueduct unit"
+    }
+  ],
+  "h3Resolution": 6,
+  "regions": {
+    "arizona": {
+      "file": "arizona.parquet",
+      "regionCells": 3558,
+      "rows": 3558,
+      "cellsWithValue": 3558,
+      "valueRange": [
+        0.0,
+        5.0
+      ],
+      "valueMedian": 5.0,
+      "bbox": [
+        -113.5,
+        31.3,
+        -109.0,
+        34.5
+      ],
+      "inputFiles": [
+        "aqueduct40_arizona.gpkg:baseline_annual"
+      ]
+    },
+    "uk": {
+      "file": "uk.parquet",
+      "regionCells": 26264,
+      "rows": 9363,
+      "cellsWithValue": 9280,
+      "valueRange": [
+        0.0,
+        3.464295
+      ],
+      "valueMedian": 0.163021,
+      "bbox": [
+        -8.7,
+        49.8,
+        1.9,
+        60.9
+      ],
+      "inputFiles": [
+        "aqueduct40_uk.gpkg:baseline_annual"
+      ]
+    }
+  },
+  "sourceRefs": [
+    {
+      "sourceId": "WATER-06",
+      "region": "arizona",
+      "record": "data/raw/WATER-06/arizona/source.json",
+      "recordId": "WATER-06-arizona-20261107",
+      "provider": "World Resources Institute",
+      "product": "Aqueduct 4.0 water risk data",
+      "version": "4.0",
+      "doi": null,
+      "documentationUrl": "https://www.wri.org/data/aqueduct-global-maps-40-data",
+      "evidenceType": "modelled",
+      "retrievedAt": "2026-11-07",
+      "licence": "CC BY 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "attribution": "Kuzma, S. et al. 2023. Aqueduct 4.0: Updated decision-relevant global water risk indicators. WRI. (verify citation on download page)",
+      "licenceNotes": "Auto-generated from catalogue; confirm against the release's own licence before publishing."
+    },
+    {
+      "sourceId": "WATER-06",
+      "region": "uk",
+      "record": "data/raw/WATER-06/uk/source.json",
+      "recordId": "WATER-06-uk-20261107",
+      "provider": "World Resources Institute",
+      "product": "Aqueduct 4.0 water risk data",
+      "version": "4.0",
+      "doi": null,
+      "documentationUrl": "https://www.wri.org/data/aqueduct-global-maps-40-data",
+      "evidenceType": "modelled",
+      "retrievedAt": "2026-11-07",
+      "licence": "CC BY 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "attribution": "Kuzma, S. et al. 2023. Aqueduct 4.0: Updated decision-relevant global water risk indicators. WRI. (verify citation on download page)",
+      "licenceNotes": "Auto-generated from catalogue; confirm against the release's own licence before publishing."
+    }
+  ],
+  "licence": {
+    "name": "CC BY 4.0",
+    "url": "https://creativecommons.org/licenses/by/4.0/",
+    "attribution": "Kuzma, S. et al. 2023. Aqueduct 4.0: Updated decision-relevant global water risk indicators. WRI. (verify citation on download page)"
+  },
+  "generatedAt": "2026-11-07T16:55:42+00:00",
+  "script": "scripts/build_layers.py"
+}

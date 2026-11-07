@@ -54,6 +54,7 @@ export type CellLayer = {
   limitations: string[];
   nativeResolution: string | null;
   sampling: string | null;
+  period?: string | null;
   provenance: Provenance;
 };
 
@@ -111,17 +112,46 @@ export type ProfileValue = {
   display: number | null;
   units: string;
   rawUnits: string | null;
+  /** For a zoomed-out hexagon: how many of its resolution-6 cells had data (null for a single cell). */
+  cellsWithData?: number | null;
+  /** The value is a class code (see the layer's categories), not a quantity. */
+  categorical?: boolean;
+};
+
+/** What a profile value is and where it came from, for the cell inspector. */
+export type CellSource = {
+  sourceId: string;
+  provider?: string | null;
+  product?: string | null;
+  period?: string | null;
+  nativeResolution?: string | null;
+  sampling?: string | null;
+  evidenceType?: string | null;
+  licence?: string | null;
+  licenceUrl?: string | null;
+  attribution?: string | null;
+  retrievedAt?: string | null;
+  documentationUrl?: string | null;
+  limitations: string[];
 };
 export type CellProfile = {
   h3Id: string;
+  resolution: number;
   areaKm2: number;
+  /** Resolution-6 cells inside this cell (1 for a simulation cell). */
+  simulationCells: number;
+  /** Baseline region ("arizona" | "uk") containing the cell centre, or null outside both. */
+  region?: string | null;
   layers: {
     layer: string;
     name: string;
     category: string;
+    coverage?: "global" | "regions";
     categorical: boolean;
     categories: LayerCategory[] | null;
     values: ProfileValue[];
+    attributes?: { key: string; label: string; value: string | number }[];
+    source?: CellSource;
   }[];
 };
 
@@ -305,3 +335,28 @@ export const REGION_VIEWS: { id: string; label: string; bbox: [number, number, n
   { id: "arizona", label: "Arizona", bbox: [-113.5, 31.3, -109.0, 34.5] },
   { id: "uk", label: "United Kingdom", bbox: [-8.7, 49.8, 1.9, 60.9] },
 ];
+
+/** Plain-language evidence types used in source records. */
+export const EVIDENCE_LABEL: Record<string, string> = {
+  reported_record: "reported record",
+  reference_geometry: "reference geometry",
+  reference_map: "reference map",
+  in_situ_observation: "in-situ observation",
+  satellite_retrieval: "satellite retrieval",
+  satellite_imagery: "satellite imagery",
+  model_output: "model output",
+  modelled: "model output",
+  reanalysis: "reanalysis (model + observations)",
+  reference: "reference service",
+};
+
+type Bounds = { west: number; south: number; east: number; north: number };
+
+/** Whether a map view overlaps any of the given baseline regions (longitudes compared modulo 360). */
+export function viewTouchesRegions(bounds: Bounds, regionIds: string[]): boolean {
+  if (bounds.east - bounds.west >= 360) return regionIds.length > 0;
+  return REGION_VIEWS.filter((r) => regionIds.includes(r.id)).some(({ bbox: [w, s, e, n] }) => {
+    if (bounds.north < s || bounds.south > n) return false;
+    return [-360, 0, 360].some((k) => bounds.west + k <= e && bounds.east + k >= w);
+  });
+}

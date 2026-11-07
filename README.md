@@ -99,6 +99,23 @@ uv run --no-project --with geopandas --with pyogrio --with shapely --with pyarro
 uv run --no-project --with rasterio --with numpy --with pillow python -I scripts/prepare_imagery.py
 ```
 
+Satellite and reanalysis layers (ERA5-Land and CAMS 2024 monthly, GRACE, SMAP, SWOT, GEDI, MODIS NDVI, ECOSTRESS,
+PACE, EMIT, Sentinel-5P) are aggregated to resolution-6 cells and appear in *Colour the grid* with month/date variants.
+Grids coarser than a cell are sampled at each cell centre (like POWER); finer pixels are averaged per cell:
+
+```bash
+uv run --no-project --with xarray --with netcdf4 --with h5netcdf --with rasterio --with pyproj --with pyhdf --with duckdb --with pyarrow --with numpy --with h3 python -I scripts/prepare_observation_h3.py
+```
+
+Aqueduct 4.0 baseline water stress (Arizona and UK) comes from `scripts/build_layers.py`, which writes
+`data/prepared/layers/water_stress_baseline/{arizona,uk}.parquet`. Each cell takes the basin containing its centre;
+the index is never averaged, so zoomed-out hexagons show the most common class, and "No Data" basins stay blank.
+
+Regional layers outside the Arizona and UK boxes are blank, and the data panel says *No baseline data for this
+area*. Each value in the cell inspector has a *Source* block (units, period, native resolution, evidence type,
+caveats, licence and attribution from `data/raw/<ID>/<region>/source.json`). The map always shows the basemap
+credit and the active sources, linked to the *Data sources & licences* list in the Layers tab.
+
 `GET /api/imagery` lists the prepared Globe–Miami scene clips (Sentinel-2, Landsat 8), drawn from the Data tab.
 
 ### Baseline layer cache
@@ -173,7 +190,7 @@ The backend API tests need the Docker database running.
 | `GET /api/sources` | Data credits registry |
 | `GET /api/layers` | H3 baseline layers: slices, units, colour hints, availability, provenance |
 | `POST /api/layers/{id}/values` `{slice, cells}` | Values for display cells (res 0–6), aligned with the request; `null` = no data |
-| `GET /api/cells/{h3Id}/profile` | Every H3 layer's values (all slices) for one res-6 cell |
+| `GET /api/cells/{h3Id}/profile` | Every H3 layer's values (all slices) for a cell of resolution 0–6, with source, licence and caveats per layer |
 | `GET /api/features`, `GET /api/features/{id}?west&south&east&north&category&q&limit` | Record layers (points, lines, polygons, tables) |
 | `GET /api/cells/{h3Id}/features` | Containing polygons, crossing rivers, and nearest records for one res-6 cell |
 | `POST /api/scenarios/{id}/projects` | Place a project (server computes the res-6 `h3Id`) |
