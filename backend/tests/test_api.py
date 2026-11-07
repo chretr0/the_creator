@@ -1,19 +1,6 @@
 """Integration tests: require the docker Postgres (docker compose up -d db flyway)."""
 
 import h3
-import pytest
-from fastapi.testclient import TestClient
-
-from app.main import app
-
-
-@pytest.fixture(scope="module")
-def client():
-    try:
-        with TestClient(app) as c:
-            yield c
-    except Exception as exc:  # pragma: no cover
-        pytest.skip(f"database unavailable: {exc}")
 
 
 def test_cell_lookup(client):

@@ -1,16 +1,34 @@
+import math
 from datetime import datetime
-from typing import Literal
+from typing import Annotated, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
-from pydantic.alias_generators import to_camel
+from pydantic import AfterValidator, Field
 
-ProjectType = Literal["data_centre", "solar", "greenhouse"]
-ParamValue = float | int | str | bool
+from app.api_base import ApiModel, ParamValue
+from app.building_models import DefinitionSnapshot, SiteAssumptions
+
+ProjectType = Literal["data_centre", "solar", "greenhouse", "power_station", "water_plant", "custom"]
+
+__all__ = ["ApiModel", "ParamValue"]  # re-exported for existing imports
+
+NAME_MAX = 200
 
 
-class ApiModel(BaseModel):
-    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+def _json_finite(value):
+    """Reject NaN / infinity anywhere in free-form JSON: PostgreSQL jsonb cannot store them."""
+    if isinstance(value, float) and not math.isfinite(value):
+        raise ValueError("numbers must be finite")
+    if isinstance(value, dict):
+        for v in value.values():
+            _json_finite(v)
+    elif isinstance(value, list):
+        for v in value:
+            _json_finite(v)
+    return value
+
+
+Assumptions = Annotated[dict, AfterValidator(_json_finite)]
 
 
 class LatLng(ApiModel):
@@ -34,18 +52,26 @@ class CellInfo(ApiModel):
 
 class ProjectCreate(ApiModel):
     type: ProjectType
-    name: str = ""
+    name: str = Field(default="", max_length=NAME_MAX)
     latitude: float = Field(ge=-90, le=90)
     longitude: float
     parameters: dict[str, ParamValue] = {}
+    # Building-system fields (CLAUDE.Building-System.md). Without `definition` but with
+    # `source_definition_id`, the server snapshots that saved definition.
+    definition: DefinitionSnapshot | None = None
+    source_definition_id: UUID | None = None
+    site: SiteAssumptions | None = None
 
 
 class ProjectUpdate(ApiModel):
     type: ProjectType | None = None
-    name: str | None = None
+    name: str | None = Field(default=None, max_length=NAME_MAX)
     latitude: float | None = Field(default=None, ge=-90, le=90)
     longitude: float | None = None
     parameters: dict[str, ParamValue] | None = None
+    definition: DefinitionSnapshot | None = None
+    source_definition_id: UUID | None = None  # explicit null clears the link
+    site: SiteAssumptions | None = None
 
 
 class Project(ApiModel):
@@ -58,22 +84,26 @@ class Project(ApiModel):
     h3_id: str
     h3_resolution: int
     parameters: dict[str, ParamValue]
+    # Always present in responses: legacy rows are adapted (all new statistics unknown).
+    definition: DefinitionSnapshot
+    source_definition_id: UUID | None = None
+    site: SiteAssumptions = SiteAssumptions()
     created_at: datetime
     updated_at: datetime
 
 
 class ScenarioCreate(ApiModel):
-    name: str = Field(min_length=1)
-    assumptions: dict = {}
+    name: str = Field(min_length=1, max_length=NAME_MAX)
+    assumptions: Assumptions = {}
 
 
 class ScenarioUpdate(ApiModel):
-    name: str | None = Field(default=None, min_length=1)
-    assumptions: dict | None = None
+    name: str | None = Field(default=None, min_length=1, max_length=NAME_MAX)
+    assumptions: Assumptions | None = None
 
 
 class ScenarioBranch(ApiModel):
-    name: str = Field(min_length=1)
+    name: str = Field(min_length=1, max_length=NAME_MAX)
 
 
 class ScenarioSummary(ApiModel):

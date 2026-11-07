@@ -1,12 +1,13 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type DragEvent } from "react";
 import { maplibregl } from "../lib/maplibre";
 import { MapboxOverlay } from "@deck.gl/mapbox";
 import { H3HexagonLayer } from "@deck.gl/geo-layers";
 import { GeoJsonLayer, LineLayer, ScatterplotLayer, TextLayer } from "@deck.gl/layers";
 import { WebMercatorViewport, type Layer, type PickingInfo } from "@deck.gl/core";
 import type { Project } from "../lib/api";
-import { viewportCells, type ViewportCells } from "../lib/h3grid";
-import { PROJECT_TYPE_BY_ID } from "../lib/projectTypes";
+import { normaliseLongitude, viewportCells, type ViewportCells } from "../lib/h3grid";
+import { typeColour, typeLabel } from "../lib/projectTypes";
+import { PRESET_DRAG_TYPE, STATE_COLOUR, STATE_LABEL, type CellState } from "../lib/buildings";
 import { facilityTitle, formatKw, type Facility } from "../lib/infrastructure";
 
 type RGB = [number, number, number];
@@ -113,7 +114,15 @@ type Props = {
   cellTooltip: (h3: string) => string | null;
   /** A prepared single-scene PNG (EPSG:4326) drawn at its bounds, under the labels. */
   scene: SceneImage | null;
+  /** Building-assessment screening states for resolution-6 cells, drawn under project markers. */
+  assessmentCells?: CellState[] | null;
+  /** Ghost marker for a building placement preview (not its physical footprint). */
+  preview?: { latitude: number; longitude: number; colour?: RGB } | null;
+  /** A real example building dragged from the Build tab and dropped at this point. */
+  onDropPreset?: (presetId: string, latitude: number, longitude: number) => void;
 };
+
+const isPresetDrag = (e: DragEvent) => Array.from(e.dataTransfer.types).includes(PRESET_DRAG_TYPE);
 
 export default function WorldMap(props: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -122,6 +131,7 @@ export default function WorldMap(props: Props) {
   const [grid, setGrid] = useState<ViewportCells>({ resolution: 0, cells: [], overview: true });
   const [labelled, setLabelled] = useState<Facility[]>([]);
   const [stemM, setStemM] = useState(0);
+  const [dropping, setDropping] = useState(false);
 
   // Keep latest callbacks without re-creating the map.
   const propsRef = useRef(props);
@@ -335,6 +345,20 @@ export default function WorldMap(props: Props) {
         highlightColor: [59, 130, 246, 60],
       }),
       ...props.contextLayers,
+      new H3HexagonLayer<CellState>({
+        id: "assessment-cells",
+        data: props.assessmentCells ?? [],
+        getHexagon: (c) => c.h3Id,
+        filled: true,
+        stroked: true,
+        extruded: false,
+        highPrecision: true,
+        getFillColor: (c) => [...STATE_COLOUR[c.state], 110],
+        getLineColor: (c) => [...STATE_COLOUR[c.state], 200],
+        lineWidthUnits: "pixels",
+        getLineWidth: 1,
+        pickable: true,
+      }),
       new H3HexagonLayer<Project>({
         id: "project-cells",
         data: projects,
@@ -343,8 +367,8 @@ export default function WorldMap(props: Props) {
         stroked: true,
         extruded: false,
         highPrecision: true,
-        getFillColor: (p) => [...PROJECT_TYPE_BY_ID[p.type].colour, 60],
-        getLineColor: (p) => [...PROJECT_TYPE_BY_ID[p.type].colour, 220],
+        getFillColor: (p) => [...typeColour(p.type), 60],
+        getLineColor: (p) => [...typeColour(p.type), 220],
         lineWidthUnits: "pixels",
         getLineWidth: 2,
       }),
@@ -429,7 +453,7 @@ export default function WorldMap(props: Props) {
         id: "projects",
         data: projects,
         getPosition: (p) => [p.longitude, p.latitude],
-        getFillColor: (p) => [...PROJECT_TYPE_BY_ID[p.type].colour, 255],
+        getFillColor: (p) => [...typeColour(p.type), 255],
         getLineColor: (p) => (p.id === selectedProjectId ? [15, 23, 42, 255] : [255, 255, 255, 255]),
         getRadius: (p) => (p.id === selectedProjectId ? 9 : 6),
         radiusUnits: "pixels",
@@ -438,6 +462,18 @@ export default function WorldMap(props: Props) {
         getLineWidth: 2,
         pickable: true,
         updateTriggers: { getLineColor: selectedProjectId, getRadius: selectedProjectId },
+      }),
+      new ScatterplotLayer<{ latitude: number; longitude: number; colour?: RGB }>({
+        id: "build-preview",
+        data: props.preview ? [props.preview] : [],
+        getPosition: (p) => [p.longitude, p.latitude],
+        getFillColor: (p) => [...(p.colour ?? [37, 99, 235]), 90],
+        getLineColor: [15, 23, 42, 255],
+        getRadius: 11,
+        radiusUnits: "pixels",
+        stroked: true,
+        lineWidthUnits: "pixels",
+        getLineWidth: 2.5,
       }),
     ];
 
@@ -450,26 +486,31 @@ export default function WorldMap(props: Props) {
         let object = info.object;
         // The grid covers every pixel, so it always wins a radius pick. Re-pick without it so a
         // thin cable or power line a few pixels away still gets selected.
-        if (layerId === "grid" || !object) {
+        // Assessment cells are a display overlay: clicks fall through to what lies beneath.
+        const background = (id: string | undefined) => id === "grid" || id === "assessment-cells";
+        if (background(layerId) || !object) {
           const alt = overlay.pickObject({
             x: info.x,
             y: info.y,
             radius: 6,
-            layerIds: layers.map((l) => l.id).filter((id) => id !== "grid"),
+            layerIds: layers.map((l) => l.id).filter((id) => !background(id)),
           });
           if (alt?.object && alt.layer) {
             layerId = alt.layer.id;
             object = alt.object;
           }
         }
-        const picked = layerId && layerId !== "grid" && object ? { layerId, object } : null;
+        const picked = layerId && !background(layerId) && object ? { layerId, object } : null;
         propsRef.current.onMapClick(lat, lng, picked);
       },
       getTooltip: ({ object, layer }: PickingInfo) => {
         if (!object || !layer) return null;
         if (layer.id === "projects") {
           const p = object as Project;
-          return { text: `${p.name || PROJECT_TYPE_BY_ID[p.type].label}\n${PROJECT_TYPE_BY_ID[p.type].label}` };
+          return { text: `${p.name || typeLabel(p.type)}\n${typeLabel(p.type)}` };
+        }
+        if (layer.id === "assessment-cells") {
+          return { text: `${STATE_LABEL[(object as CellState).state]}\nScreening result for this cell` };
         }
         if (layer.id === "infra-points" || layer.id === "infra-footprints") {
           const p = (object as Facility).properties;
@@ -502,7 +543,67 @@ export default function WorldMap(props: Props) {
     props.tilted,
     props.contextLayers,
     props.cellFill,
+    props.assessmentCells,
+    props.preview,
   ]);
 
-  return <div ref={containerRef} className="map" />;
+  // Preset drag-and-drop. HTML5 drag events bubble from the MapLibre and deck.gl canvases to the
+  // container; neither library handles them, so nothing is swallowed.
+  const dropHandlers = props.onDropPreset
+    ? {
+        onDragEnter: (e: DragEvent) => {
+          if (!isPresetDrag(e)) return;
+          e.preventDefault();
+          setDropping(true);
+        },
+        onDragOver: (e: DragEvent) => {
+          if (!isPresetDrag(e)) return;
+          e.preventDefault();
+          e.dataTransfer.dropEffect = "copy";
+          if (!dropping) setDropping(true);
+        },
+        onDragLeave: (e: DragEvent) => {
+          // Moving between the map's own child elements also fires dragleave.
+          const to = e.relatedTarget as Node | null;
+          if (to && containerRef.current?.contains(to)) return;
+          setDropping(false);
+        },
+        onDrop: (e: DragEvent) => {
+          setDropping(false);
+          if (!isPresetDrag(e)) return;
+          e.preventDefault();
+          const id = e.dataTransfer.getData(PRESET_DRAG_TYPE);
+          const map = mapRef.current;
+          const el = containerRef.current;
+          if (!id || !map || !el) return;
+          const rect = el.getBoundingClientRect();
+          const { lng, lat } = map.unproject([e.clientX - rect.left, e.clientY - rect.top]);
+          if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+          propsRef.current.onDropPreset?.(id, Math.max(-90, Math.min(90, lat)), normaliseLongitude(lng));
+        },
+      }
+    : {};
+
+  // A drag cancelled with Escape or dropped elsewhere never reaches the map: clear the highlight.
+  useEffect(() => {
+    if (!dropping) return;
+    const clear = () => setDropping(false);
+    window.addEventListener("dragend", clear);
+    window.addEventListener("drop", clear);
+    return () => {
+      window.removeEventListener("dragend", clear);
+      window.removeEventListener("drop", clear);
+    };
+  }, [dropping]);
+
+  return (
+    <>
+      <div ref={containerRef} className="map" {...dropHandlers} />
+      {dropping && (
+        <div className="map-drop" aria-hidden="true">
+          <span>Drop to preview here</span>
+        </div>
+      )}
+    </>
+  );
 }

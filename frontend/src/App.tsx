@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import WorldMap, { type MapFocus, type MapView, type Picked } from "./components/WorldMap";
 import ContextPanel, { ImageryPanel } from "./components/ContextPanel";
 import ContextInspector from "./components/ContextInspector";
@@ -19,12 +19,17 @@ import {
 import CellInspector, { type CellSelection } from "./components/CellInspector";
 import ProjectEditor from "./components/ProjectEditor";
 import ScenarioPanel, { ScenarioSelect } from "./components/ScenarioPanel";
+import BuildPanel, { type BuildTarget, type PresetRequest } from "./components/BuildPanel";
+import StressPanel from "./components/StressPanel";
+import { StateLegend } from "./components/FormBits";
+import type { CellState } from "./lib/buildings";
 import LayerPanel from "./components/LayerPanel";
 import FacilityInspector from "./components/FacilityInspector";
 import DataPanel, { RecordsPanel, PreparedScenes } from "./components/DataPanel";
 import { FieldList } from "./components/BaselineBlock";
 import CreditsPanel from "./components/CreditsPanel";
 import { useDataLayers } from "./lib/useDataLayers";
+import { mergeAssumptions } from "./lib/buildingForm";
 import {
   COLOURED_COMPANIES,
   LAYER_META,
@@ -38,14 +43,20 @@ import {
   type InfraLayerId,
   type InfraManifest,
 } from "./lib/infrastructure";
-import { api, type Project, type ProjectInput, type ProjectType, type Scenario, type ScenarioSummary } from "./lib/api";
+import { api, keepIfShown, type Project, type ProjectInput, type Scenario, type ScenarioSummary } from "./lib/api";
 import { cellContains, displayCell, normaliseLongitude, simulationCell } from "./lib/h3grid";
-import { PROJECT_TYPES } from "./lib/projectTypes";
 
-type Tab = "details" | "layers" | "search" | "projects";
-const TAB_LABEL: Record<Tab, string> = { details: "Details", layers: "Layers", search: "Search", projects: "Projects" };
+type Tab = "details" | "layers" | "search" | "build" | "projects";
+const TAB_LABEL: Record<Tab, string> = {
+  details: "Details",
+  layers: "Layers",
+  search: "Search",
+  build: "Build",
+  projects: "Projects",
+};
 
-type Mode = { kind: "inspect" } | { kind: "place"; type: ProjectType } | { kind: "move"; projectId: string };
+/** "pick" = choosing an exact location for a building preview (Build tab). */
+type Mode = { kind: "inspect" } | { kind: "pick" } | { kind: "move"; projectId: string };
 
 const LAST_SCENARIO_KEY = "newworlds:lastScenario";
 
@@ -103,10 +114,26 @@ export default function App() {
   const [view, setView] = useState<MapView | null>(null);
   const [sideTab, setSideTab] = useState<Tab>("details");
   const [query, setQuery] = useState<Query>({ dataset: "datacenters", sort: "metric" });
+  const [buildTarget, setBuildTarget] = useState<BuildTarget | null>(null);
+  const [presetRequest, setPresetRequest] = useState<PresetRequest | null>(null);
+  const [assessmentCells, setAssessmentCells] = useState<CellState[] | null>(null);
   const ctx = useContextData(view, { country: query.country, admin1: query.admin1 });
   const data = useDataLayers(view, grid.cells);
 
   const report = useCallback((e: unknown) => setError(e instanceof Error ? e.message : String(e)), []);
+
+  // What is shown right now, for async results that finish after the user switched scenarios.
+  const shown = useRef<{ scenarioId: string | null; scenarios: ScenarioSummary[] }>({ scenarioId: null, scenarios: [] });
+  useEffect(() => {
+    shown.current = { scenarioId: scenario?.id ?? null, scenarios };
+  }, [scenario?.id, scenarios]);
+  /** True if the result belongs to the scenario on screen; otherwise says where it went. */
+  const isShown = useCallback((scenarioId: string, what: string) => {
+    if (shown.current.scenarioId === scenarioId) return true;
+    const name = shown.current.scenarios.find((x) => x.id === scenarioId)?.name ?? "another scenario";
+    setError(`${what} was saved in "${name}", not in the scenario shown now.`);
+    return false;
+  }, []);
 
   const refreshList = useCallback(async () => setScenarios(await api.listScenarios()), []);
 
@@ -116,6 +143,9 @@ export default function App() {
       setScenario(s);
       setSelectedProjectId(null);
       setMode({ kind: "inspect" });
+      // A preview or screening result belongs to the scenario it was made for.
+      setBuildTarget(null);
+      setAssessmentCells(null);
       writeLastScenario(id);
     },
     [],
@@ -165,7 +195,10 @@ export default function App() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setMode({ kind: "inspect" });
+      if (e.key === "Escape") {
+        setMode({ kind: "inspect" });
+        setBuildTarget(null);
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -196,22 +229,21 @@ export default function App() {
     const pickedMeta = picked ? data.featureMetaForLayer(picked.layerId) : null;
     const pickedObject = picked?.object;
     setError(null);
-    setSideTab("details");
     const longitude = normaliseLongitude(rawLongitude);
+    if (mode.kind === "pick") {
+      if (scenario) setBuildTarget({ latitude, longitude, scenarioId: scenario.id, nonce: Date.now() });
+      setMode({ kind: "inspect" });
+      setSideTab("build");
+      return;
+    }
+    setSideTab("details");
     try {
-      if (mode.kind === "place" && scenario) {
-        const created = await api.createProject(scenario.id, { type: mode.type, latitude, longitude });
-        setScenario({ ...scenario, projects: [...scenario.projects, created] });
-        selectProject(created);
-        setMode({ kind: "inspect" });
-        refreshList();
-        return;
-      }
       if (mode.kind === "move") {
         const moved = await api.updateProject(mode.projectId, { latitude, longitude });
+        setMode({ kind: "inspect" });
+        if (!isShown(moved.scenarioId, `The move of "${moved.name || moved.type}"`)) return;
         replaceProject(moved);
         selectProject(moved);
-        setMode({ kind: "inspect" });
         return;
       }
       const picked = pickedProjectId ? projects.find((p) => p.id === pickedProjectId) : undefined;
@@ -271,6 +303,7 @@ export default function App() {
   async function saveProject(patch: Partial<ProjectInput>) {
     if (!selectedProject) return;
     const updated = await api.updateProject(selectedProject.id, patch);
+    if (!isShown(updated.scenarioId, `"${updated.name || updated.type}"`)) return;
     replaceProject(updated);
     selectProject(updated);
   }
@@ -425,7 +458,41 @@ export default function App() {
     );
 
 
-  const placingLabel = mode.kind === "place" ? PROJECT_TYPES.find((t) => t.type === mode.type)?.label : null;
+  const onBuilt = useCallback(
+    (p: Project) => {
+      refreshList();
+      if (!isShown(p.scenarioId, `"${p.name || p.type}"`)) return;
+      setScenario((s) => (s && s.id === p.scenarioId ? { ...s, projects: [...s.projects, p] } : s));
+      setSelectedProjectId(p.id);
+      setSelection({ h3Id: p.h3Id, latitude: p.latitude, longitude: p.longitude });
+      setSideTab("details");
+    },
+    [refreshList, isShown],
+  );
+  // A save result only replaces the scenario it was made for (the user may have switched meanwhile).
+  const applySavedScenario = useCallback((saved: Scenario) => setScenario((cur) => keepIfShown(cur, saved)), []);
+  const focusOn = useCallback(
+    (latitude: number, longitude: number) => setFocus({ latitude, longitude, zoom: 9, nonce: Date.now() }),
+    [],
+  );
+  /** A real example dropped on the map: load it in the Build tab and preview it there (nothing is saved). */
+  const dropPreset = (presetId: string, latitude: number, longitude: number) => {
+    if (!scenario) {
+      setError("Choose or create a scenario first, then drop the example on the map.");
+      return;
+    }
+    const nonce = Date.now();
+    setError(null);
+    setMode({ kind: "inspect" });
+    setSideTab("build");
+    setPresetRequest({ id: presetId, nonce });
+    setBuildTarget({ latitude, longitude, scenarioId: scenario.id, nonce });
+  };
+  const setPicking = useCallback((on: boolean) => setMode(on ? { kind: "pick" } : { kind: "inspect" }), []);
+  const previewMarker = useMemo(
+    () => (buildTarget ? { latitude: buildTarget.latitude, longitude: buildTarget.longitude } : null),
+    [buildTarget],
+  );
   const hasDetail = !!(selectedProject || selectedFacility || data.picked || ctx.selection || selection);
 
   // Layer keys (as listed by /api/sources) of everything drawn on the map right now.
@@ -472,6 +539,9 @@ export default function App() {
           contextTooltip={contextTooltip}
           imagery={ctx.rasterImagery}
           onViewChange={setView}
+          assessmentCells={assessmentCells}
+          preview={previewMarker}
+          onDropPreset={dropPreset}
         />
 
         <div className="map-top">
@@ -489,22 +559,9 @@ export default function App() {
             }
           />
           <div className="toolbar" role="toolbar" aria-label="Map tools">
-            <span className="label">Add</span>
-            {PROJECT_TYPES.map((t) => {
-              const on = mode.kind === "place" && mode.type === t.type;
-              return (
-                <button
-                  key={t.type}
-                  disabled={!scenario}
-                  className={on ? "active" : ""}
-                  aria-pressed={on}
-                  onClick={() => setMode(on ? { kind: "inspect" } : { kind: "place", type: t.type })}
-                >
-                  <span className="dot" style={{ background: `rgb(${t.colour})` }} />
-                  {t.label}
-                </button>
-              );
-            })}
+            <button disabled={!scenario} className={sideTab === "build" ? "active" : ""} onClick={() => setSideTab("build")}>
+              + Add building
+            </button>
             <span className="sep" />
             <button className={tilted ? "active" : ""} aria-pressed={tilted} onClick={() => setTilted((t) => !t)} title="Tilt the map and show 3D buildings when zoomed in">
               3D
@@ -527,8 +584,18 @@ export default function App() {
 
         {crosshair && (
           <div className="hint" role="status">
-            {mode.kind === "place" ? `Click where the ${placingLabel?.toLowerCase()} project should go` : "Click the new location"}
+            {mode.kind === "pick" ? "Click the exact location to preview the building" : "Click the new location"}
             <button onClick={() => setMode({ kind: "inspect" })}>Cancel</button>
+          </div>
+        )}
+
+        {assessmentCells && assessmentCells.length > 0 && (
+          <div className="map-legend small" aria-label="Assessment legend">
+            <strong>Screening by cell</strong>
+            <StateLegend />
+            <button className="link inline" onClick={() => setAssessmentCells(null)}>
+              Hide
+            </button>
           </div>
         )}
       </main>
@@ -576,6 +643,8 @@ export default function App() {
                   }
                   onDelete={deleteProject}
                   onClose={() => setSelectedProjectId(null)}
+                  catalogue={data.catalogue}
+                  periodDays={mergeAssumptions(scenario?.assumptions).periodDays}
                 />
               )}
 
@@ -699,6 +768,24 @@ export default function App() {
             />
           )}
 
+          {/* Kept mounted so the building draft survives tab switches. */}
+          <div hidden={sideTab !== "build"}>
+            <BuildPanel
+              scenario={scenario}
+              view={view}
+              catalogue={data.catalogue}
+              target={buildTarget}
+              onTarget={setBuildTarget}
+              picking={mode.kind === "pick"}
+              onPick={setPicking}
+              onCells={setAssessmentCells}
+              onBuilt={onBuilt}
+              onFocus={focusOn}
+              onFitBounds={(bbox) => fitBBox(bbox, 7)}
+              presetRequest={presetRequest}
+            />
+          </div>
+
           {sideTab === "projects" && (
             <ScenarioPanel
               scenarios={scenarios}
@@ -710,6 +797,12 @@ export default function App() {
               }}
               {...scenarioActions}
             />
+          )}
+          {/* Kept mounted so unsaved stress and budget edits survive tab switches (not evaluated while hidden). */}
+          {scenario && (
+            <div hidden={sideTab !== "projects"}>
+              <StressPanel scenario={scenario} active={sideTab === "projects"} onSaved={applySavedScenario} />
+            </div>
           )}
         </div>
       </aside>

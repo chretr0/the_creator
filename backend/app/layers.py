@@ -617,6 +617,65 @@ LAYERS.append(
     )
 )
 
+# ---------------------------------------------------------------------------------------------
+# Average utility prices, built by scripts/prepare_utility_prices.py. One price per country (or US/Canadian/
+# Australian state for electricity) repeated in each of its cells; zoomed-out hexagons show the mean.
+# Day/night and seasonal tariffs are averaged into one rate (see data/reference/utility_prices/README.md).
+
+PRICES_FILE = "utility_prices_h3r6.parquet"
+PRICE_LIMITS = [
+    "One average per country (or state/province): real tariffs vary by utility, city, customer size and contract.",
+    "Day/night and seasonal rates are averaged into one figure; time-of-use savings are not modelled.",
+    "Converted to USD at the World Bank annual average exchange rate for the price year.",
+    "Sources differ in year and tax treatment: read the basis line for the cell before comparing two places.",
+]
+
+LAYERS += [
+    LayerDef(
+        id="electricity_price",
+        name="Electricity price (average)",
+        category="Prices",
+        source_id="PRICE-01",
+        provenance=("PRICE-01/global",),
+        slices=[
+            Slice("household", "Household", (PRICES_FILE,), "elec_household"),
+            Slice("business", "Business", (PRICES_FILE,), "elec_business"),
+        ],
+        units="USD/kWh",
+        domain=(0.0, 0.4),
+        attributes=[("price_area_name", "Price area"), ("elec_household_basis", "Household basis"),
+                    ("elec_business_basis", "Business basis")],
+        description="Average end-user electricity price per kWh in the country, or the state/province in the US, "
+                    "Canada and Australia.",
+        limitations=PRICE_LIMITS + [
+            "Business is the commercial / non-household average where reported; a few countries only have an "
+            "industrial or 2019 World Bank survey figure (see basis).",
+        ],
+    ),
+    LayerDef(
+        id="water_price",
+        name="Water price (average)",
+        category="Prices",
+        source_id="PRICE-01",
+        provenance=("PRICE-01/global",),
+        slices=[
+            Slice("household", "Household", (PRICES_FILE,), "water_household"),
+            Slice("business", "Business", (PRICES_FILE,), "water_business"),
+        ],
+        units="USD/m³",
+        domain=(0.0, 6.0),
+        attributes=[("price_area_name", "Price area"), ("water_household_basis", "Household basis"),
+                    ("water_business_basis", "Business basis")],
+        description="Average household price per m³ of drinking water plus wastewater, at about 15 m³ a month "
+                    "with fixed charges spread in.",
+        limitations=PRICE_LIMITS + [
+            "Outside Europe and Latin America this is usually the capital or largest city's utility tariff.",
+            "Some areas price water only, without wastewater (stated in the basis line).",
+            "Business water prices exist for few countries.",
+        ],
+    ),
+]
+
 BY_ID = {layer.id: layer for layer in LAYERS}
 
 

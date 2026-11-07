@@ -1,0 +1,63 @@
+{
+  "id": "PRICE-01-global-20261107",
+  "catalogueSourceId": "PRICE-01",
+  "provider": "U.S. EIA; Eurostat; World Bank; national regulators and utilities (research table)",
+  "product": "Average end-user electricity and water prices by country / state",
+  "version": "2026-11-07",
+  "documentationUrl": "data/reference/utility_prices/README.md",
+  "accessMethod": "download + compiled research table",
+  "evidenceType": "reported",
+  "licence": {
+    "name": "Mixed: EIA public domain; Eurostat and World Bank CC BY 4.0; research table cites each source",
+    "url": "https://ec.europa.eu/eurostat/about-us/policies/copyright",
+    "attribution": "U.S. Energy Information Administration; Eurostat; World Bank WDI / Doing Business; per-row sources in data/reference/utility_prices/research.csv",
+    "reviewedAt": "2026-11-07",
+    "notes": "Rows from price aggregators (named in source_name) are facts with citation; check their terms before any commercial redistribution."
+  },
+  "region": "global",
+  "retrievedAt": "2026-11-07",
+  "files": [
+    {
+      "path": "eurostat_nrg_pc_204.json",
+      "url": "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/nrg_pc_204?format=JSON&lang=en&nrg_cons=TOT_KWH&unit=KWH&currency=EUR&sinceTimePeriod=2024-S1",
+      "bytes": 11827,
+      "sha256": "06616b581789370d0a928519c2316f3cbe07ea761f57a2acb4b90f03be9a0382"
+    },
+    {
+      "path": "eurostat_nrg_pc_205.json",
+      "url": "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/nrg_pc_205?format=JSON&lang=en&nrg_cons=TOT_KWH&unit=KWH&currency=EUR&sinceTimePeriod=2024-S1",
+      "bytes": 11334,
+      "sha256": "5d6040137271366ce9bb88f5ac848c5d505fa5f4fba5f983c63a2079eae6cc8f"
+    },
+    {
+      "path": "eia_epa_02_10.xlsx",
+      "url": "https://www.eia.gov/electricity/annual/xls/epa_02_10.xlsx",
+      "bytes": 16608,
+      "sha256": "aa9615b7b340b8c5dc60a7b5a1d8d74a070478502e5607c3783bb5a380c282b1"
+    },
+    {
+      "path": "worldbank_fx_PA.NUS.FCRF.json",
+      "url": "https://api.worldbank.org/v2/country/all/indicator/PA.NUS.FCRF?format=json&per_page=20000&date=2019:2026",
+      "bytes": 445892,
+      "sha256": "303864ab11ac454f5dbbcfa962aee59dfbb273c95ce5dd5b5f2c62b910627cee"
+    },
+    {
+      "path": "fred_AEXTAUS.csv",
+      "url": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=AEXTAUS",
+      "bytes": 842,
+      "sha256": "832594f8d52adaef4d4f62e2e7179e3b30b06412a528975768a6e740977c5659"
+    },
+    {
+      "path": "exchangerate_api_latest_USD.json",
+      "url": "https://open.er-api.com/v6/latest/USD",
+      "bytes": 2970,
+      "sha256": "998e59d29c2aac13b941757f5285b0f668be1f61bc13c0acf7a567c6629d99b6"
+    },
+    {
+      "path": "worldbank_db_electricity_price.json",
+      "url": "https://api.worldbank.org/v2/country/all/indicator/IC.ELC.PRI.KH.DB1619?format=json&per_page=20000&mrnev=1",
+      "bytes": 54714,
+      "sha256": "af73a011d1ecba689608b5ffedc6afeb1b3e5a84706d85f147e4f1c4166cf381"
+    }
+  ]
+}
