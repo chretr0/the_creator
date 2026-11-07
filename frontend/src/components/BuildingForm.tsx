@@ -4,6 +4,7 @@ import type { BuildingTemplate, Period } from "../lib/buildings";
 import {
   countErrors,
   editEmission,
+  editedProvenance,
   editMaterial,
   editOperating,
   editValue,
@@ -147,6 +148,17 @@ export default function BuildingForm({ draft, onChange, errors, template, page }
         )}
         <h4>Water use</h4>
         {num("water.inputM3PerHour")}
+        <Select
+          label="Intake source"
+          value={draft.waterSource}
+          options={[
+            { value: "fresh", label: "Fresh water (rivers, runoff, groundwater)" },
+            { value: "seawater", label: "Seawater — needs a coastal site" },
+            { value: "wastewater", label: "Treated municipal wastewater — from towns within ~64 km" },
+          ]}
+          onChange={(v) => onChange({ ...draft, waterSource: v, provenance: { ...draft.provenance, water: editedProvenance(draft) } })}
+          help="Only fresh water uses the local river and runoff supply. A plant on seawater or wastewater adds all of its output to the area's supply."
+        />
         {num("water.basis")}
         {!template.producesWater && (
           <>

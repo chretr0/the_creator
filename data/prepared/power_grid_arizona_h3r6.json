@@ -1,0 +1,35 @@
+{
+  "layer": "power_grid_arizona",
+  "sourceId": "GRID-OSM",
+  "provider": "OpenStreetMap contributors via Overpass API",
+  "licence": "ODbL-1.0",
+  "attribution": "\u00a9 OpenStreetMap contributors",
+  "evidenceType": "reported_record",
+  "retrievedAt": "2026-11-07",
+  "region": "arizona",
+  "regionBbox": [
+    -113.5,
+    31.3,
+    -109.0,
+    34.5
+  ],
+  "h3Resolution": 6,
+  "counts": {
+    "lines": 22228,
+    "substations": 987,
+    "plants": 218
+  },
+  "cells": 1376,
+  "method": "Overpass power=line/minor_line/cable ways with a voltage tag, densified to 0.3 km steps and indexed to every res-6 cell they cross (max voltage kept); power=substation and power=plant features indexed by their centre.",
+  "units": {
+    "line_max_kv": "kV",
+    "substation_max_kv": "kV",
+    "n_substations": "count",
+    "plant_output_kw": "kW (tagged nameplate, plant:output:electricity)"
+  },
+  "limitations": [
+    "Volunteer-mapped; coverage and voltage tagging vary. A cell with no mapped line may still have one.",
+    "Voltage is not spare capacity or a connection offer; capacity is inferred from voltage by the backend.",
+    "Underground distribution cables are rarely mapped."
+  ]
+}

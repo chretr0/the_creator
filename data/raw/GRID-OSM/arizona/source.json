@@ -1,0 +1,20 @@
+{
+  "id": "GRID-OSM-arizona-20261107",
+  "provider": "OpenStreetMap contributors via Overpass API",
+  "licence": {
+    "name": "ODbL-1.0",
+    "attribution": "\u00a9 OpenStreetMap contributors"
+  },
+  "accessUrl": "https://overpass-api.de/api/interpreter",
+  "region": "arizona",
+  "bbox": [
+    -113.5,
+    31.3,
+    -109.0,
+    34.5
+  ],
+  "tileDegrees": 2.0,
+  "query": "[out:json][timeout:180];way[\"power\"~\"^(line|minor_line|cable)$\"][\"voltage\"]({bbox});out tags geom;nwr[\"power\"=\"substation\"]({bbox});out tags center;nwr[\"power\"=\"plant\"]({bbox});out tags center;",
+  "retrievedAt": "2026-11-07",
+  "evidenceType": "reported_record"
+}

@@ -6,6 +6,7 @@ import uuid
 import numpy as np
 import pytest
 
+from app import site_capacity
 from app import features, h3store, layers
 from app.building_assess import (
     PlacedBuilding,
@@ -29,6 +30,12 @@ from app.building_models import (
 )
 
 LAT, LON = 33.4, -112.0  # Phoenix area (inside the Arizona prepared region)
+
+
+@pytest.fixture(autouse=True)
+def _no_site_checks(monkeypatch):
+    """These tests cover declared criteria and budgets; automatic site checks are tested in test_site_capacity.py."""
+    monkeypatch.setattr(site_capacity, "site_checks", lambda *a, **k: ([], [], site_capacity.Materials([], [])))
 FIXTURE = {"operatingHoursPerDay": 8, "power": {"averageDemandKw": 100}, "water": {"inputM3PerHour": 2}}
 
 
@@ -90,7 +97,7 @@ def test_costs_without_currency_are_not_summed_together():
 def test_explanations_use_readable_numbers():
     s = stats(costs={"currency": "USD", "constructionTotal": 1_000_000})
     crit = [Criterion(id="c", kind="construction_budget", amount=2_000_000)]
-    _, _, a, _ = assess_point("custom", s, {}, crit, SiteAssumptions(), LAT, LON, ScenarioContext(), set())
+    _, _, a, *_ = assess_point("custom", s, {}, crit, SiteAssumptions(), LAT, LON, ScenarioContext(), set())
     assert "1,000,000 USD" in a.checks[0].explanation and "e+06" not in a.checks[0].explanation
 
 
@@ -100,7 +107,7 @@ def test_explanations_use_readable_numbers():
 def test_zero_demand_without_supply_passes_with_matching_explanation():
     s = stats(operatingHoursPerDay=24, water={"inputM3PerHour": 0})
     crit = [Criterion(id="w", kind="water_budget")]
-    _, _, a, _ = assess_point("custom", s, {}, crit, SiteAssumptions(), LAT, LON, ScenarioContext(), set())
+    _, _, a, *_ = assess_point("custom", s, {}, crit, SiteAssumptions(), LAT, LON, ScenarioContext(), set())
     c = a.checks[0]
     assert c.status == "pass" and "No demand" in c.explanation and "unknown" not in c.explanation
 

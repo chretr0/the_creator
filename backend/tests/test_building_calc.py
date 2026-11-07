@@ -7,6 +7,7 @@ import uuid
 import pytest
 from pydantic import ValidationError
 
+from app import site_capacity
 from app.building_assess import PlacedBuilding, ScenarioContext, assess_point, budget_result, building_results, pool_state
 from app.building_calc import (
     CalcInputError,
@@ -30,6 +31,12 @@ from app.building_models import (
 LAT, LON = 33.4, -112.0  # Phoenix area (inside the Arizona prepared region)
 
 
+@pytest.fixture(autouse=True)
+def _no_site_checks(monkeypatch):
+    """These tests cover declared criteria and budgets; automatic site checks are tested in test_site_capacity.py."""
+    monkeypatch.setattr(site_capacity, "site_checks", lambda *a, **k: ([], [], site_capacity.Materials([], [])))
+
+
 def stats(**kw) -> BuildingStats:
     return BuildingStats.model_validate(kw)
 
@@ -49,7 +56,7 @@ def _water_check(stress=None):
     crit = [Criterion(id="w", kind="water_budget")]
     ctx = ScenarioContext(assumptions=ScenarioAssumptions(period_days=10))
     site = SiteAssumptions(water_allocation_m3_per_day=20)
-    _, _, a, _ = assess_point("custom", stats(**FIXTURE), {}, crit, site, LAT, LON, ctx, set(), stress)
+    _, _, a, *_ = assess_point("custom", stats(**FIXTURE), {}, crit, site, LAT, LON, ctx, set(), stress)
     return a
 
 
@@ -220,7 +227,7 @@ def test_solar_kwp_model_needs_location():
 
 
 def test_empty_criteria_is_insufficient():
-    _, _, a, _ = assess_point("custom", stats(**FIXTURE), {}, [], SiteAssumptions(), LAT, LON, ScenarioContext(), set())
+    _, _, a, *_ = assess_point("custom", stats(**FIXTURE), {}, [], SiteAssumptions(), LAT, LON, ScenarioContext(), set())
     assert a.state == "insufficient_data" and a.checks == []
 
 
@@ -228,7 +235,7 @@ def test_fail_and_unknown_both_visible():
     crit = [Criterion(id="c", kind="construction_budget", amount=100),
             Criterion(id="s", kind="staffing")]
     s = stats(costs={"currency": "USD", "constructionTotal": 500})
-    _, _, a, _ = assess_point("custom", s, {}, crit, SiteAssumptions(), LAT, LON, ScenarioContext(), set())
+    _, _, a, *_ = assess_point("custom", s, {}, crit, SiteAssumptions(), LAT, LON, ScenarioContext(), set())
     assert a.state == "fails_criteria"
     assert [c.status for c in a.checks] == ["fail", "unknown"]
     assert "1 more unknown" in a.summary
@@ -237,7 +244,7 @@ def test_fail_and_unknown_both_visible():
 def test_optional_checks_do_not_decide_state():
     crit = [Criterion(id="c", kind="construction_budget", amount=100, required=False)]
     s = stats(costs={"currency": "USD", "constructionTotal": 500})
-    _, _, a, _ = assess_point("custom", s, {}, crit, SiteAssumptions(), LAT, LON, ScenarioContext(), set())
+    _, _, a, *_ = assess_point("custom", s, {}, crit, SiteAssumptions(), LAT, LON, ScenarioContext(), set())
     assert a.state == "insufficient_data" and a.checks[0].status == "fail"
 
 

@@ -128,6 +128,7 @@ All files are in `data/prepared/*_h3r6.parquet`, zstd-compressed, keyed by `h3` 
 | POWER, 5 variables × (13 climatology + 12 monthly 2024 columns) | 14,117,882 each | 65–122 MB each, 974 MB total | Phoenix annual irradiation 5.848 kWh/m²/day, equal to the API |
 | FIRMS VIIRS 2024 | 933,751 | 16 MB | 20.98 M detections; 5,875 in the Arizona box |
 | Utility prices (PRICE-01, `scripts/prepare_utility_prices.py`, built 2026-11-07) | 3,705,164 (land and coast) | 11 MB | Arizona household electricity 0.1526 USD/kWh = EIA 2025; priced cells: electricity 86% household / 96% business, water 76% household / 19% business |
+| OSM power grid per region (GRID-OSM, `scripts/prepare_power_grid.py --fetch`, built 2026-11-07) | cells with a mapped line, substation or plant only (`power_grid_<region>_h3r6.parquet`): arizona 1,376 cells, uk 9,039 cells | < 1 MB each | Palo Verde site reaches mapped 500 kV infrastructure; feeds the building site-capacity grid estimate |
 
 Rules of thumb from these measurements:
 

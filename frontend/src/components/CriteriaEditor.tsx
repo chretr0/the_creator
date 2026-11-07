@@ -31,7 +31,7 @@ export default function CriteriaEditor({ drafts, onChange, errors, catalogue, cu
       </p>
       {drafts.length === 0 && (
         <p className="muted small">
-          No requirements yet. Without at least one, no location can be shown as meeting criteria.
+          No extra limits. The building's specs are still checked automatically against the site.
         </p>
       )}
       {drafts.length > 0 && <label className="field">
@@ -58,8 +58,8 @@ export default function CriteriaEditor({ drafts, onChange, errors, catalogue, cu
           <p className="muted small">{HELP[d.kind]}</p>
           {SITE_KINDS.includes(d.kind) && (
             <p className="muted small">
-              The value to compare against comes from Site inputs in the placement review, or a scenario budget in Scenarios → Resources.
-              Where neither is declared, the check is unknown.
+              Scenario budgets in Scenarios → Resources and saved site allocations can supply this extra limit.
+              Where neither is declared, this additional check is unknown. Automatic site capacity is assessed separately.
             </p>
           )}
           <CriterionFields d={d} errors={errors} catalogue={catalogue} currency={currency} period={fmtDays(periodDays)} update={(p) => update(d.id, p)} />

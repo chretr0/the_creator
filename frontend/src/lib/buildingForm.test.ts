@@ -6,6 +6,8 @@ import {
   fmtQuantity,
   mergeAssumptions,
   missingInputs,
+  siteNeeds,
+  isAirPollutant,
   newCriterion,
   newMaterial,
   parseBudgets,
@@ -129,11 +131,63 @@ describe("parseStats", () => {
   });
 });
 
+describe("siteNeeds", () => {
+  it("lists what the site must provide from the specs, footprint always", () => {
+    const n = siteNeeds(
+      { footprintM2: 2000, operatingHoursPerDay: 24, water: { inputM3PerHour: 2 }, power: { peakDemandKw: 500 }, workers: { staffingRequired: 30 } },
+      {},
+      "custom",
+    );
+    expect(n.map((x) => [x.key, x.from])).toEqual([
+      ["land", "2,000 m² footprint"],
+      ["water", "48 m³/day (2 m³/h × 24 h)"],
+      ["power", "500 kW peak"],
+      ["workforce", "30 people"],
+      ["air", null],
+      ["light", null],
+      ["materials", null],
+    ]);
+  });
+  it("lists air, dark-sky and advisory raw-material needs", () => {
+    const n = siteNeeds(
+      {
+        emissions: [
+          { id: "a", pollutant: "CO2", rateKgPerHour: 10 },
+          { id: "b", pollutant: "NOx", rateKgPerHour: 2 },
+        ],
+        light: { upwardLumens: 5000 },
+        materials: [{ id: "m", name: "Steel", phase: "construction", quantityKg: 10 }],
+      },
+      {},
+      "custom",
+    );
+    expect(n.find((x) => x.key === "air")!.from).toBe("emits NOx");
+    expect(n.find((x) => x.key === "light")!.from).toBe("5,000 lm upward light");
+    const m = n.find((x) => x.key === "materials")!;
+    expect(m.advisory).toBe(true);
+    expect(m.from).toContain("Steel");
+  });
+  it("round-trips the water intake source, fresh by default", () => {
+    expect(parseStats(statsToDraft({ water: { source: "wastewater" } }), []).stats.water?.source).toBe("wastewater");
+    expect(parseStats(statsToDraft({}), []).stats.water?.source).toBe("fresh");
+  });
+  it("recognises local air pollutants but not greenhouse gases", () => {
+    expect(["NOx", "PM2.5", "SO₂", "CO", "VOCs"].map(isAirPollutant)).toEqual([true, true, true, true, true]);
+    expect(["CO2", "CO2e (Scope 1)", "CH4"].map(isAirPollutant)).toEqual([false, false, false]);
+  });
+  it("marks undeclared needs as not checked, and a producer as exporting", () => {
+    const n = siteNeeds({ power: { ratedOutputKw: 4000 } }, {}, "power_station");
+    expect(n.find((x) => x.key === "land")!.from).toBeNull();
+    expect(n.find((x) => x.key === "water")!.from).toBeNull();
+    expect(n.find((x) => x.key === "power")!.from).toBe("exports 4 MW to the grid");
+  });
+});
+
 describe("missingInputs", () => {
   const crit = (kind: Criterion["kind"], extra: Partial<Criterion> = {}): Criterion => ({ id: kind, kind, required: true, ...extra });
 
-  it("asks for a requirement when there is none, and nothing else", () => {
-    expect(missingInputs({}, {}, { type: "water_plant" }, [])).toEqual(["At least one location requirement"]);
+  it("asks for nothing when there are no extra limits: site checks are automatic", () => {
+    expect(missingInputs({}, {}, { type: "water_plant" }, [])).toEqual([]);
   });
   it("lists nothing for map-layer requirements, which use map data only", () => {
     expect(missingInputs({}, {}, { type: "power_station" }, [crit("layer", { layerId: "slope", max: 5 })])).toEqual([]);
