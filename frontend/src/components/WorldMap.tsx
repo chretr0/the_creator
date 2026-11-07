@@ -1,0 +1,467 @@
+import { useEffect, useRef, useState } from "react";
+import { maplibregl } from "../lib/maplibre";
+import { MapboxOverlay } from "@deck.gl/mapbox";
+import { H3HexagonLayer } from "@deck.gl/geo-layers";
+import { GeoJsonLayer, LineLayer, ScatterplotLayer, TextLayer } from "@deck.gl/layers";
+import { WebMercatorViewport, type Layer, type PickingInfo } from "@deck.gl/core";
+import { getResolution } from "h3-js";
+import type { Project } from "../lib/api";
+import { viewportCells, type ViewportCells } from "../lib/h3grid";
+import { PROJECT_TYPE_BY_ID } from "../lib/projectTypes";
+import { facilityTitle, formatKw, LAYER_META, type Facility } from "../lib/infrastructure";
+
+type RGB = [number, number, number];
+
+// Display-only marker height for facility "stems" in the tilted view (as in gods-eye-view). Not data.
+// Capped to about STEM_MAX_PX on screen so the tips stay in view when zoomed in to street level.
+const STEM_HEIGHT_M = 1500;
+const STEM_MAX_PX = 70;
+
+function stemHeightM(map: maplibregl.Map, tilted: boolean): number {
+  if (!tilted) return 0;
+  const metresPerPx = (40075016.686 * Math.cos((map.getCenter().lat * Math.PI) / 180)) / (512 * 2 ** map.getZoom());
+  return Math.min(STEM_HEIGHT_M, STEM_MAX_PX * metresPerPx);
+}
+// Facility labels appear from this zoom and are thinned by a screen-space grid budget, the same
+// approach as gods-eye-view (one label per grid cell, highest priority wins, capped total).
+const LABEL_MIN_ZOOM = 5;
+const LABEL_CELL_PX: [number, number] = [130, 30];
+const LABEL_MAX = 400;
+
+function pickLabels(map: maplibregl.Map, facilities: Facility[], selectedId: string | null, z: number): Facility[] {
+  if (map.getZoom() < LABEL_MIN_ZOOM) return [];
+  const { clientWidth: w, clientHeight: h } = map.getCanvas();
+  // Project where deck.gl will actually draw the label (at the stem tip when tilted).
+  const centre = map.getCenter();
+  const viewport = new WebMercatorViewport({
+    width: w,
+    height: h,
+    longitude: centre.lng,
+    latitude: centre.lat,
+    zoom: map.getZoom(),
+    pitch: map.getPitch(),
+    bearing: map.getBearing(),
+  });
+  const best = new Map<string, { f: Facility; score: number }>();
+  for (const f of facilities) {
+    const { lon, lat, name, operator, companyFacilityCount } = f.properties;
+    if (!name && !operator && f.id !== selectedId) continue;
+    const [x, y] = viewport.project([lon, lat, z]);
+    if (!(x >= -20 && y >= -20 && x <= w + 20 && y <= h + 20)) continue;
+    const score = f.id === selectedId ? Infinity : (name ? 1e6 : 0) + (companyFacilityCount ?? 0);
+    const key = `${Math.floor(x / LABEL_CELL_PX[0])}:${Math.floor(y / LABEL_CELL_PX[1])}`;
+    const cur = best.get(key);
+    if (!cur || score > cur.score) best.set(key, { f, score });
+  }
+  return [...best.values()]
+    .sort((a, b) => b.score - a.score)
+    .slice(0, LABEL_MAX)
+    .map((x) => x.f);
+}
+
+// OpenFreeMap (OSM data, ODbL). The style carries its own attribution, kept visible below.
+const STYLE_URL = "https://tiles.openfreemap.org/styles/liberty";
+
+export type MapFocus = {
+  latitude: number;
+  longitude: number;
+  zoom?: number;
+  /** [west, south, east, north]; when set the map fits it instead of flying to a zoom. */
+  bbox?: [number, number, number, number];
+  nonce: number;
+};
+
+export type Picked = { layerId: string; object: unknown };
+
+export type MapView = {
+  bounds: { west: number; south: number; east: number; north: number };
+  zoom: number;
+  centre: { lat: number; lon: number };
+};
+
+export type RasterImagery = {
+  key: string;
+  tiles: string[];
+  maxzoom: number;
+  opacity: number;
+  attribution: string;
+};
+
+const IMAGERY_SOURCE = "context-imagery";
+
+type Props = {
+  projects: Project[];
+  selectedProjectId: string | null;
+  selectedCell: string | null;
+  crosshair: boolean;
+  focus: MapFocus | null;
+  facilities: Facility[];
+  facilityColour: (f: Facility) => RGB;
+  selectedFacilityId: string | null;
+  tilted: boolean;
+  /** Context deck.gl layers (boundaries, cables, hazards, power), drawn above the grid. */
+  contextLayers: Layer[];
+  contextTooltip: (layerId: string, object: unknown) => string | null;
+  imagery: RasterImagery | null;
+  onViewChange: (view: MapView) => void;
+  onMapClick: (latitude: number, longitude: number, picked: Picked | null) => void;
+  onGridChange: (grid: { resolution: number; count: number; overview: boolean }) => void;
+};
+
+export default function WorldMap(props: Props) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<maplibregl.Map | null>(null);
+  const overlayRef = useRef<MapboxOverlay | null>(null);
+  const [grid, setGrid] = useState<ViewportCells>({ resolution: 0, cells: [], overview: true });
+  const [labelled, setLabelled] = useState<Facility[]>([]);
+  const [stemM, setStemM] = useState(0);
+
+  // Keep latest callbacks without re-creating the map.
+  const propsRef = useRef(props);
+  propsRef.current = props;
+
+  useEffect(() => {
+    const map = new maplibregl.Map({
+      container: containerRef.current!,
+      style: STYLE_URL,
+      center: [10, 30],
+      zoom: 1.6,
+      attributionControl: { compact: false },
+      dragRotate: false,
+      pitchWithRotate: false,
+    });
+    map.touchZoomRotate.disableRotation();
+    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-left");
+    map.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-left");
+
+    const overlay = new MapboxOverlay({ interleaved: false, layers: [] });
+    map.addControl(overlay);
+    mapRef.current = map;
+    overlayRef.current = overlay;
+
+    // Debounced on moveend; a timer (not rAF) so it also runs in background tabs.
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const refreshGrid = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        const b = map.getBounds();
+        const next = viewportCells({
+          west: b.getWest(),
+          east: b.getEast(),
+          south: b.getSouth(),
+          north: b.getNorth(),
+        });
+        setGrid(next);
+        const cur = propsRef.current;
+        const stem = stemHeightM(map, cur.tilted);
+        setStemM(stem);
+        setLabelled(pickLabels(map, cur.facilities, cur.selectedFacilityId, stem));
+        propsRef.current.onGridChange({
+          resolution: next.resolution,
+          count: next.cells.length,
+          overview: next.overview,
+        });
+        const c = map.getCenter();
+        propsRef.current.onViewChange({
+          bounds: { west: b.getWest(), east: b.getEast(), south: b.getSouth(), north: b.getNorth() },
+          zoom: map.getZoom(),
+          centre: { lat: c.lat, lon: c.lng },
+        });
+      }, 60);
+    };
+    map.on("load", refreshGrid);
+    map.on("moveend", refreshGrid);
+
+    return () => {
+      clearTimeout(timer);
+      map.remove();
+      mapRef.current = null;
+      overlayRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    const canvas = mapRef.current?.getCanvas();
+    if (canvas) canvas.style.cursor = props.crosshair ? "crosshair" : "";
+  }, [props.crosshair]);
+
+  // Tilted view: oblique camera with rotation. The basemap's own building-3d layer (OpenFreeMap,
+// zoom >= 14) supplies building volumes; it is always on and only reads as 3D once tilted.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (props.tilted) {
+      map.dragRotate.enable();
+      map.touchZoomRotate.enableRotation();
+      map.easeTo({ pitch: 55, duration: 800 });
+    } else {
+      map.dragRotate.disable();
+      map.touchZoomRotate.disableRotation();
+      map.easeTo({ pitch: 0, bearing: 0, duration: 800 });
+    }
+  }, [props.tilted]);
+
+  // Re-pick labels when the facility set or selection changes (camera moves are handled on moveend).
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const stem = stemHeightM(map, props.tilted);
+    setStemM(stem);
+    setLabelled(pickLabels(map, props.facilities, props.selectedFacilityId, stem));
+  }, [props.facilities, props.selectedFacilityId, props.tilted]);
+
+  useEffect(() => {
+    const f = props.focus;
+    if (!f || !mapRef.current) return;
+    if (f.bbox) {
+      const [w, s, e, n] = f.bbox;
+      mapRef.current.fitBounds(
+        [
+          [w, s],
+          [e, n],
+        ],
+        { padding: 40, maxZoom: f.zoom ?? 12, speed: 1.6 },
+      );
+      return;
+    }
+    mapRef.current.flyTo({
+      center: [f.longitude, f.latitude],
+      zoom: Math.max(mapRef.current.getZoom(), f.zoom ?? 9),
+      speed: 1.6,
+    });
+  }, [props.focus]);
+
+  // Satellite imagery as a MapLibre raster source, beneath the basemap's labels and buildings.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const img = props.imagery;
+    const apply = () => {
+      if (map.getLayer(IMAGERY_SOURCE)) map.removeLayer(IMAGERY_SOURCE);
+      if (map.getSource(IMAGERY_SOURCE)) map.removeSource(IMAGERY_SOURCE);
+      if (!img) return;
+      map.addSource(IMAGERY_SOURCE, {
+        type: "raster",
+        tiles: img.tiles,
+        tileSize: 256,
+        maxzoom: img.maxzoom,
+        attribution: img.attribution,
+      });
+      const firstSymbol = map.getStyle().layers.find((l) => l.type === "symbol" || l.type === "fill-extrusion")?.id;
+      map.addLayer(
+        { id: IMAGERY_SOURCE, type: "raster", source: IMAGERY_SOURCE, paint: { "raster-opacity": img.opacity } },
+        firstSymbol,
+      );
+    };
+    if (map.isStyleLoaded()) apply();
+    else map.once("load", apply);
+    return () => {
+      map.off("load", apply);
+    };
+    // Opacity changes are handled below without re-creating the source.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.imagery?.key]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (map?.getLayer(IMAGERY_SOURCE) && props.imagery) {
+      map.setPaintProperty(IMAGERY_SOURCE, "raster-opacity", props.imagery.opacity);
+    }
+  }, [props.imagery?.opacity, props.imagery]);
+
+  useEffect(() => {
+    const overlay = overlayRef.current;
+    if (!overlay) return;
+    const { projects, selectedProjectId, selectedCell, facilities, facilityColour, selectedFacilityId, tilted } = props;
+    const footprints = facilities.filter((f) => f.geometry.type !== "Point");
+    const tip = tilted ? stemM : 0;
+    const colourTrigger = [facilities, facilityColour];
+
+    const layers = [
+      new H3HexagonLayer<string>({
+        id: "grid",
+        data: grid.cells,
+        getHexagon: (d) => d,
+        filled: true,
+        stroked: true,
+        extruded: false,
+        highPrecision: true,
+        // No baseline layer is loaded yet: neutral "no data" styling, not a value colour.
+        getFillColor: [100, 116, 139, 14],
+        getLineColor: [51, 65, 85, 110],
+        lineWidthUnits: "pixels",
+        getLineWidth: 1,
+        pickable: true,
+        autoHighlight: true,
+        highlightColor: [59, 130, 246, 60],
+      }),
+      ...props.contextLayers,
+      new H3HexagonLayer<Project>({
+        id: "project-cells",
+        data: projects,
+        getHexagon: (p) => p.h3Id,
+        filled: true,
+        stroked: true,
+        extruded: false,
+        highPrecision: true,
+        getFillColor: (p) => [...PROJECT_TYPE_BY_ID[p.type].colour, 60],
+        getLineColor: (p) => [...PROJECT_TYPE_BY_ID[p.type].colour, 220],
+        lineWidthUnits: "pixels",
+        getLineWidth: 2,
+      }),
+      new H3HexagonLayer<string>({
+        id: "selected-cell",
+        data: selectedCell ? [selectedCell] : [],
+        getHexagon: (d) => d,
+        filled: true,
+        stroked: true,
+        extruded: false,
+        highPrecision: true,
+        getFillColor: [37, 99, 235, 40],
+        getLineColor: [15, 23, 42, 255],
+        lineWidthUnits: "pixels",
+        getLineWidth: 3,
+      }),
+      // Footprints as mapped in OSM. Extruded only by a tagged height; untagged stay flat.
+      new GeoJsonLayer<Facility["properties"]>({
+        id: "infra-footprints",
+        data: footprints as never,
+        filled: true,
+        stroked: true,
+        extruded: tilted,
+        getElevation: (f) => f.properties.heightM ?? 0,
+        getFillColor: (f) => [...facilityColour(f as Facility), f.id === selectedFacilityId ? 160 : 70],
+        getLineColor: (f) => [...facilityColour(f as Facility), 255],
+        lineWidthUnits: "pixels",
+        getLineWidth: 1.5,
+        pickable: true,
+        updateTriggers: { getFillColor: [colourTrigger, selectedFacilityId], getLineColor: colourTrigger },
+      }),
+      new LineLayer<Facility>({
+        id: "infra-stems",
+        data: tilted ? facilities : [],
+        getSourcePosition: (f) => [f.properties.lon, f.properties.lat, 0],
+        getTargetPosition: (f) => [f.properties.lon, f.properties.lat, tip],
+        getColor: (f) => [...facilityColour(f), 150],
+        getWidth: 1.5,
+        widthUnits: "pixels",
+        updateTriggers: { getColor: colourTrigger, getTargetPosition: tip },
+      }),
+      new ScatterplotLayer<Facility>({
+        id: "infra-points",
+        data: facilities,
+        getPosition: (f) => [f.properties.lon, f.properties.lat, tip],
+        getFillColor: (f) => [...facilityColour(f), 255],
+        getLineColor: (f) => (f.id === selectedFacilityId ? [255, 255, 255, 255] : [0, 0, 0, 255]),
+        getRadius: (f) => (f.id === selectedFacilityId ? 8 : 4),
+        radiusUnits: "pixels",
+        radiusMinPixels: 3,
+        stroked: true,
+        lineWidthUnits: "pixels",
+        getLineWidth: (f) => (f.id === selectedFacilityId ? 2.5 : 1.5),
+        pickable: true,
+        updateTriggers: {
+          getPosition: tip,
+          getFillColor: colourTrigger,
+          getLineColor: selectedFacilityId,
+          getRadius: selectedFacilityId,
+          getLineWidth: selectedFacilityId,
+        },
+      }),
+      new TextLayer<Facility>({
+        id: "infra-labels",
+        data: labelled,
+        getPosition: (f) => [f.properties.lon, f.properties.lat, tip],
+        getText: (f) => facilityTitle(f.properties),
+        getColor: [15, 23, 42, 255],
+        getSize: 12,
+        fontWeight: 600,
+        getPixelOffset: [0, -12],
+        getTextAnchor: "middle",
+        getAlignmentBaseline: "bottom",
+        characterSet: "auto",
+        fontFamily: "Inter, system-ui, sans-serif",
+        fontSettings: { sdf: true, fontSize: 64, buffer: 8 },
+        outlineWidth: 2,
+        outlineColor: [255, 255, 255, 235],
+        updateTriggers: { getPosition: tip },
+      }),
+      new ScatterplotLayer<Project>({
+        id: "projects",
+        data: projects,
+        getPosition: (p) => [p.longitude, p.latitude],
+        getFillColor: (p) => [...PROJECT_TYPE_BY_ID[p.type].colour, 255],
+        getLineColor: (p) => (p.id === selectedProjectId ? [15, 23, 42, 255] : [255, 255, 255, 255]),
+        getRadius: (p) => (p.id === selectedProjectId ? 9 : 6),
+        radiusUnits: "pixels",
+        stroked: true,
+        lineWidthUnits: "pixels",
+        getLineWidth: 2,
+        pickable: true,
+        updateTriggers: { getLineColor: selectedProjectId, getRadius: selectedProjectId },
+      }),
+    ];
+
+    overlay.setProps({
+      layers,
+      onClick: (info: PickingInfo) => {
+        if (!info.coordinate) return;
+        const [lng, lat] = info.coordinate;
+        let layerId = info.layer?.id;
+        let object = info.object;
+        // The grid covers every pixel, so it always wins a radius pick. Re-pick without it so a
+        // thin cable or power line a few pixels away still gets selected.
+        if (layerId === "grid" || !object) {
+          const alt = overlay.pickObject({
+            x: info.x,
+            y: info.y,
+            radius: 6,
+            layerIds: layers.map((l) => l.id).filter((id) => id !== "grid"),
+          });
+          if (alt?.object && alt.layer) {
+            layerId = alt.layer.id;
+            object = alt.object;
+          }
+        }
+        const picked = layerId && layerId !== "grid" && object ? { layerId, object } : null;
+        propsRef.current.onMapClick(lat, lng, picked);
+      },
+      getTooltip: ({ object, layer }: PickingInfo) => {
+        if (!object || !layer) return null;
+        if (layer.id === "projects") {
+          const p = object as Project;
+          return { text: `${p.name || PROJECT_TYPE_BY_ID[p.type].label}\n${p.h3Id}` };
+        }
+        if (layer.id === "infra-points" || layer.id === "infra-footprints") {
+          const p = (object as Facility).properties;
+          const company = p.owner ? `Owner: ${p.owner}` : p.operator ? `Operator: ${p.operator}` : "Owner/operator not tagged";
+          const rating = p.powerRatings.find((r) => r.kw !== null);
+          const lines = [`${facilityTitle(p)} · ${LAYER_META[p.layer].label}`, company];
+          if (rating?.kw != null) lines.push(`Rated ${formatKw(rating.kw)} (${rating.tag})`);
+          return { text: lines.join("\n") };
+        }
+        const context = propsRef.current.contextTooltip(layer.id, object);
+        if (context) return { text: context };
+        if (layer.id === "grid") {
+          const id = object as string;
+          return { text: `${id} · res ${getResolution(id)}\nNo baseline layer loaded` };
+        }
+        return null;
+      },
+    });
+  }, [
+    grid,
+    labelled,
+    stemM,
+    props.projects,
+    props.selectedProjectId,
+    props.selectedCell,
+    props.facilities,
+    props.facilityColour,
+    props.selectedFacilityId,
+    props.tilted,
+    props.contextLayers,
+  ]);
+
+  return <div ref={containerRef} className="map" />;
+}

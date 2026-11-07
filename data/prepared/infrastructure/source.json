@@ -1,0 +1,57 @@
+{
+  "id": "INFRA-OSM-GEV",
+  "provider": "OpenStreetMap contributors (via the gods-eye-view bundled snapshot)",
+  "product": "OSM telecom=data_center and dam features",
+  "upstream": {
+    "repository": "https://github.com/bilawalsidhu/gods-eye-view",
+    "commit": "8b8ccc9a81379e8b40d4be67610570ee5b159512",
+    "paths": [
+      "src/data/local_data/datacenters/",
+      "src/data/local_data/dams/"
+    ],
+    "notes": [
+      "Original OSM extraction date and query were not recorded by the upstream snapshot.",
+      "Dams were extracted by upstream from OpenInfraMap/PostGIS layers (waterway=dam, man_made=dam, building=dam).",
+      "Upstream removed contact tags (email, phone, fax) before release."
+    ]
+  },
+  "licence": "ODbL-1.0",
+  "attribution": "© OpenStreetMap contributors (ODbL). Dams also credit Open Infrastructure Map.",
+  "evidenceType": "reported_record",
+  "spatialSupport": "OSM building footprint polygon or point; representative point = outer-ring vertex average",
+  "retrievedAt": "2026-11-07",
+  "observationPeriod": null,
+  "limitations": [
+    "Coverage is whatever OSM volunteers mapped; absence of a facility is not evidence it does not exist.",
+    "operator and owner are free-text OSM tags and may be stale, abbreviated or a brand rather than the legal entity.",
+    "Power values are tagged capacity ratings (kW), not measured consumption or generation.",
+    "No electricity or water consumption is reported by this source."
+  ],
+  "simulationResolution": 6,
+  "layers": [
+    {
+      "id": "datacenters",
+      "file": "datacenters.geojson",
+      "stats": {
+        "features": 4351,
+        "withOperator": 2619,
+        "withOwner": 142,
+        "withPowerRating": 17,
+        "withParsedPowerRatingKw": 16,
+        "withConsumption": 0
+      }
+    },
+    {
+      "id": "dams",
+      "file": "dams.geojson",
+      "stats": {
+        "features": 703,
+        "withOperator": 220,
+        "withOwner": 5,
+        "withPowerRating": 368,
+        "withParsedPowerRatingKw": 311,
+        "withConsumption": 0
+      }
+    }
+  ]
+}
