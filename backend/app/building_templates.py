@@ -95,6 +95,8 @@ _GREENHOUSE_PARAMS = [
 # recorded with the building and shown back, but resource use, outputs and costs always come from the
 # common statistics: no coefficient is derived from them.
 DESCRIPTIVE = "Recorded with the building; not used in calculations."
+# Select fields the site-suitability grade reads (site_suitability.profile_for); still not used for resources.
+SUITABILITY_HINT = "Used by the site-suitability grade; not in resource calculations."
 
 
 def _n(key: str, label: str, unit: str, hint: str | None = None) -> TemplateParam:
@@ -102,15 +104,16 @@ def _n(key: str, label: str, unit: str, hint: str | None = None) -> TemplatePara
                          hint=f"{hint}. {DESCRIPTIVE}" if hint else DESCRIPTIVE)
 
 
-def _s(key: str, label: str, options: list[str], hint: str | None = None) -> TemplateParam:
+def _s(key: str, label: str, options: list[str], hint: str | None = None, graded: bool = False) -> TemplateParam:
+    tail = SUITABILITY_HINT if graded else DESCRIPTIVE
     return TemplateParam(key=key, label=label, unit="", kind="select", options=options,
-                         hint=f"{hint}. {DESCRIPTIVE}" if hint else DESCRIPTIVE)
+                         hint=f"{hint}. {tail}" if hint else tail)
 
 
 _PCT = "0–100 %"
 
 _WIND_PARAMS = [
-    _s("siting", "Siting", ["onshore", "offshore"]),
+    _s("siting", "Siting", ["onshore", "offshore"], graded=True),
     _n("turbineCount", "Turbines", "count"),
     _n("turbineRatingKw", "Turbine rating", "kW", "Nameplate rating of one turbine"),
     _n("hubHeightM", "Hub height", "m"),
@@ -208,8 +211,9 @@ _FAB_PARAMS = [
 ]
 _FARM_PARAMS = [
     _s("cropType", "Main crop", ["wheat", "maize", "rice", "soybean", "barley", "cotton", "sugarcane", "potatoes",
-                                 "vegetables", "fruit_orchard", "vineyard", "nuts", "alfalfa_hay", "mixed", "other"]),
-    _s("irrigation", "Irrigation", ["rainfed", "centre_pivot", "sprinkler", "drip", "furrow_flood"]),
+                                 "vegetables", "fruit_orchard", "vineyard", "nuts", "alfalfa_hay", "mixed", "other"],
+       graded=True),
+    _s("irrigation", "Irrigation", ["rainfed", "centre_pivot", "sprinkler", "drip", "furrow_flood"], graded=True),
     _n("cultivatedAreaHa", "Cultivated area", "ha", "Separate from the occupied footprint in m²"),
     _n("yieldTPerHa", "Yield", "t/ha/yr"),
 ]
@@ -227,7 +231,7 @@ _VERTICAL_FARM_PARAMS = [
 ]
 _AQUACULTURE_PARAMS = [
     _s("system", "System", ["marine_net_pen", "freshwater_pond", "recirculating_ras", "flow_through",
-                            "shellfish_longline"]),
+                            "shellfish_longline"], graded=True),
     _s("species", "Species", ["salmon", "trout", "shrimp", "tilapia", "carp", "catfish", "oysters_mussels",
                               "seaweed", "other"]),
     _n("productionTPerYear", "Production", "t/yr"),

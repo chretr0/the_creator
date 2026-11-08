@@ -432,8 +432,52 @@ export type AssessmentRequest = {
   limit?: number;
 };
 
-export type CellState = { h3Id: string; state: AssessmentState };
-export type Candidate = { h3Id: string; latitude: number; longitude: number; assessment: Assessment };
+/** How ideal a site is for the building type (FAO classes S1, S2, S3, N). Separate from the hard state. */
+export type SuitabilityTier = "ideal" | "good" | "marginal" | "unsuitable";
+
+/** One graded site factor in a building type's profile (e.g. soil nitrogen for a crop farm). */
+export type SuitabilityFactor = {
+  key: string;
+  label: string;
+  group: string;
+  unit: string;
+  weight: number;
+  /** "Unsuitable" here makes the whole site unsuitable, whatever the other factors say. */
+  constraint: boolean;
+  /** Human text of the bands, e.g. "Ideal 6.0–7.5 · Good 5.5–8.0 · Marginal 5.0–8.5 · otherwise unsuitable". */
+  bands: string;
+  layerId: string | null;
+  sliceId: string | null;
+  source: string;
+  why: string;
+};
+
+export type SuitabilityProfile = { id: string; label: string; method: string; factors: SuitabilityFactor[] };
+
+export type FactorGrade = { key: string; tier: SuitabilityTier | null; value: number | null; display: string; explanation: string };
+
+export type Suitability = {
+  profile: SuitabilityProfile;
+  tier: SuitabilityTier | null;
+  score: number | null; // weighted mean of class points, 0–3
+  coverage: number; // share of factor weight with data, 0–1
+  limiting: string[]; // factor keys, worst first
+  summary: string;
+  factors: FactorGrade[]; // same order as profile.factors
+};
+
+/**
+ * `tier`/`grades` are set when the building type has a suitability profile. `grades` holds one character
+ * per profile factor, in profile order: "1" ideal, "2" good, "3" marginal, "4" unsuitable, "0" no data.
+ */
+export type CellState = { h3Id: string; state: AssessmentState; tier?: SuitabilityTier | null; grades?: string | null };
+export type Candidate = {
+  h3Id: string;
+  latitude: number;
+  longitude: number;
+  assessment: Assessment;
+  suitability?: Suitability | null;
+};
 
 export type PriceOfferStatus =
   | "available" // no price entered; the cell's price can be applied explicitly
@@ -487,6 +531,7 @@ export type LocationAssessment = {
   result: BuildingResult;
   assessment: Assessment;
   utilityPrices?: LocationPriceOffer[];
+  suitability?: Suitability | null;
 };
 
 export type AreaAssessment = {
@@ -496,6 +541,8 @@ export type AreaAssessment = {
   candidates: Candidate[];
   result: BuildingResult;
   note: string;
+  suitability?: SuitabilityProfile | null;
+  tierCounts?: Partial<Record<SuitabilityTier | "unknown", number>> | null;
 };
 
 export type AssessmentResponse = {
@@ -566,4 +613,30 @@ export const STATE_COLOUR: Record<AssessmentState, [number, number, number]> = {
   meets_criteria: [46, 160, 90],
   fails_criteria: [210, 64, 64],
   insufficient_data: [150, 150, 160],
+};
+
+export const TIER_ORDER: SuitabilityTier[] = ["ideal", "good", "marginal", "unsuitable"];
+
+export const TIER_LABEL: Record<SuitabilityTier, string> = {
+  ideal: "Ideal",
+  good: "Good",
+  marginal: "Marginal",
+  unsuitable: "Unsuitable",
+};
+
+/** Green → yellow → orange; "not buildable" (a resource shortfall) keeps the state red above them. */
+export const TIER_COLOUR: Record<SuitabilityTier, [number, number, number]> = {
+  ideal: [22, 140, 74],
+  good: [132, 196, 84],
+  marginal: [238, 196, 64],
+  unsuitable: [232, 124, 46],
+};
+
+/** `grades` character → tier (see `CellState.grades`). */
+export const GRADE_TIER: Record<string, SuitabilityTier | null> = {
+  "1": "ideal",
+  "2": "good",
+  "3": "marginal",
+  "4": "unsuitable",
+  "0": null,
 };

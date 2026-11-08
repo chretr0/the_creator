@@ -27,7 +27,7 @@ from uuid import UUID
 import h3
 import numpy as np
 
-from app import building_prices, features, h3store, layers, site_capacity, site_support
+from app import building_prices, features, h3store, layers, site_capacity, site_suitability, site_support
 from app.api_base import ParamValue
 from app.building_calc import LocationContext, average_kw, calculate, fmt_num, is_unknown, q
 from app.building_models import (
@@ -724,7 +724,19 @@ def assess_point(
     latitude: float, longitude: float, ctx: ScenarioContext, exclude: set[UUID],
     stress: StressControls | None = None, results: dict[UUID, BuildingResult] | None = None,
     pools: list[PoolState] | None = None, result: BuildingResult | None = None,
-) -> tuple[str, BuildingResult, Assessment, list[CheckVec]]:
+):
+    """(h3 id, result, assessment, checks, site capacity) at an exact location."""
+    return _assess_point(btype, stats, parameters, criteria, site, latitude, longitude, ctx, exclude, stress,
+                         results, pools, result)[:5]
+
+
+def _assess_point(
+    btype: str, stats: BuildingStats, parameters: dict, criteria: list[Criterion], site: SiteAssumptions,
+    latitude: float, longitude: float, ctx: ScenarioContext, exclude: set[UUID],
+    stress: StressControls | None = None, results: dict[UUID, BuildingResult] | None = None,
+    pools: list[PoolState] | None = None, result: BuildingResult | None = None,
+):
+    """assess_point plus the cell's SiteData (reused for the suitability grade)."""
     stress = stress or StressControls()
     h3_id = h3.latlng_to_cell(latitude, longitude, h3store.SIM_RES)
     if result is None:
@@ -742,14 +754,17 @@ def assess_point(
     state = overall(statuses, np.array([c.required for c in checks], dtype=bool), 1)
     sd, sh, demand, mats = site_state
     capacity = site_capacity.capacity_at(sd, sh, 0, stress, demand, btype, mats)
-    return h3_id, result, assessment_at(checks, 0, int(state[0]), skipped, bool(sd.coastal[0])), checks, capacity
+    return (h3_id, result, assessment_at(checks, 0, int(state[0]), skipped, bool(sd.coastal[0])), checks, capacity,
+            sd)
 
 
 def assess_location(btype, stats, parameters, criteria, site, latitude, longitude, ctx, exclude) -> LocationAssessment:
-    h3_id, result, assessment, _, capacity = assess_point(btype, stats, parameters, criteria, site, latitude,
-                                                          longitude, ctx, exclude)
+    h3_id, result, assessment, _, capacity, sd = _assess_point(btype, stats, parameters, criteria, site, latitude,
+                                                               longitude, ctx, exclude)
+    graded = site_suitability.grade_for(btype, stats, parameters, sd)
     return LocationAssessment(latitude=latitude, longitude=longitude, h3_id=h3_id, result=result, assessment=assessment,
-                              site=capacity, utility_prices=building_prices.location_offers(h3_id, stats.costs))
+                              site=capacity, utility_prices=building_prices.location_offers(h3_id, stats.costs),
+                              suitability=None if graded is None else graded.at(0))
 
 
 def _box_area_km2(w: float, s: float, e: float, n: float) -> float:
@@ -812,20 +827,31 @@ def assess_area(btype, stats, parameters, criteria, box: tuple[float, float, flo
     statuses = np.array([c.status for c in checks]).reshape(len(checks), n)
     states = overall(statuses, np.array([c.required for c in checks], dtype=bool), n)
 
-    order = np.lexsort((cells, states))  # state rank, then H3 id (same-resolution ids sort like their hex)
+    graded = site_suitability.grade_for(btype, stats, parameters, site_state[0])  # same SiteData, no re-lookup
+    if graded is None:
+        tier_rank = np.full(n, site_suitability.UNGRADED_RANK, dtype=np.int8)
+        tiers, grades, profile = [None] * n, [None] * n, None
+    else:
+        tier_rank, tiers, grades, profile = graded.rank, graded.tier_names(), graded.grade_strings(), graded.profile_model()
+
+    # state rank, then suitability tier, then H3 id (same-resolution ids sort like their hex)
+    order = np.lexsort((cells, tier_rank, states))
     candidates = []
     for i in order[:limit]:
         lat, lon = h3.cell_to_latlng(hexes(int(i)))
         candidates.append(Candidate(h3_id=hexes(int(i)), latitude=lat, longitude=lon,
-                                    assessment=assessment_at(checks, int(i), int(states[i]), skipped, bool(coastal[i]))))
+                                    assessment=assessment_at(checks, int(i), int(states[i]), skipped, bool(coastal[i])),
+                                    suitability=None if graded is None else graded.at(int(i), profile)))
     counts = {s: int(np.count_nonzero(states == k)) for k, s in enumerate(_STATES)}
     return AreaAssessment(
         cell_count=n,
         counts=counts,
-        cells=[CellState(h3_id=hexes(i), state=_STATES[states[i]]) for i in range(n)],
+        cells=[CellState(h3_id=hexes(i), state=_STATES[states[i]], tier=tiers[i], grades=grades[i]) for i in range(n)],
         candidates=candidates,
         result=result,
         note=SCREENING_NOTE + (f" Showing the first {len(candidates)} of {n} cells in order." if n > limit else ""),
+        suitability=profile,
+        tier_counts=None if graded is None else graded.tier_counts(),
     )
 
 

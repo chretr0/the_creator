@@ -492,6 +492,21 @@ fieldset.classes .toggle, fieldset.radios .toggle { width: 100%; }
 }
 .map-legend .legend { margin-top: 4px; }
 
+/* Build tab: graded screening legend (overall grade or one factor) */
+.suitability-legend { width: 236px; max-width: calc(100% - 40px); }
+.suitability-legend-head { line-height: 1.35; }
+.suitability-legend-head .block { font-size: 11px; margin-top: 1px; }
+.suitability-colour-by { display: flex; align-items: center; gap: 8px; margin: 8px 0 2px; font-size: 11px; color: var(--label); }
+.suitability-colour-by select { flex: 1; min-width: 0; font-size: 12px; padding: 4px 6px; }
+.suitability-legend .legend li.muted { color: var(--muted); }
+.suitability-legend-note { margin: 8px 0 0; font-size: 11px; line-height: 1.4; color: var(--label); }
+.suitability-legend-note .block { margin-top: 2px; }
+.suitability-legend-note summary { cursor: pointer; color: var(--accent); }
+.suitability-legend-note p { margin: 6px 0 0; }
+.suitability-legend-strip, .suitability-legend-toggle { display: none; }
+:root { --tier-unsuitable: #b85414; }
+:root[data-theme="dark"] { --tier-unsuitable: #f3a061; }
+
 /* Stress comparison: per-building supply check groups */
 .comparison table.mini tr.group th { padding-top: 10px; color: var(--text); font-weight: 600; }
 .comparison .section .section-meta { flex-wrap: wrap; justify-content: flex-end; }
@@ -941,6 +956,38 @@ ul.site-res-parts li { margin: 1px 0; overflow-wrap: anywhere; }
 .need-ok .need-amount, .need-surplus .need-amount { color: var(--ok); }
 .need-detail { grid-column: 1 / -1; display: block; font-size: 11px; color: var(--muted); line-height: 1.4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
+/* How ideal the clicked site is, factor by factor */
+.site-badges { display: flex; flex-wrap: wrap; gap: 6px; }
+.badge.tier-ideal, .badge.tier-good { color: var(--ok); }
+.badge.tier-marginal { color: var(--warn); }
+.badge.tier-unsuitable { color: var(--tier-unsuitable); }
+.badge.tier-none { color: var(--muted); border-style: dashed; }
+.suitability-verdict { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.suitability-verdict .badge { font-size: 12px; padding: 3px 10px; }
+.suitability-verdict button.link.active { color: var(--text); text-decoration: none; cursor: default; }
+.suitability-summary { margin: 8px 0 10px; color: var(--label); line-height: 1.45; }
+.factor-list, .factor-list ul { list-style: none; margin: 0; padding: 0; }
+.factor-group + .factor-group { margin-top: 8px; }
+.factor-group-name { display: block; font-size: 10px; font-weight: 650; letter-spacing: .5px; text-transform: uppercase; color: var(--subtle); margin: 0 0 3px; }
+.factor { display: grid; grid-template-columns: 10px minmax(6em, 1fr) auto 66px 24px; align-items: center; column-gap: 7px; padding: 4px 0; border-bottom: 1px dashed var(--border); font-size: 12px; }
+.factor:last-child { border-bottom: 0; }
+.factor-dot { width: 9px; height: 9px; border-radius: 50%; border: 1px solid color-mix(in srgb, var(--text) 18%, transparent); }
+.factor-none .factor-dot { border-style: dashed; }
+.factor-label { min-width: 0; color: var(--text); overflow-wrap: anywhere; }
+.factor-limit { margin-left: 5px; font-size: 9.5px; font-weight: 650; text-transform: uppercase; letter-spacing: .4px; color: var(--subtle); border: 1px solid var(--border-strong); border-radius: 4px; padding: 0 3px; }
+.factor-value { text-align: right; font-variant-numeric: tabular-nums; color: var(--label); overflow-wrap: anywhere; }
+.factor-tier { font-weight: 600; font-size: 11px; white-space: nowrap; }
+.factor-ideal .factor-tier, .factor-good .factor-tier { color: var(--ok); }
+.factor-marginal .factor-tier { color: var(--warn); }
+.factor-unsuitable .factor-tier { color: var(--tier-unsuitable); }
+.factor-none .factor-tier, .factor-none .factor-value { color: var(--muted); }
+button.ghost.factor-map { padding: 3px; display: inline-flex; justify-content: center; }
+button.ghost.factor-map.active { color: var(--accent); background: var(--accent-soft); }
+.factor-explanation { grid-column: 2 / -1; font-size: 11px; color: var(--muted); line-height: 1.35; }
+.suitability-method { margin-top: 10px; color: var(--label); }
+.suitability-method summary { cursor: pointer; color: var(--accent); }
+.suitability-method p { margin: 6px 0 0; line-height: 1.45; }
+
 /* Supporting buildings that would close the gaps */
 .support-options { display: flex; flex-direction: column; gap: 8px; }
 .support-options h4 { margin: 0; font-size: 11px; font-weight: 650; letter-spacing: .6px; text-transform: uppercase; color: var(--label); }
@@ -974,3 +1021,70 @@ ul.site-res-parts li { margin: 1px 0; overflow-wrap: anywhere; }
   .site-panel-actions { padding: 10px 14px max(12px, env(safe-area-inset-bottom)); }
   .type-picker select, .example-picker select { font-size: 16px; }
 }
+
+/* ---- build layer chips ---- */
+/* Build overlays (layer chips, then the screening legend) in one left-hand column under .map-context.
+   The column is capped to the map's height and the legend scrolls inside it, so nothing overlaps. */
+.build-map-stack {
+  --stack-top: 114px; --stack-bottom: 44px;
+  position: absolute; z-index: 2; top: var(--stack-top); left: 20px; width: min(360px, calc(100% - 40px));
+  max-height: calc(100% - var(--stack-top) - var(--stack-bottom));
+  display: flex; flex-direction: column; align-items: flex-start; gap: 8px; pointer-events: none;
+}
+.build-map-stack > * { pointer-events: auto; }
+.build-map-stack .map-legend { position: static; flex: 0 1 auto; min-height: 0; overflow-y: auto; max-width: 100%; }
+.build-layer-chips { flex: none; max-width: 100%; padding: 9px 10px 10px; background: color-mix(in srgb, var(--surface) 96%, transparent); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow); }
+.build-layer-chips-title { display: flex; align-items: center; gap: 6px; margin: 0 0 7px; color: var(--label); font-size: 11px; font-weight: 600; line-height: 1.3; }
+.build-layer-chips-title .icon { color: var(--accent); }
+.build-layer-chips-list { display: flex; flex-wrap: wrap; gap: 5px; list-style: none; margin: 0; padding: 0; }
+.build-layer-chip { gap: 5px; padding: 4px 10px 4px 8px; border-radius: 999px; border-color: var(--border-strong); background: var(--surface); color: var(--muted); font-size: 12px; font-weight: 550; white-space: nowrap; }
+.build-layer-chip:hover:not(:disabled) { color: var(--text); border-color: var(--accent-border); background: var(--hover); }
+.build-layer-chip[aria-pressed="true"], .build-layer-chip[aria-pressed="true"]:hover:not(:disabled) { color: var(--accent-strong); border-color: var(--accent-border); background: var(--accent-soft); }
+.build-layer-chip[aria-pressed="true"]:hover:not(:disabled) { border-color: var(--accent); }
+.build-layer-chip[aria-pressed="mixed"] { color: var(--accent-strong); border-color: var(--accent-border); border-style: dashed; }
+.build-layer-chip-auto { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+.build-layer-chip-spinner { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid currentColor; border-right-color: transparent; flex-shrink: 0; animation: build-layer-spin .8s linear infinite; }
+@keyframes build-layer-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .build-layer-chip-spinner { animation: none; opacity: .5; } }
+/* With extra attributions the credits grow; keep the column clear of them. */
+.map-wrap:has(.map-credits span) .build-map-stack { --stack-bottom: 72px; }
+@media (max-width: 1360px) { .with-inspector .build-map-stack { --stack-top: 160px; } }
+@media (min-width: 801px) and (max-width: 1100px) {
+  .with-inspector .build-map-stack { --stack-top: 126px; }
+  /* Share the map's height with the floating site card: the column takes at most about half. */
+  .build-map-stack { max-height: min(calc(100% - var(--stack-top) - var(--stack-bottom)), calc((100% - var(--stack-top)) * .55)); }
+  /* The floating site card stops below the overlay column (its bottom edge is measured in App). */
+  .workspace-build .inspector:has(> .inspector-body > .site-host:not([hidden])) { max-height: calc(100% - max(90px, var(--build-stack-bottom, 0px)) - 40px); }
+  /* Compact legend here so the card keeps room: two-column rows; bands and method are in the site panel. */
+  .build-map-stack .suitability-legend .legend.single { grid-template-columns: 1fr 1fr; gap: 4px 10px; }
+  .build-map-stack .suitability-legend .suitability-legend-note { display: none; }
+}
+@media (max-width: 800px) {
+  .build-map-stack, .with-inspector .build-map-stack { --stack-top: 140px; --stack-bottom: 76px; left: 12px; width: calc(100% - 24px); gap: 6px; }
+  .build-layer-chips { padding: 7px 8px 8px; }
+  .build-layer-chips-title { font-size: 10px; margin-bottom: 5px; }
+  .build-layer-chip { font-size: 11px; padding: 3px 8px 3px 6px; }
+  /* The map is short here (the site sheet takes the rest): no workspace pill, no chip title, one
+     sideways-scrolling chip row (faded edge when cut off), and a legend that starts as one strip. */
+  .workspace-build .map-context { display: none; }
+  .build-map-stack, .with-inspector .build-map-stack, .map-wrap:has(.map-credits span) .build-map-stack { --stack-top: 106px; --stack-bottom: 44px; }
+  .build-layer-chips-title { display: none; }
+  .build-layer-chips-list { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .build-layer-chips-list[data-overflow] { mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); }
+  .build-map-stack .suitability-legend { width: min(320px, 100%); padding: 7px 10px; }
+  .suitability-legend-head { display: flex; align-items: center; gap: 4px; }
+  .suitability-legend-head .block { display: none; }
+  .suitability-legend-toggle { display: inline-flex; margin-left: auto; padding: 0 4px; font-size: 11px; color: var(--accent); }
+  .suitability-legend:not(.expanded) .suitability-legend-body { display: none; }
+  /* Collapsed: one line, the strip of swatches and counts, then "More". */
+  .build-map-stack .suitability-legend:not(.expanded) { display: flex; align-items: center; gap: 8px; width: 100%; padding: 6px 8px 6px 10px; }
+  .suitability-legend:not(.expanded) .suitability-legend-head { order: 2; margin-left: auto; }
+  .suitability-legend:not(.expanded) .suitability-legend-head > :not(.suitability-legend-toggle) { display: none; }
+  .suitability-legend:not(.expanded) .suitability-legend-strip { display: flex; flex: 1; min-width: 0; flex-wrap: wrap; gap: 3px 10px; list-style: none; margin: 0; padding: 0; font-size: 11px; font-variant-numeric: tabular-nums; }
+  .suitability-legend-strip li { display: inline-flex; align-items: center; gap: 4px; }
+  .suitability-legend .legend.single { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 3px 8px; }
+  .suitability-legend .legend li { gap: 5px; }
+  .suitability-legend .suitability-legend-note { display: none; }
+  .suitability-colour-by { margin: 5px 0 2px; }
+}
+/* ---- end build layer chips ---- */
