@@ -1,0 +1,87 @@
+{
+  "id": "MOON-PLACE-01-global-20261108",
+  "catalogueSourceId": "MOON-PLACE-01",
+  "body": "moon",
+  "provider": "IAU WGPSN / USGS Astrogeology Science Center (Planetary Geomatics Group)",
+  "product": "Gazetteer of Planetary Nomenclature, Moon feature centre points (shapefile, rebuilt nightly)",
+  "version": "nightly build as retrieved",
+  "documentationUrl": "https://planetarynames.wr.usgs.gov/",
+  "accessUrl": "https://asc-planetarynames-data.s3.us-west-2.amazonaws.com/MOON_nomenclature_center_pts.zip",
+  "accessMethod": "download (HTTPS, USGS S3 bucket)",
+  "evidenceType": "reference_gazetteer",
+  "licence": {
+    "name": "U.S. public domain (USGS)",
+    "attribution": "Gazetteer of Planetary Nomenclature, Planetary Geomatics Group of the USGS Astrogeology Science Center, https://planetarynames.wr.usgs.gov. IAU WGPSN.",
+    "notes": "Feature names are IAU nomenclature; USGS data carry no copyright.",
+    "reviewedAt": "2026-11-08"
+  },
+  "frame": "Moon planetocentric, east-positive; center_lon in 0..360 (converted to ±180)",
+  "processing": "scripts/moon/prepare_moon_reference.py -> data/prepared/moon/places/gazetteer.json",
+  "stats": {
+    "records": 9087,
+    "kept": 9087,
+    "approval": {
+      "Adopted by IAU": 9087
+    },
+    "diameterZeroToNull": [
+      "Planitia Descensus",
+      "Mons Agnes",
+      "Statio Shiv Shakti",
+      "Statio Tianjiang"
+    ],
+    "originsLeftToParent": 6999,
+    "types": {
+      "Crater": 1615,
+      "Lettered crater": 7064,
+      "Astronaut-named feature": 81,
+      "Catena": 20,
+      "Dorsum": 39,
+      "Statio": 6,
+      "Lacus": 21,
+      "Mare": 22,
+      "Mons": 58,
+      "Oceanus": 1,
+      "Palus": 3,
+      "Planitia": 1,
+      "Promontorium": 9,
+      "Albedo Feature": 1,
+      "Rima": 112,
+      "Rupes": 8,
+      "Sinus": 12,
+      "Vallis": 14
+    },
+    "fields": [
+      "name",
+      "clean_name",
+      "approvaldt",
+      "origin",
+      "diameter",
+      "center_lon",
+      "center_lat",
+      "type",
+      "code",
+      "approval",
+      "min_lon",
+      "max_lon",
+      "min_lat",
+      "max_lat",
+      "ethnicity",
+      "continent",
+      "quad_name",
+      "quad_code",
+      "link"
+    ]
+  },
+  "region": "global",
+  "retrievedAt": "2026-11-08T02:31:25Z",
+  "preparedAt": "2026-11-08T03:00:37Z",
+  "files": [
+    {
+      "path": "MOON_nomenclature_center_pts.zip",
+      "url": "https://asc-planetarynames-data.s3.us-west-2.amazonaws.com/MOON_nomenclature_center_pts.zip",
+      "resolvedUrl": "https://asc-planetarynames-data.s3.us-west-2.amazonaws.com/MOON_nomenclature_center_pts.zip",
+      "bytes": 23845070,
+      "sha256": "73e2ee042a8f03683f9b3c9dd5d7d355b08dc7221a4b27e1715d7e441ae45ab6"
+    }
+  ]
+}

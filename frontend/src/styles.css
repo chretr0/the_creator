@@ -783,6 +783,15 @@ fieldset.classes .toggle, fieldset.radios .toggle { width: 100%; }
 .build-workflow { display: flex; flex-direction: column; flex: 1; min-width: 0; min-height: 0; }
 .workflow-header { padding: 12px 18px 10px; background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); flex-shrink: 0; }
 .workflow-header .build-steps { margin: 0; }
+/* Shown above the steps while a placed building is loaded into the form. */
+.edit-banner { display: flex; align-items: flex-start; gap: 10px; margin: -2px 0 12px; padding: 10px 12px; border: 1px solid var(--accent-border); border-radius: var(--radius); background: var(--accent-soft); }
+.edit-banner > .dot { width: 12px; height: 12px; margin-top: 3px; flex: 0 0 auto; }
+.edit-banner-text { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; }
+.edit-banner-text .eyebrow { font-size: 9px; color: var(--accent-strong); }
+.edit-banner-text strong { font-size: 14px; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.edit-banner-text small { font-size: 11px; }
+.edit-banner-actions { display: flex; align-items: center; gap: 4px; flex: 0 0 auto; }
+.edit-banner-actions button { font-size: 12px; }
 .workflow-content { flex: 1; overflow-y: auto; min-height: 0; overscroll-behavior: contain; }
 .workflow-content > div > .panel-tabs { position: sticky; top: 0; z-index: 2; }
 .workflow-content .panel { border-bottom: none; padding-top: 18px; padding-bottom: 18px; }
@@ -1020,7 +1029,8 @@ ul.site-res-parts li { margin: 1px 0; overflow-wrap: anywhere; }
 .site-verdict { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 14px 16px; border-bottom: 1px solid var(--border); }
 .site-verdict .badge { font-size: 12px; padding: 4px 11px; gap: 7px; }
 .site-verdict p, .site-verdict > span:not(.badge), .site-verdict > small { margin: 0; font-size: 13px; color: var(--label); line-height: 1.45; }
-.site-panel > .note, .site-panel > .error, .site-panel > .field-error, .site-panel > p.warn { margin: 12px 16px 0; }
+.site-panel > .note, .site-panel > .error, .site-panel > .field-error, .site-panel > p.warn, .site-panel > p.ok { margin: 12px 16px 0; }
+.site-panel > p.ok { font-size: 12px; font-weight: 550; }
 .site-panel > p.warn, .site-panel > .field-error { font-size: 12px; }
 .site-panel-section { padding: 14px 16px; border-bottom: 1px solid var(--border); min-width: 0; }
 .site-panel-section > h4 { display: flex; align-items: baseline; gap: 6px; margin: 0 0 8px; font-size: 11px; font-weight: 650; letter-spacing: .6px; text-transform: uppercase; color: var(--label); }
@@ -1347,3 +1357,50 @@ button.chip.on { background: var(--accent-soft); border-color: var(--accent-bord
   .tiles { grid-template-columns: minmax(0, 1fr); }
   .glance { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+/* ---------- Body switch (Earth | Moon) and per-body map ---------- */
+.body-switch { display: inline-flex; align-items: center; gap: 2px; padding: 3px; flex-shrink: 0; background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; }
+.body-switch button { border: 1px solid transparent; background: transparent; padding: 5px 11px 5px 9px; gap: 6px; font-size: 12px; font-weight: 600; color: var(--muted); border-radius: 7px; white-space: nowrap; }
+.body-switch button:hover:not(:disabled) { color: var(--text); background: var(--surface); }
+.body-switch button[aria-pressed="true"] { color: var(--accent-strong); background: var(--accent-soft); border-color: var(--accent-border); cursor: default; }
+.body-switch button[aria-pressed="true"]:hover:not(:disabled) { background: var(--accent-soft); }
+/* Other bodies have no vector basemap to theme: the style's black background shows through. */
+.map.map-moon { background: #000; }
+/* Body-aware scale bar: MapLibre's .maplibregl-ctrl-scale look, sized by the body's own radius. */
+.map-wrap .maplibregl-ctrl-scale.body-scale { box-sizing: border-box; white-space: nowrap; }
+/* Icons only until the header has room for the names (they stay as each button's aria-label). */
+@media (min-width: 801px) and (max-width: 1200px) {
+  .body-switch-label { display: none; }
+  .body-switch button { padding: 6px 8px; }
+}
+@media (min-width: 801px) and (max-width: 920px) {
+  /* Room for the active world's name next to the extra switch. */
+  .app-header { gap: 12px; }
+  .workspace-nav button { padding: 10px 8px; }
+  .body-switch button { padding: 6px; }
+}
+@media (max-width: 800px) {
+  /*
+   * Second header row: the workspace tabs, then the body switch at its end. Positioned in that row's
+   * grid area (the sticky header is its containing block) so it never widens the first row's columns.
+   */
+  .app-header .body-switch { position: absolute; grid-row: 2; grid-column: 1 / -1; top: 0; right: 0; }
+  .app-header .workspace-nav { padding-right: 84px; }
+  .body-switch-label { display: none; }
+  /* Same height as the workspace tabs beside it. */
+  .body-switch button { padding: 4px 7px; }
+}
+@media (max-width: 420px) {
+  .workspace-nav { gap: 5px; }
+  .workspace-nav button { padding: 9px 6px; gap: 5px; }
+  .workspace-nav button .icon { width: 16px; height: 16px; }
+}
+@media (max-width: 370px) {
+  .workspace-nav button .icon { display: none; }
+}
+
+/* Read-only limits of a placed building (Explore inspector). */
+.limit-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.limit-list li { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius); }
+.limit-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.project-details .actions > .primary { flex: 1; justify-content: center; }

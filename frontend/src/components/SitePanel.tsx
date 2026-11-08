@@ -31,6 +31,17 @@ export type SitePanelProps = {
   onColourBy: (key: string) => void;
   /** The suitability profile the map is coloured by; factor buttons show as active only for that one. */
   mapProfileId: string | null;
+  /** Editing a placed building: the main action saves it (moving it to the target) instead of placing a new one. */
+  edit?: {
+    /** The target is not where the building stands. */
+    moved: boolean;
+    /** Anything unsaved (form or location). */
+    changed: boolean;
+    /** e.g. "Saved …" after saving. */
+    note: string | null;
+    onDiscard: () => void;
+    onStop: () => void;
+  } | null;
 };
 
 /** Site checks that restate a site resource: the resource row is shown and the check is skipped. */
@@ -191,7 +202,7 @@ function SupportOptions({ suggestions, onSupport }: { suggestions: SupportSugges
 
 /** Live check of the current building at the clicked map location: what the site still needs. */
 export default function SitePanel(props: SitePanelProps) {
-  const { target, location } = props;
+  const { target, location, edit } = props;
   if (!target) {
     return (
       <div className="site-panel">
@@ -258,19 +269,42 @@ export default function SitePanel(props: SitePanelProps) {
             {props.typeLabel} · {coordLabel(target.latitude, target.longitude)}
           </small>
         </div>
-        <button className="ghost" aria-label="Remove placement" title="Remove placement" onClick={props.onCancel}>
-          ✕
-        </button>
+        {edit ? (
+          <button className="ghost" aria-label="Stop editing" title="Stop editing" onClick={edit.onStop}>
+            ✕
+          </button>
+        ) : (
+          <button className="ghost" aria-label="Remove placement" title="Remove placement" onClick={props.onCancel}>
+            ✕
+          </button>
+        )}
       </div>
+      {edit?.moved && <p className="note small site-move-note">New location: saving moves the building here. Click the building to put it back.</p>}
       {body}
       {props.buildError && <p className="warn small">{props.buildError}</p>}
+      {edit?.note && <p className="ok small" role="status">{edit.note}</p>}
       <div className="site-panel-actions">
-        <button className="primary" disabled={!props.canBuild || props.building} onClick={props.onBuild}>
-          {props.building ? "Placing…" : "Build here"}
-        </button>
-        <button className="ghost" onClick={props.onCancel}>
-          Cancel
-        </button>
+        {edit ? (
+          <>
+            <button className="primary" disabled={!props.canBuild || props.building} onClick={props.onBuild}>
+              {props.building ? "Saving…" : edit.moved ? "Move & save" : "Save changes"}
+            </button>
+            {edit.changed && (
+              <button className="ghost" onClick={edit.onDiscard}>
+                Discard changes
+              </button>
+            )}
+          </>
+        ) : (
+          <>
+            <button className="primary" disabled={!props.canBuild || props.building} onClick={props.onBuild}>
+              {props.building ? "Placing…" : "Build here"}
+            </button>
+            <button className="ghost" onClick={props.onCancel}>
+              Cancel
+            </button>
+          </>
+        )}
       </div>
     </div>
   );

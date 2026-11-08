@@ -42,7 +42,9 @@ class CellInfo(ApiModel):
     is_pentagon: bool
     centre: LatLng
     boundary: list[list[float]] = Field(description="Closed ring of [longitude, latitude] pairs")
+    body: str = Field(description="Body whose radius sizes the cell: earth | moon")
     area_km2: float
+    edge_length_km: float = Field(description="Average hexagon edge length at this resolution on the body")
     neighbours: list[str]
     parent: str | None
     simulation_cell: str | None

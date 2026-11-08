@@ -242,7 +242,7 @@ function LayerTile({ layer, total, onShow }: { layer: ProfileLayer; total: numbe
   return (
     <Tile layer={layer} total={total} onShow={onShow} slice={head?.slice}>
       <Num v={head?.display ?? null} units={head?.units} />
-      {shown.length > 1 && <span className="tile-note">{head.label}</span>}
+      {head && shown.length > 1 && <span className="tile-note">{head.label}</span>}
       {rest.length > 0 && (
         <dl className="tile-rows">
           {rest.map((v) => (

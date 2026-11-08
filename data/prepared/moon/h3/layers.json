@@ -1,0 +1,54 @@
+{
+  "layers": [
+    {
+      "id": "elevation",
+      "name": "Elevation (LOLA)",
+      "unit": "m",
+      "description": "Mean surface height in each H3 cell relative to the 1737.4 km lunar reference sphere, from the LOLA LDEM 16 pixels/degree global grid (≈1.9 km pixels).",
+      "sourceId": "MOON-TOPO-02",
+      "evidenceType": "orbital_retrieval",
+      "file": "elevation.parquet",
+      "maxResolution": 5,
+      "nativeResolutionKm": 1.9,
+      "aggregation": "mean",
+      "range": [
+        -5240,
+        6100
+      ],
+      "rangeMethod": "1st and 99th percentiles of the res-5 cell means, rounded outward to 10 m",
+      "extent": [
+        -8534.1,
+        10475.6
+      ],
+      "palette": "terrain",
+      "limitations": [
+        "16 pixels/degree grid (≈1.9 km pixels at the equator): values exist down to H3 resolution 5 only (~19 km² cells, about 5 pixels each near the equator); resolution-6 cells inherit their res-5 parent's value.",
+        "Heights are relative to the 1737.4 km reference sphere (planetary radius − 1737.4 km), not a geoid or equipotential surface.",
+        "Display/demo product: far too coarse for slopes, roughness or landing-site work. Use SLDEM2015 (MOON-TOPO-01, 59 m, ±60°) or LOLA LDEM 128 ppd (237 m) for slopes.",
+        "Gaps between LOLA ground tracks are interpolated by the producer (GMT 'surface'); the label warns of possible edge artifacts at the 45° latitude band boundaries.",
+        "Pixel-centre assignment; cell values are pixel-area-weighted (cos latitude) means, and parent cells are area-weighted means of all their pixels."
+      ]
+    }
+  ],
+  "sources": {
+    "MOON-TOPO-02": {
+      "id": "MOON-TOPO-02",
+      "name": "LOLA LDEM 16 ppd global DEM (LDEM_16_FLOAT V3.1)",
+      "provider": "NASA PDS Geosciences Node / LRO LOLA team (NASA GSFC)",
+      "licence": "U.S. public domain (NASA PDS)",
+      "attribution": "LOLA team, NASA/GSFC; Smith et al. 2010/2017",
+      "evidenceType": "orbital_retrieval",
+      "url": "https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/data/lola_gdr/cylindrical/float_img/ldem_16_float.img",
+      "labelUrl": "https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/data/lola_gdr/cylindrical/float_img/ldem_16_float.lbl",
+      "retrievedAt": "2026-11-08T02:21:37Z",
+      "limitations": [
+        "16 pixels/degree grid (≈1.9 km pixels at the equator): values exist down to H3 resolution 5 only (~19 km² cells, about 5 pixels each near the equator); resolution-6 cells inherit their res-5 parent's value.",
+        "Heights are relative to the 1737.4 km reference sphere (planetary radius − 1737.4 km), not a geoid or equipotential surface.",
+        "Display/demo product: far too coarse for slopes, roughness or landing-site work. Use SLDEM2015 (MOON-TOPO-01, 59 m, ±60°) or LOLA LDEM 128 ppd (237 m) for slopes.",
+        "Gaps between LOLA ground tracks are interpolated by the producer (GMT 'surface'); the label warns of possible edge artifacts at the 45° latitude band boundaries.",
+        "Pixel-centre assignment; cell values are pixel-area-weighted (cos latitude) means, and parent cells are area-weighted means of all their pixels."
+      ],
+      "commercialUse": true
+    }
+  }
+}

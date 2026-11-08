@@ -226,3 +226,22 @@ These projections are built from the per-slice measurements in §2, for a one-ye
 4. **UK manual items:** BGS Geology 625k and Environment Agency water quality.
 
 The whole-world figures in §3–§4 are a sizing reference only. The data-scope rule means global fine-resolution datasets are not downloaded.
+
+## 6. Moon (snapshot 2026-11-08)
+
+Sources are in [CLAUDE-Moon-Data-Sources.md](../CLAUDE-Moon-Data-Sources.md); the layout and commands are in [README.md §7](./README.md). Everything is global, and each raw folder has a `source.json`.
+
+| ID | Raw download | Prepared (`data/prepared/moon/`) | Script |
+| --- | --- | --- | --- |
+| MOON-SITE-01 | LROC Anthropogenic Objects zip, 1.6 MB (release 2026-08-14) | `sites/anthropogenic_objects.geojson`, 73 points (71 LROC + Luna 9/13 from NSSDCA), 40 KB | `prepare_moon_reference.py` |
+| MOON-PLACE-01 | IAU/USGS gazetteer centre points zip, 24 MB | `places/gazetteer.json`, 9,087 approved names, 1.99 MB | `prepare_moon_reference.py` |
+| MOON-PLACE-02 | LROC global mare zip, 8.8 MB | `regions/mare.geojson`, 97 merged mare features (simplified 0.015° ≈ 455 m), 2.4 MB | `prepare_moon_reference.py` |
+| MOON-SITE-02 | none (curated from catalogue §9, as of 2026-11-08) | `missions/planned.geojson`: 7 Artemis anchor boxes (9 regions) + 16 planned missions, 14 KB | `prepare_moon_reference.py` |
+| MOON-SITE-06 | none (rule) | entry in `source.json`; the backend draws 2.0 km / 0.5 km rings around sites with `heritage` | backend |
+| MOON-TOPO-02 | LOLA LDEM 16 ppd, 66 MB | `h3/elevation.parquet` (res 0–5, gitignored) + `h3/layers.json` | `prepare_moon_elevation.py` |
+
+Things to know:
+
+- **Approximate positions.** The Artemis boxes are centred on the anchor feature, not on the real rim/flank region; NASA published no polygons. Planned-mission points are catalogue coordinates or gazetteer centres, and missions without a published site have no geometry. All carry `approximate: true`.
+- **Keep-out modelling.** The NASA 2011 heritage recommendations are not law and cover U.S. artifacts only. The app applies them to every nation's landings (`heritage: "landing"`, incl. rovers) and impacts (`"impact"`).
+- **Mirror early.** The PDS Imaging Node shows a funding-lapse banner. The LROC host now redirects to `pds.mcp.nasa.gov`.
