@@ -27,7 +27,7 @@ def baseline(cells: list[str], layer_id: str) -> list[float | None]:
 
 
 def timeline_inputs(ctx: ScenarioContext) -> dict:
-    # Bounded local display domains, about 30 km around each placed project. No global enumeration.
+    # Bounded local display domains, roughly 50 km around each placed project. No global enumeration.
     cells: set[str] = set()
     for building in ctx.buildings:
         cells.update(h3.grid_disk(building.h3_id, 8))

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api, type Project, type Scenario } from "../lib/api";
 import { DEFAULT_DISPERSION, dailyEmission, impactCells, knownTotal, DEFAULT_ENVIRONMENT, ENVIRONMENT_FIELDS, validEnvironment, impactUnit, pollutantKey, pollutantLabel, timeLabel, validDispersion,
-  type Dispersion, type Environment, type TimelineData, type TimelineMode, type TimelineOverlay } from "../lib/timeline";
+  DEFAULT_AIR_MEASURE, FIRST_STEP, LAST_STEP, PLAYBACK_INTERVAL_MS, TIMELINE_DAYS, TIMELINE_HORIZON_DAYS, type Dispersion, type Environment, type TimelineData, type TimelineMeasure, type TimelineMode, type TimelineOverlay } from "../lib/timeline";
 import { MEDIA, pollutantsFor, releaseMedium, type ReleaseMedium } from "../lib/pollutants";
 import Icon from "./Icon";
 import { PanelTabs } from "./PanelNavigation";
@@ -11,8 +11,6 @@ type Props = {
   onFocus: (latitude: number, longitude: number) => void; onEdit: (project: Project) => void; onBuild: () => void;
 };
 const number = (n: number | null) => n === null ? "Unknown" : n.toLocaleString(undefined, { maximumFractionDigits: 2, maximumSignificantDigits: 4 });
-const stepToDays = (step: number) => step === 0 ? 0 : step >= 1000 ? 365 : Math.expm1(step / 1000 * Math.log1p(365 * 24)) / 24;
-const daysToStep = (days: number) => Math.log1p(days * 24) / Math.log1p(365 * 24) * 1000;
 
 export default function TimelinePanel({ scenario, active, onOverlay, onFocus, onEdit, onBuild }: Props) {
   const revision = scenario ? JSON.stringify([scenario.id, scenario.projects.map((p) => [p.id, p.updatedAt])]) : "";
@@ -24,7 +22,11 @@ export default function TimelinePanel({ scenario, active, onOverlay, onFocus, on
   const [envDraft, setEnvDraft] = useState(Object.fromEntries(Object.entries(DEFAULT_ENVIRONMENT).map(([k, v]) => [k, String(v)])));
   const [pollutant, setPollutant] = useState("co2");
   const [mode, setMode] = useState<TimelineMode>("added");
-  const [days, setDays] = useState(0);
+  const [airMeasure, setAirMeasure] = useState<TimelineMeasure>(DEFAULT_AIR_MEASURE);
+  const measure = medium === "air" ? airMeasure : "concentration";
+  const exposure = measure === "exposure";
+  const [step, setStep] = useState(FIRST_STEP);
+  const days = TIMELINE_DAYS[step];
   const [playing, setPlaying] = useState(false);
   const [dispersion, setDispersion] = useState(DEFAULT_DISPERSION);
   const [draft, setDraft] = useState(Object.fromEntries(Object.entries(DEFAULT_DISPERSION).map(([k, v]) => [k, String(v)])));
@@ -40,7 +42,7 @@ export default function TimelinePanel({ scenario, active, onOverlay, onFocus, on
     }).catch((e) => { if (!ctrl.signal.aborted) setError(String(e.message ?? e)); });
     return () => ctrl.abort();
   }, [active, revision, scenario?.id, retry]);
-  useEffect(() => { setDays(0); setPlaying(false); setPollutant("co2"); setMedium("air"); setMode("added"); initialPollutantWorld.current = null; }, [scenario?.id]);
+  useEffect(() => { setStep(FIRST_STEP); setPlaying(false); setPollutant("co2"); setMedium("air"); setMode("added"); setAirMeasure(DEFAULT_AIR_MEASURE); initialPollutantWorld.current = null; }, [scenario?.id]);
   useEffect(() => {
     if (!data?.projects.length || !scenario || initialPollutantWorld.current === scenario.id) return;
     initialPollutantWorld.current = scenario.id;
@@ -56,14 +58,14 @@ export default function TimelinePanel({ scenario, active, onOverlay, onFocus, on
   }, [active, scenario?.id, onFocus]);
   useEffect(() => { if (!active || !data) setPlaying(false); }, [active, data]);
   useEffect(() => {
-    if (!playing || !active) return;
-    const timer = window.setInterval(() => setDays((d) => stepToDays(Math.min(1000, daysToStep(d) + 12))), 200);
-    return () => window.clearInterval(timer);
-  }, [playing, active]);
-  useEffect(() => { if (days >= 365) setPlaying(false); }, [days]);
+    if (!playing || !active || !data) return;
+    if (step >= LAST_STEP) { setPlaying(false); return; }
+    const timer = window.setTimeout(() => setStep((m) => Math.min(LAST_STEP, m + 1)), PLAYBACK_INTERVAL_MS);
+    return () => window.clearTimeout(timer);
+  }, [playing, active, data, step]);
   const options = useMemo(() => [...new Set([...pollutantsFor(medium).map((p) => p.id), ...(data?.projects.flatMap((p) => p.emissions.filter((e) => releaseMedium(e.pollutant, e.medium) === medium).map((e) => pollutantKey(e.pollutant))) ?? [])])], [data, medium]);
   const displayName = (key: string) => pollutantLabel(key, data?.projects.flatMap((p) => p.emissions).find((e) => pollutantKey(e.pollutant) === key)?.pollutant);
-  const label = displayName(pollutant), unit = impactUnit(medium), massUnit = medium === "climate" ? "kgCO₂e" : "kg";
+  const label = displayName(pollutant), unit = impactUnit(medium, measure), massUnit = medium === "climate" ? "kgCO₂e" : "kg";
   const hasBaseline = medium === "air" && (pollutant === "pm25" || pollutant === "pm10");
   const rates = useMemo(() => data?.projects.map((p) => dailyEmission(p, pollutant, medium)) ?? [], [data, pollutant, medium]);
   const emitted = knownTotal(rates, days);
@@ -72,14 +74,14 @@ export default function TimelinePanel({ scenario, active, onOverlay, onFocus, on
     medium === "marine" && p.marineRelease?.latitude == null ||
     medium === "soil" && !data.cells.some((c) => c.surface === "land"))) ?? [];
   const partial = emitted.known < emitted.total || unresolved.length > 0;
-  const cells = useMemo(() => active && data ? impactCells(data, pollutant, days, dispersion, mode, medium, environment) : [], [active, data, pollutant, days, dispersion, mode, medium, environment]);
+  const cells = useMemo(() => active && data ? impactCells(data, pollutant, days, dispersion, mode, medium, environment, measure) : [], [active, data, pollutant, days, dispersion, mode, medium, environment, measure]);
   // Fixed horizon scale keeps colours comparable during playback.
   const max = useMemo(() => {
     if (!data) return 1;
-    const peak = impactCells(data, pollutant, 365, dispersion, mode, medium, environment).reduce((max, c) => Math.max(max, c.value ?? 0), 0);
+    const peak = impactCells(data, pollutant, TIMELINE_HORIZON_DAYS, dispersion, mode, medium, environment, measure).reduce((max, c) => Math.max(max, c.value ?? 0), 0);
     return peak > 0 ? peak * 1.05 : 1;
-  }, [data, pollutant, dispersion, mode, medium, environment]);
-  const overlay = useMemo(() => active && data && !error ? { cells, pollutant: label, mode, days, partial, max, medium, unit } : null, [active, data, error, cells, label, mode, days, partial, max, medium, unit]);
+  }, [data, pollutant, dispersion, mode, medium, environment, measure]);
+  const overlay = useMemo(() => active && data && !error ? { cells, pollutant: label, mode, measure, days, partial, max, medium, unit } : null, [active, data, error, cells, label, mode, measure, days, partial, max, medium, unit]);
   useEffect(() => { onOverlay(overlay); }, [overlay, onOverlay]);
   useEffect(() => () => onOverlay(null), [onOverlay]);
   const peak = cells.reduce<number | null>((p, c) => c.added === null ? p : Math.max(p ?? 0, c.added), null);
@@ -106,24 +108,37 @@ export default function TimelinePanel({ scenario, active, onOverlay, onFocus, on
       <label className="timeline-field">Pollutant<select value={pollutant} onChange={(e) => { setPlaying(false); setPollutant(e.target.value); setMode("added"); }}>
         {options.map((p) => <option key={p} value={p}>{displayName(p)}</option>)}
       </select></label>
+      {medium === "air" && <PanelTabs label="Air impact measure" value={airMeasure} onChange={(value) => { setPlaying(false); setAirMeasure(value); }} options={[
+        { value: "exposure", label: "Accumulated exposure" }, { value: "concentration", label: "Concentration now" },
+      ]} />}
       {hasBaseline && <PanelTabs label="Environmental view" value={mode} onChange={setMode} options={[
         { value: "baseline", label: "Baseline" }, { value: "added", label: "Added impact" }, { value: "combined", label: "Combined" },
       ]} />}
-      <p className="timeline-baseline small muted">{medium === "climate"
+      <p className="timeline-baseline small muted">{exposure && "Exposure adds up concentration over elapsed time (µg·day/m³). Colours use a fixed five-year scale, so early exposure is faint. "}{medium === "climate"
         ? "CO₂e is a climate accounting measure. The map shows cumulative contributions at each building, including any declared indirect emissions; it does not predict a local CO₂ concentration or warming."
-        : hasBaseline ? `${data.baseline.label} · ${data.baseline.resolution}. Historical reference, not live conditions.`
+        : hasBaseline ? `${data.baseline.label} · ${data.baseline.resolution}. ${exposure ? "Baseline exposure holds this historical mean constant." : "Historical reference, not live conditions."}`
         : `No compatible measured ${label} background is available here. The map shows illustrative added impact only; existing pollution remains unknown.`}</p>
       <div className="timeline-time"><span className="eyebrow">TIME SINCE OPERATION BEGINS</span><strong>{timeLabel(days)}</strong></div>
       <div className="timeline-player">
-        <button className="primary icon-button" disabled={!emitted.known && mode !== "baseline"} aria-label={playing ? "Pause timeline" : "Play timeline"} onClick={() => { if (days >= 365) setDays(0); setPlaying((p) => !p); }}><Icon name={playing ? "pause" : "play"} size={18} /></button>
-        <input type="range" min="0" max="1000" step="1" value={daysToStep(days)} aria-label="Time since operation begins" aria-valuetext={timeLabel(days)} onChange={(e) => { setPlaying(false); setDays(stepToDays(Number(e.target.value))); }} />
-        <button className="icon-button" aria-label="Reset timeline" onClick={() => { setPlaying(false); setDays(0); }}><Icon name="reset" size={18} /></button>
+        <button className="primary icon-button" disabled={!emitted.known && mode !== "baseline"} aria-label={playing ? "Pause timeline" : "Play timeline"} onClick={() => { if (step >= LAST_STEP) setStep(FIRST_STEP); setPlaying((p) => !p); }}><Icon name={playing ? "pause" : "play"} size={18} /></button>
+        <button className="icon-button" aria-label="Previous time step" disabled={step <= FIRST_STEP} onClick={() => { setPlaying(false); setStep((m) => Math.max(FIRST_STEP, m - 1)); }}><Icon name="arrow" size={14} style={{ transform: "rotate(180deg)" }} /></button>
+        <input type="range" min={FIRST_STEP} max={LAST_STEP} step="1" value={step} aria-label="Time since operation begins" aria-valuetext={timeLabel(days)} onChange={(e) => { setPlaying(false); setStep(Number(e.target.value)); }} />
+        <button className="icon-button" aria-label="Next time step" disabled={step >= LAST_STEP} onClick={() => { setPlaying(false); setStep((m) => Math.min(LAST_STEP, m + 1)); }}><Icon name="arrow" size={14} /></button>
+        <button className="icon-button" aria-label="Reset timeline" onClick={() => { setPlaying(false); setStep(FIRST_STEP); }}><Icon name="reset" size={18} /></button>
       </div>
-      <div className="timeline-stops">{[[0, "Before"], [1 / 24, "1 hour"], [1, "1 day"], [7, "1 week"], [30, "1 month"], [365, "1 year"]].map(([d, label]) => <button key={d} aria-pressed={days === d} onClick={() => { setPlaying(false); setDays(Number(d)); }}>{label}</button>)}</div>
-      <p className="small muted">All placed projects start at day 0. Declared daily operating hours are averaged across each day.</p>
+      <div className="timeline-stops">{TIMELINE_DAYS.map((d, index) => <button key={d} aria-pressed={step === index} onClick={() => { setPlaying(false); setStep(index); }}>{d === TIMELINE_HORIZON_DAYS ? "5 years" : timeLabel(d)}</button>)}</div>
+      <p className="small muted">Time doubles at each step, from day 1 to 1,024 days, then ends at exactly 5 years (1,826.25 days). Totals count from operation beginning at day 0.</p>
+      {medium === "air" && mode !== "baseline" && <details className="timeline-transport small muted">
+        <summary>{dispersion.windSpeed === 0 ? "Calm air assumption" : `Assumed wind: ${number(dispersion.windSpeed)} m/s · ${number(dispersion.windSpeed * 86400 / 1000)} km/day`}</summary>
+        <p>{dispersion.windSpeed === 0
+          ? "No wind transport; diffusion still spreads releases."
+          : "Day 1 includes 24 hours of releases. Wind can carry them across the local map in that time, so local concentrations may already have settled."}
+          {exposure ? " Accumulated exposure continues to grow as releases continue. It integrates the concentration experienced at each location since operation began." : " The map shows concentration at this time; emitted mass below is cumulative."}
+          {" Change wind under Wind & mixing assumptions."}</p>
+      </details>}
       <div className="timeline-metrics">
         <div><span>{label} emitted</span><strong>{number(emitted.value)} <small>{massUnit}</small></strong><small>{partial ? `Known subtotal · ${emitted.known}/${emitted.total} projects` : "Cumulative since day 0"}</small></div>
-        <div><span>{medium === "climate" ? "Largest source-cell contribution" : "Peak added concentration"}</span><strong>{number(peak)} <small>{unit}</small></strong><small>{`Within displayed cells${partial ? " · partial estimate" : ""}`}</small></div>
+        <div><span>{medium === "climate" ? "Largest source-cell contribution" : exposure ? "Peak added exposure" : "Peak added concentration"}</span><strong>{number(peak)} <small>{unit}</small></strong><small>{`Within displayed cells${partial ? " · partial estimate" : ""}`}</small></div>
       </div>
       {emitted.known < emitted.total && <p className="warn small">{emitted.known} of {emitted.total} projects have complete {label} inputs. Other contributions are unknown. Add rates and operating hours in the building editor.</p>}
       {unresolved.length > 0 && <p className="warn small">Receiving environment or flow is unavailable for {unresolved.map((p) => p.name).join(", ")}. Their cumulative releases are included, but affected concentrations are unknown. See Project contributions.</p>}

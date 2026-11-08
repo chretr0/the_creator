@@ -22,7 +22,7 @@ import ProjectEditor from "./components/ProjectEditor";
 import ScenarioPanel, { ScenarioSelect } from "./components/ScenarioPanel";
 import BuildPanel, { type BuildTarget, type PresetRequest, type BuildStage } from "./components/BuildPanel";
 import TimelinePanel from "./components/TimelinePanel";
-import { type TimelineOverlay, timeLabel } from "./lib/timeline";
+import { type TimelineOverlay, timeLabel, timelineViewLabel } from "./lib/timeline";
 import SuitabilityLegend from "./components/SuitabilityLegend";
 import BuildLayerChips from "./components/BuildLayerChips";
 import { layerAvailability, loadingByNeed, type LayerNeed } from "./lib/buildLayers";
@@ -814,9 +814,10 @@ export default function App() {
             </div>
           )}
           {activeTimeline && activeTimeline.cells.length > 0 && <div className="layer-map-legend timeline-map-legend" aria-label="Timeline map legend">
-            <strong>{activeTimeline.pollutant} · {activeTimeline.mode === "baseline" ? "Historical baseline" : activeTimeline.mode === "added" ? (activeTimeline.medium === "climate" ? "Source contributions" : "Added impact") : "Baseline + added impact"}</strong>
-            <span className="small muted">{timeLabel(activeTimeline.days)} · {activeTimeline.mode === "baseline" ? "CAMS 2024" : "Illustrative estimate"}</span>
+            <strong>{activeTimeline.pollutant} · {timelineViewLabel(activeTimeline.medium, activeTimeline.mode, activeTimeline.measure)}</strong>
+            <span className="timeline-legend-time small muted">{timeLabel(activeTimeline.days)} · {activeTimeline.mode === "baseline" ? "CAMS 2024 reference" : "Illustrative estimate"}</span>
             <div className="timeline-colour-ramp" /><div className="timeline-legend-range small"><span>0</span><span>{activeTimeline.max.toLocaleString(undefined, { maximumSignificantDigits: 3 })} {activeTimeline.unit}</span></div>
+            <span className="small muted">Fixed five-year scale · relative intensity</span>
             <span className="small muted">Grey = unknown{activeTimeline.partial && activeTimeline.mode !== "baseline" ? " · known sources only" : ""}</span>
           </div>}
           <div className="map-credits small">

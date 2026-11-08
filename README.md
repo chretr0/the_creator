@@ -112,27 +112,46 @@ for product intent and [CLAUDE-World-Mapping.md](./CLAUDE-World-Mapping.md) for 
     supply minus this building's requirement, after nearby projects are accounted for. Negative means shortfall;
     unknown inputs stay unknown. Air/light indicators with incompatible units are not subtracted.
 
-- **Timeline** replaces the Scenarios / stress-testing UI. Scrub or play from before operation to one year,
+- **Timeline** replaces the Scenarios / stress-testing UI. Scrub or play from day 1 to five years,
   choose a receiving environment and pollutant, and view illustrative added impact. Where compatible measured
   backgrounds exist, historical Baseline and Combined views are also available.
   The Projects section retains saved buildings and world management; existing scenario records and APIs remain compatible.
+  - The slider doubles elapsed time: 1, 2, 4, 8, 16, 32, 64, 128, 256, 512 and 1,024 days, then
+    ends at exactly five years (1,826.25 days, using 365.25 days/year). Previous/next buttons and shortcuts
+    use the same steps. Playback advances every 500 ms and stops at five years; Reset returns to day 1.
+    The colour scale stays fixed to the five-year horizon. Opacity is linear in concentration, so faint plume
+    tails are not visually amplified. Colours are relative to the displayed estimate, not health/safety thresholds.
   - All projects start at day zero. Emission mass and resource use accumulate from declared operating hours and rates,
     using the existing calculator without legacy stress multipliers. Unknown project contributions are explicitly excluded
     from *known subtotals*, never treated as zero. The API is read-only and does not change source measurements.
+  - **Air defaults to Accumulated exposure**, the integral of added concentration since operation began, in
+    **µg·day/m³**. This continues increasing as releases continue, even when local air concentration has settled.
+    **Concentration now** remains a separate view in **µg/m³**. Both use the same transport assumptions and a fixed
+    five-year colour scale; day-one accumulated exposure can be very faint against that scale. The cumulative
+    quantity is not the mass currently in the air or an inhaled dose. For continuous emissions it integrates each
+    age-dependent transport kernel with weight `(elapsed days − puff age in days)`, accounting for arrival time,
+    rather than multiplying the final concentration by elapsed time. Baseline/Combined exposure views integrate the
+    fixed CAMS historical mean as a reference; the underlying measurements remain unchanged. Soil, water and CO₂e
+    keep their existing measures and units. No API or database changes are required.
   - Air uses a **prototype Gaussian puff illustration**, not a forecast or regulatory dispersion model.
     Equation basis: [NOAA's Gaussian horizontal puff concentration](https://www.ready.noaa.gov/documents/AMS2018/html/conc_eqns.html).
     This implementation is not HYSPLIT. It assumes constant wind, uniform vertical mixing, an initial horizontal standard
     deviation of 750 m, and continuous emissions at each building's daily average. Defaults (3 m/s wind from 270°,
     500 m mixing height, 200 m²/s horizontal diffusion) are editable **illustrative assumptions**, not site weather.
-    Concentration sums 160 logarithmically spaced puff-age intervals with variance `750² + 2 × diffusion × age`;
-    mass is conserved in the unbounded mathematical domain. Display is bounded to eight simulation-cell rings (~30 km)
+    Concentration integrates a fixed 2,048-interval logarithmic puff-age grid spanning the supported ten-year calculation
+    range (the UI ends at five years), with variance `750² + 2 × diffusion × age`. Each frame includes only ages up to
+    its elapsed time; intervals do not shift during playback. Mass is conserved in the unbounded mathematical domain.
+    Display is bounded to eight simulation-cell rings (roughly 50 km, varying with location)
     around projects, sampled at resolution-7 display-cell centres. The finer display repeats each parent's coarse
     background; it does not create finer atmospheric observations. Up to 25,000 display cells are supported per world.
   - PM2.5/PM10 can use the **CAMS 2024 annual mean** (~80 km native grid) as a fixed background. These are historical
     reference conditions, not current readings. CO₂ has no supplied background, so only its added mass concentration is
     shown; atmospheric-column products are never substituted for surface concentration. No chemistry, deposition,
     terrain, stack/plume rise, weather evolution or climate warming is modelled. Local concentrations can level off as
-    pollution moves away while cumulative emitted mass keeps growing.
+    pollution moves away while cumulative emitted mass keeps growing. Day 1 means 24 elapsed hours, not the start
+    instant. At the default 3 m/s, air travels 259.2 km/day, so a plume may cross the entire local display on day 1.
+    The panel explains this speed and distinguishes instantaneous concentration, accumulated exposure and cumulative
+    released mass. The map legend, peak metric and tooltips use the units of the selected measure.
   - **Pollutants & releases** uses the shared `shared/pollutants.json` catalogue (39 identities): gases and particles,
     metals, nutrients, oils, solids, pesticides, PFAS and microplastics. Select a destination, pollutant and hourly rate.
     `Other / existing pollutant` preserves unlisted legacy names and distinct mass bases. Missing `medium` in old

@@ -4,6 +4,13 @@ import { pollutantKey, releaseMedium, type ReleaseMedium } from "./pollutants";
  * Equation reference: https://www.ready.noaa.gov/documents/AMS2018/html/conc_eqns.html
  * This is our simplified model, not NOAA HYSPLIT. No chemistry, deposition, terrain or plume rise.
  */
+// Five model years use the backend's 365.25-day accounting convention.
+export const TIMELINE_HORIZON_DAYS = 5 * 365.25;
+export const TIMELINE_DAYS = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, TIMELINE_HORIZON_DAYS] as const;
+export const FIRST_STEP = 0;
+export const LAST_STEP = TIMELINE_DAYS.length - 1;
+export const PLAYBACK_INTERVAL_MS = 500;
+
 export type TimelineProject = {
   id: string; name: string; type: string; latitude: number; longitude: number;
   displayCell?: string;
@@ -22,8 +29,10 @@ export type Dispersion = { windSpeed: number; windFrom: number; mixingHeight: nu
 // Prototype assumptions, explicitly shown and editable in the UI; never labelled measured weather.
 export const DEFAULT_DISPERSION: Dispersion = { windSpeed: 3, windFrom: 270, mixingHeight: 500, diffusion: 200 };
 export type TimelineMode = "baseline" | "added" | "combined";
+export type TimelineMeasure = "concentration" | "exposure";
+export const DEFAULT_AIR_MEASURE: TimelineMeasure = "exposure";
 export type ImpactCell = TimelineCell & { baseline: number | null; added: number | null; value: number | null; relevant?: boolean };
-export type TimelineOverlay = { cells: ImpactCell[]; pollutant: string; mode: TimelineMode; days: number; partial: boolean; max: number; medium: ReleaseMedium; unit: string };
+export type TimelineOverlay = { cells: ImpactCell[]; pollutant: string; mode: TimelineMode; measure: TimelineMeasure; days: number; partial: boolean; max: number; medium: ReleaseMedium; unit: string };
 
 export { pollutantKey, pollutantLabel } from "./pollutants";
 export function isAtmosphericPollutant(key: string): boolean {
@@ -35,7 +44,15 @@ export function dailyEmission(project: TimelineProject, pollutant: string, mediu
   const total = rows.reduce((sum, e) => sum + e.kgPerDay!, 0);
   return Number.isFinite(total) ? total : null;
 }
-export const impactUnit = (medium: ReleaseMedium) => ({ air: "µg/m³", soil: "mg/kg", freshwater: "mg/L", marine: "mg/L", climate: "kgCO₂e" })[medium];
+export const impactUnit = (medium: ReleaseMedium, measure: TimelineMeasure = "concentration") =>
+  medium === "air" && measure === "exposure" ? "µg·day/m³" : ({ air: "µg/m³", soil: "mg/kg", freshwater: "mg/L", marine: "mg/L", climate: "kgCO₂e" })[medium];
+export function timelineViewLabel(medium: ReleaseMedium, mode: TimelineMode, measure: TimelineMeasure): string {
+  if (medium === "air" && measure === "exposure") return {
+    baseline: "Historical reference exposure", added: "Accumulated exposure", combined: "Reference + added exposure",
+  }[mode];
+  return mode === "baseline" ? "Historical baseline" : mode === "combined" ? "Baseline + added impact"
+    : medium === "climate" ? "Source contributions" : "Added concentration";
+}
 export const DEFAULT_ENVIRONMENT = { soilDepth: .2, soilDensity: 1300, soilSpread: 1000, riverSpeed: .3,
   currentSpeed: .1, currentFrom: 270, seaDepth: 10, seaDiffusion: 20 };
 export type Environment = typeof DEFAULT_ENVIRONMENT;
@@ -62,39 +79,63 @@ export function validDispersion(p: Dispersion): boolean {
     && p.diffusion >= 10 && p.diffusion <= 2000;
 }
 
-/** Continuous emission integrated using 160 log-spaced age bins. kg -> µg, seconds, metres.
+const MAX_MODEL_DAYS = 3650;
+const PUFF_INTERVALS = 2048;
+// Fixed age intervals keep existing contributions identical as the horizon advances.
+// Re-spacing a smaller number of bins for each frame made narrow plumes flicker and
+// could overestimate concentrations near the edge of the actual ~50 km display domain.
+const PUFF_AGE_EDGES = Array.from({ length: PUFF_INTERVALS }, (_, i) =>
+  Math.expm1(Math.log1p(MAX_MODEL_DAYS * 86400) * (i + 1) / PUFF_INTERVALS));
+
+/** Continuous emission integrated on a fixed log-spaced age grid. kg -> µg, seconds, metres.
  * All projects begin together at day 0; hourly rates are averaged by declared operating hours/day.
  * Older puffs leave the local display domain naturally; cumulative emissions are a separate total.
  */
-type Puff = { x: number; y: number; variance: number; factor: number };
-function puffs(days: number, p: Dispersion): Puff[] {
+type Puff = { x: number; y: number; variance: number; factor: number; innerRadius: number };
+function puffs(days: number, p: Dispersion, measure: TimelineMeasure = "concentration"): Puff[] {
   const seconds = days * 86400;
   const direction = (p.windFrom + 180) * Math.PI / 180;
   const vx = Math.sin(direction) * p.windSpeed, vy = Math.cos(direction) * p.windSpeed;
-  const scale = Math.log1p(seconds);
   let previous = 0;
   const result: Puff[] = [];
-  for (let i = 1; i <= 160; i++) {
-    const end = Math.expm1(scale * i / 160), age = (previous + end) / 2;
+  for (const edge of PUFF_AGE_EDGES) {
+    const end = Math.min(seconds, edge), age = (previous + end) / 2;
     const variance = 750 ** 2 + 2 * p.diffusion * age;
+    // For continuous releases, integrating concentration from 0 to T gives
+    // ∫₀ᵀ (T - age) × transportKernel(age) d(age). Convert the extra time factor
+    // to days for µg·day/m³. This includes arrival delay; C(T) × T would not.
+    const duration = measure === "exposure" ? Math.max(0, days - age / 86400) : 1;
     result.push({ x: vx * age, y: vy * age, variance,
-      factor: (end - previous) * 1e9 / 86400 / (2 * Math.PI * variance * p.mixingHeight) });
+      innerRadius: p.windSpeed * age - Math.sqrt(80 * variance),
+      factor: duration * (end - previous) * 1e9 / 86400 / (2 * Math.PI * variance * p.mixingHeight) });
+    if (end >= seconds) break;
     previous = end;
   }
   return result;
 }
 function fromPuffs(east: number, north: number, ageBins: Puff[]): number {
   let total = 0;
+  const radius = Math.hypot(east, north);
   for (const puff of ageBins) {
+    // Once a puff's entire exp(-40) footprint has passed this radius, all older
+    // puffs are also outside it. Same numerical cutoff, without scanning years of distant puffs.
+    if (puff.innerRadius > radius) break;
     const exponent = ((east - puff.x) ** 2 + (north - puff.y) ** 2) / (2 * puff.variance);
     if (exponent < 40) total += puff.factor * Math.exp(-exponent);
   }
   return total;
 }
+function airImpactAt(east: number, north: number, kgPerDay: number, days: number, p: Dispersion, measure: TimelineMeasure): number {
+  if (!validDispersion(p) || !Number.isFinite(kgPerDay) || kgPerDay < 0 || days < 0 || days > MAX_MODEL_DAYS || !Number.isFinite(days)) return NaN;
+  if (days === 0 || kgPerDay === 0) return 0;
+  return fromPuffs(east, north, puffs(days, p, measure)) * kgPerDay;
+}
 export function concentrationAt(east: number, north: number, kgPerDay: number, days: number, p: Dispersion): number {
-  if (days <= 0 || kgPerDay === 0) return 0;
-  if (!validDispersion(p) || !Number.isFinite(kgPerDay) || kgPerDay < 0 || days > 3650 || !Number.isFinite(days)) return NaN;
-  return fromPuffs(east, north, puffs(days, p)) * kgPerDay;
+  return airImpactAt(east, north, kgPerDay, days, p, "concentration");
+}
+/** Time-integrated added air concentration, in µg·day/m³ (not inhaled dose). */
+export function exposureAt(east: number, north: number, kgPerDay: number, days: number, p: Dispersion): number {
+  return airImpactAt(east, north, kgPerDay, days, p, "exposure");
 }
 
 function offsets(cell: TimelineCell, source: { longitude: number; latitude: number }) {
@@ -108,12 +149,14 @@ export function soilConcentration(east: number, north: number, rate: number, day
     * Math.exp(-(east ** 2 + north ** 2) / (2 * p.soilSpread ** 2));
 }
 export function impactCells(data: TimelineData, pollutant: string, days: number, p: Dispersion, mode: TimelineMode,
-  medium: ReleaseMedium = releaseMedium(pollutant), env: Environment = DEFAULT_ENVIRONMENT): ImpactCell[] {
-  const valid = Number.isFinite(days) && days >= 0 && days <= 3650 && validDispersion(p) && validEnvironment(env);
+  medium: ReleaseMedium = releaseMedium(pollutant), env: Environment = DEFAULT_ENVIRONMENT,
+  measure: TimelineMeasure = "concentration"): ImpactCell[] {
+  const valid = Number.isFinite(days) && days >= 0 && days <= MAX_MODEL_DAYS && validDispersion(p) && validEnvironment(env);
   const emitters = data.projects.map((project) => ({ project, rate: dailyEmission(project, pollutant, medium),
     river: new Map(project.river?.cells.map((c) => [c.h3Id, c])) })).filter((e) => e.rate !== null);
   const params = medium === "marine" ? { windSpeed: env.currentSpeed, windFrom: env.currentFrom, mixingHeight: env.seaDepth, diffusion: env.seaDiffusion } : p;
-  const ageBins = valid && days > 0 && (medium === "air" || medium === "marine") ? puffs(days, params) : [];
+  const exposure = medium === "air" && measure === "exposure";
+  const ageBins = valid && days > 0 && (medium === "air" || medium === "marine") ? puffs(days, params, exposure ? "exposure" : "concentration") : [];
   return data.cells.map((cell) => {
     let added: number | null = null;
     for (const { project, rate, river } of emitters) {
@@ -137,7 +180,9 @@ export function impactCells(data: TimelineData, pollutant: string, days: number,
       if (contribution !== null && Number.isFinite(contribution)) added = (added ?? 0) + contribution;
     }
     if (added !== null && !Number.isFinite(added)) added = null;
-    const baseline = baselineFor(cell, pollutant, medium);
+    const background = baselineFor(cell, pollutant, medium);
+    // A reference exposure holds the historical mean constant, without modifying the measured input.
+    const baseline = background === null ? null : exposure ? valid ? background * days : null : background;
     const value = mode === "baseline" ? baseline : mode === "added" ? added : baseline !== null && added !== null ? baseline + added : null;
     const relevant = medium === "air" || medium === "soil" && cell.surface === "land" || medium === "marine" && cell.surface === "marine"
       || medium === "climate" && data.projects.some((p) => p.displayCell === cell.h3Id)
@@ -146,13 +191,12 @@ export function impactCells(data: TimelineData, pollutant: string, days: number,
   });
 }
 export function timeLabel(days: number): string {
-  if (days === 0) return "Before building";
-  if (days < 1) { const hours = Number((days * 24).toFixed(1)); return `${hours} ${hours === 1 ? "hour" : "hours"} later`; }
-  const rounded = Number(days.toFixed(1));
-  return `${rounded} ${rounded === 1 ? "day" : "days"} later`;
+  const elapsed = `${days.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${days === 1 ? "day" : "days"}`;
+  return days === TIMELINE_HORIZON_DAYS ? `5 years · ${elapsed}` : elapsed;
 }
 export function impactColour(value: number | null, max: number): [number, number, number, number] {
   if (value === null) return [130, 145, 160, 55];
   const t = Math.min(1, Math.max(0, value / Math.max(max, 1e-9)));
-  return [Math.round(70 + 175 * t), Math.round(145 - 65 * t), Math.round(235 - 175 * t), Math.round(205 * Math.sqrt(t))];
+  // Linear opacity: do not visually amplify very small Gaussian tails into a broad plume.
+  return [Math.round(70 + 175 * t), Math.round(145 - 65 * t), Math.round(235 - 175 * t), Math.round(205 * t)];
 }

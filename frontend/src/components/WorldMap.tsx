@@ -599,6 +599,7 @@ export default function WorldMap(props: Props) {
           const t = propsRef.current.timeline;
           const value = (n: number | null) => n === null ? "Unknown" : `${n.toLocaleString(undefined, { maximumSignificantDigits: 4 })} ${t?.unit ?? "µg/m³"}`;
           if (t?.medium !== "air") return { text: `${t?.pollutant} · ${timeLabel(t?.days ?? 0)}\n${t?.medium === "climate" ? "Source-cell contribution" : "Illustrative addition"}: ${value(c.added)}${t?.partial ? " (known sources only)" : ""}` };
+          if (t.measure === "exposure") return { text: `${t.pollutant} · ${timeLabel(t.days)}\nHistorical reference exposure (2024 held constant): ${value(c.baseline)}\nAccumulated added exposure: ${value(c.added)}${t.partial ? " (known sources only)" : ""}\nCombined exposure: ${value(c.baseline !== null && c.added !== null ? c.baseline + c.added : null)}` };
           return { text: `${t?.pollutant} · ${timeLabel(t?.days ?? 0)}\nBaseline (2024): ${value(c.baseline)}\nIllustrative addition: ${value(c.added)}${t?.partial ? " (known sources only)" : ""}\nCombined: ${value(c.baseline !== null && c.added !== null ? c.baseline + c.added : null)}` };
         }
         if (layer.id === "projects") {
