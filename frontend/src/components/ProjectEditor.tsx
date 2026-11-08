@@ -30,6 +30,8 @@ type Props = {
   catalogue: CellLayer[];
   /** The scenario's evaluation period (days). */
   periodDays: number;
+  /** Refresh shared site capacity when other buildings in this world change. */
+  contextRevision?: string;
 };
 
 type Draft = {
@@ -65,7 +67,7 @@ function withType(draft: Draft, type: ProjectType): Draft {
   return { ...draft, type, stats: type === "data_centre" ? draft.stats : { ...draft.stats, demandBasis: "direct" } };
 }
 
-export default function ProjectEditor({ project, moving, onSave, onMove, onDelete, onClose, catalogue, periodDays }: Props) {
+export default function ProjectEditor({ project, moving, onSave, onMove, onDelete, onClose, catalogue, periodDays, contextRevision }: Props) {
   const [draft, setDraft] = useState<Draft>(() => toDraft(project));
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -86,7 +88,7 @@ export default function ProjectEditor({ project, moving, onSave, onMove, onDelet
   // from shared budgets so it is not counted twice).
   const [assessed, setAssessed] = useState<{ key: string; value: LocationAssessment; periodDays: number } | null>(null);
   const [assessError, setAssessError] = useState<string | null>(null);
-  const assessKey = `${project.id}:${project.updatedAt}:${project.latitude}:${project.longitude}`;
+  const assessKey = `${project.id}:${project.updatedAt}:${project.latitude}:${project.longitude}:${contextRevision ?? ""}:${periodDays}`;
   useEffect(() => {
     const ctrl = new AbortController();
     setAssessError(null);

@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { PanelTabs } from "./PanelNavigation";
+import PollutantSelect from "./PollutantSelect";
+import { MEDIA, releaseMedium, pollutantKey, pollutantsFor, type ReleaseMedium } from "../lib/pollutants";
 import type { BuildingTemplate, Period, Provenance } from "../lib/buildings";
 import {
   countErrors,
@@ -267,7 +269,8 @@ export default function BuildingForm({ draft, onChange, errors, template, page }
           </div>
         </Section>
 
-        <Section title="Air emissions" invalid={bad("emissions.")}>
+        <Section title="Pollutants & releases" invalid={bad("emissions.")}>
+          <p className="muted small">Choose where each pollutant is released. Rates count operating hours. Record the same substance separately if it enters both air and water.</p>
           {draft.emissions.map((e) => (
             <EmissionRow
               key={e.id}
@@ -368,11 +371,17 @@ function EmissionRow({
   onRemove: () => void;
 }) {
   const err = (k: string) => errors[`emissions.${e.id}.${k}`];
+  const medium = releaseMedium(e.pollutant, e.medium);
   return (
-    <div className="list-row">
+    <div className="list-row emission-row">
+      <label>Release destination<select aria-label="Release destination" value={medium} onChange={(event) => {
+        const next = event.target.value as ReleaseMedium;
+        const same = pollutantsFor(next).some((p) => p.id === pollutantKey(e.pollutant));
+        onChange({ ...e, medium: next, pollutant: same ? e.pollutant : "", rate: same ? e.rate : "" });
+      }}>{Object.entries(MEDIA).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label>
+      <PollutantSelect key={medium} medium={medium} value={e.pollutant} onChange={(v) => onChange({ ...e, medium, pollutant: v })} error={err("pollutant")} />
       <div className="row align-end">
-        <Field label="Pollutant" value={e.pollutant} onChange={(v) => onChange({ ...e, pollutant: v })} error={err("pollutant")} numeric={false} placeholder="e.g. NOx" />
-        <Field label="Rate" unit="kg/h" value={e.rate} onChange={(v) => onChange({ ...e, rate: v })} error={err("rate")} />
+        <Field label="Release rate" unit={medium === "climate" ? "kg CO₂e/h" : "kg/h"} value={e.rate} onChange={(v) => onChange({ ...e, rate: v })} error={err("rate")} />
         <button className="ghost danger" onClick={onRemove}>
           Remove
         </button>

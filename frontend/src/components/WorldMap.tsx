@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type DragEvent } from "react";
 import { maplibregl } from "../lib/maplibre";
 import { MapboxOverlay } from "@deck.gl/mapbox";
 import { H3HexagonLayer } from "@deck.gl/geo-layers";
+import { impactColour, timeLabel, type ImpactCell, type TimelineOverlay } from "../lib/timeline";
 import { GeoJsonLayer, LineLayer, ScatterplotLayer, TextLayer } from "@deck.gl/layers";
 import { WebMercatorViewport, type Layer, type PickingInfo } from "@deck.gl/core";
 import type { Project } from "../lib/api";
@@ -116,6 +117,7 @@ type Props = {
   tilted: boolean;
   /** Context deck.gl layers (boundaries, cables, hazards, power), drawn above the grid. */
   contextLayers: Layer[];
+  timeline?: TimelineOverlay | null;
   contextTooltip: (layerId: string, object: unknown) => string | null;
   imagery: RasterImagery | null;
   onViewChange: (view: MapView) => void;
@@ -139,6 +141,7 @@ const isPresetDrag = (e: DragEvent) => Array.from(e.dataTransfer.types).includes
 export default function WorldMap(props: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
+  const projectMarkers = useRef(new Map<string, maplibregl.Marker>());
   const overlayRef = useRef<MapboxOverlay | null>(null);
   const basemapRef = useRef<maplibregl.LayerSpecification[]>([]);
   const [grid, setGrid] = useState<ViewportCells>({ resolution: 0, cells: [], overview: true });
@@ -213,12 +216,43 @@ export default function WorldMap(props: Props) {
     return () => {
       resize.disconnect();
       clearTimeout(timer);
+      projectMarkers.current.forEach((marker) => marker.remove());
+      projectMarkers.current.clear();
       map.remove();
       mapRef.current = null;
       overlayRef.current = null;
       basemapRef.current = [];
     };
   }, []);
+
+  // Buildings live above the GPU data overlays. Pollutant changes never replace their markers.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const ids = new Set(props.projects.map((p) => p.id));
+    for (const [id, marker] of projectMarkers.current) if (!ids.has(id)) { marker.remove(); projectMarkers.current.delete(id); }
+    for (const project of props.projects) {
+      let marker = projectMarkers.current.get(project.id);
+      if (!marker) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "project-map-marker";
+        button.addEventListener("click", (event) => {
+          event.stopPropagation();
+          const current = propsRef.current.projects.find((p) => p.id === project.id);
+          if (current) propsRef.current.onMapClick(current.latitude, current.longitude, { layerId: "projects", object: current });
+        });
+        marker = new maplibregl.Marker({ element: button, anchor: "center", pitchAlignment: "viewport" }).setLngLat([project.longitude, project.latitude]).addTo(map);
+        projectMarkers.current.set(project.id, marker);
+      }
+      marker.setLngLat([project.longitude, project.latitude]);
+      const element = marker.getElement();
+      element.setAttribute("aria-label", `Select building ${project.name || typeLabel(project.type)}`);
+      element.setAttribute("aria-pressed", String(project.id === props.selectedProjectId));
+      element.title = `${project.name || typeLabel(project.type)} · ${typeLabel(project.type)}`;
+      element.style.setProperty("--marker-colour", `rgb(${typeColour(project.type).join(",")})`);
+    }
+  }, [props.projects, props.selectedProjectId]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -347,7 +381,7 @@ export default function WorldMap(props: Props) {
   useEffect(() => {
     const overlay = overlayRef.current;
     if (!overlay) return;
-    const { projects, selectedProjectId, selectedCell, facilities, facilityColour, selectedFacilityId, tilted } = props;
+    const { projects, selectedCell, facilities, facilityColour, selectedFacilityId, tilted } = props;
     // Polygons (OSM footprints) and lines (the high-voltage grid) draw as shapes; everything except
     // lines also gets a dot, so small sites stay visible at world zoom.
     const footprints = facilities.filter((f) => f.geometry.type !== "Point");
@@ -377,6 +411,18 @@ export default function WorldMap(props: Props) {
         highlightColor: [59, 130, 246, 60],
       }),
       ...props.contextLayers,
+      new H3HexagonLayer<ImpactCell>({
+        id: "timeline-impact",
+        data: props.timeline?.cells.filter((c) => c.relevant !== false) ?? [],
+        getHexagon: (c) => c.h3Id,
+        getFillColor: (c) => impactColour(c.value, props.timeline?.max ?? 1),
+        stroked: props.showHexOutlines,
+        getLineColor: [80, 115, 150, 90],
+        lineWidthMinPixels: 0.5,
+        pickable: true,
+        highPrecision: true,
+        updateTriggers: { getFillColor: props.timeline },
+      }),
       new H3HexagonLayer<CellState>({
         id: "assessment-cells",
         data: props.assessmentCells ?? [],
@@ -495,20 +541,6 @@ export default function WorldMap(props: Props) {
         outlineColor: dark ? [12, 24, 41, 245] : [255, 255, 255, 235],
         updateTriggers: { getPosition: tip },
       }),
-      new ScatterplotLayer<Project>({
-        id: "projects",
-        data: projects,
-        getPosition: (p) => [p.longitude, p.latitude],
-        getFillColor: (p) => [...typeColour(p.type), 255],
-        getLineColor: (p) => (p.id === selectedProjectId ? selectionLine : [255, 255, 255, 255]),
-        getRadius: (p) => (p.id === selectedProjectId ? 9 : 6),
-        radiusUnits: "pixels",
-        stroked: true,
-        lineWidthUnits: "pixels",
-        getLineWidth: 2,
-        pickable: true,
-        updateTriggers: { getLineColor: [selectedProjectId, dark], getRadius: selectedProjectId },
-      }),
       new ScatterplotLayer<{ latitude: number; longitude: number; colour?: RGB }>({
         id: "build-preview",
         data: props.preview ? [props.preview] : [],
@@ -533,7 +565,7 @@ export default function WorldMap(props: Props) {
         // The grid covers every pixel, so it always wins a radius pick. Re-pick without it so a
         // thin cable or power line a few pixels away still gets selected.
         // Assessment cells are a display overlay: clicks fall through to what lies beneath.
-        const background = (id: string | undefined) => id === "grid" || id === "assessment-cells";
+        const background = (id: string | undefined) => id === "grid" || id === "assessment-cells" || id === "timeline-impact";
         if (background(layerId) || !object) {
           const alt = overlay.pickObject({
             x: info.x,
@@ -551,6 +583,13 @@ export default function WorldMap(props: Props) {
       },
       getTooltip: ({ object, layer }: PickingInfo) => {
         if (!object || !layer) return null;
+        if (layer.id === "timeline-impact") {
+          const c = object as ImpactCell;
+          const t = propsRef.current.timeline;
+          const value = (n: number | null) => n === null ? "Unknown" : `${n.toLocaleString(undefined, { maximumSignificantDigits: 4 })} ${t?.unit ?? "µg/m³"}`;
+          if (t?.medium !== "air") return { text: `${t?.pollutant} · ${timeLabel(t?.days ?? 0)}\n${t?.medium === "climate" ? "Source-cell contribution" : "Illustrative addition"}: ${value(c.added)}${t?.partial ? " (known sources only)" : ""}` };
+          return { text: `${t?.pollutant} · ${timeLabel(t?.days ?? 0)}\nBaseline (2024): ${value(c.baseline)}\nIllustrative addition: ${value(c.added)}${t?.partial ? " (known sources only)" : ""}\nCombined: ${value(c.baseline !== null && c.added !== null ? c.baseline + c.added : null)}` };
+        }
         if (layer.id === "projects") {
           const p = object as Project;
           return { text: `${p.name || typeLabel(p.type)}\n${typeLabel(p.type)}` };
@@ -590,6 +629,7 @@ export default function WorldMap(props: Props) {
     props.selectedFacilityId,
     props.tilted,
     props.contextLayers,
+    props.timeline,
     props.cellFill,
     props.assessmentCells,
     props.preview,

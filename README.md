@@ -102,9 +102,57 @@ for product intent and [CLAUDE-World-Mapping.md](./CLAUDE-World-Mapping.md) for 
   - *Real examples*: cards for real facilities (Palo Verde nuclear, Mesquite gas, Agua Caliente solar, Carlsbad
     desalination, Meta Prineville data centre, Thanet Earth glasshouse) with figures cited to public sources; drag a
     card onto the map to place a new building with those figures. Unknown figures stay blank.
-  - *Scenario controls* (Projects tab): evaluation period, pooled resource budgets, and stress multipliers for water
-    and power availability, operating demand and prices, with unstressed vs stressed totals and per-building
-    shortfalls. Branching copies buildings, budgets and controls.
+  - *Capacity margins*: each comparable resource shows **Tile provides / Needs / Margin**. Margin is available
+    supply minus this building's requirement, after nearby projects are accounted for. Negative means shortfall;
+    unknown inputs stay unknown. Air/light indicators with incompatible units are not subtracted.
+
+- **Timeline** replaces the Scenarios / stress-testing UI. Scrub or play from before operation to one year,
+  choose a receiving environment and pollutant, and view illustrative added impact. Where compatible measured
+  backgrounds exist, historical Baseline and Combined views are also available.
+  The Projects section retains saved buildings and world management; existing scenario records and APIs remain compatible.
+  - All projects start at day zero. Emission mass and resource use accumulate from declared operating hours and rates,
+    using the existing calculator without legacy stress multipliers. Unknown project contributions are explicitly excluded
+    from *known subtotals*, never treated as zero. The API is read-only and does not change source measurements.
+  - Air uses a **prototype Gaussian puff illustration**, not a forecast or regulatory dispersion model.
+    Equation basis: [NOAA's Gaussian horizontal puff concentration](https://www.ready.noaa.gov/documents/AMS2018/html/conc_eqns.html).
+    This implementation is not HYSPLIT. It assumes constant wind, uniform vertical mixing, an initial horizontal standard
+    deviation of 750 m, and continuous emissions at each building's daily average. Defaults (3 m/s wind from 270°,
+    500 m mixing height, 200 m²/s horizontal diffusion) are editable **illustrative assumptions**, not site weather.
+    Concentration sums 160 logarithmically spaced puff-age intervals with variance `750² + 2 × diffusion × age`;
+    mass is conserved in the unbounded mathematical domain. Display is bounded to eight simulation-cell rings (~30 km)
+    around projects, sampled at resolution-7 display-cell centres. The finer display repeats each parent's coarse
+    background; it does not create finer atmospheric observations. Up to 25,000 display cells are supported per world.
+  - PM2.5/PM10 can use the **CAMS 2024 annual mean** (~80 km native grid) as a fixed background. These are historical
+    reference conditions, not current readings. CO₂ has no supplied background, so only its added mass concentration is
+    shown; atmospheric-column products are never substituted for surface concentration. No chemistry, deposition,
+    terrain, stack/plume rise, weather evolution or climate warming is modelled. Local concentrations can level off as
+    pollution moves away while cumulative emitted mass keeps growing.
+  - **Pollutants & releases** uses the shared `shared/pollutants.json` catalogue (39 identities): gases and particles,
+    metals, nutrients, oils, solids, pesticides, PFAS and microplastics. Select a destination, pollutant and hourly rate.
+    `Other / existing pollutant` preserves unlisted legacy names and distinct mass bases. Missing `medium` in old
+    records defaults to air, except recognised CO₂e names (including annotated Scope 1+2 labels), which resolve to
+    climate accounting. Values and original labels are preserved; no database migration is needed. The same chemical
+    released into two environments is calculated and assessed separately. Only air releases trigger air site checks.
+  - **Soil** adds `rate × days × 1e6 / (2πσ² × depth × density) × exp(-distance²/(2σ²))` in **mg/kg** on land cells.
+    Editable prototype defaults: 1 km σ, 0.2 m mixing depth, 1,300 kg/m³ soil density. No leaching, runoff or decay.
+  - **Rivers & freshwater** assumes the nearest HydroRIVERS reach within 10 km as the receiving river. Prepared
+    NEXT_DOWN connections determine direction (including upstream links for terminal reaches), for up to 30 km.
+    Arrival time uses an editable assumed speed (0.3 m/s); the increment is `kg/day / 86400 / flow(m³/s) × 1000`
+    in **mg/L**, with complete mixing and long-term average discharge. Missing flow or routing leaves concentration
+    unknown. No lake storage, tides, treatment, sedimentation or chemistry is simulated. Actual outfalls are unverified.
+  - **Sea & coastal water** uses a separate Gaussian tracer with adjustable assumed current (0.1 m/s from 270°),
+    mixing depth (10 m) and diffusion (20 m²/s), displaying **mg/L** only on sea cells. An illustrative outfall is
+    snapped to the nearest sea cell within 20 km; otherwise its concentration stays unknown. Land/sea classification
+    uses simplified country boundaries, not a hydrodynamic coastline or inland-water mask. Shoreline clipping does
+    not redistribute mass. No tides, chemical reactions or shoreline reflection are simulated.
+  - **Climate (CO₂e)** maps cumulative declared contributions at building source cells in **kgCO₂e**, including any
+    indirect emissions already in the declared rate. It does not disperse accounting equivalents as a physical gas.
+    Physical CO₂ remains separate, with no assumed GWP conversion or automatic addition to CO₂e. See the
+    [EPA explanation of greenhouse gas accounting](https://www.epa.gov/ghgemissions/overview-greenhouse-gases).
+  - Soil, river and sea baselines remain unknown; point samples and atmospheric column measurements are not repurposed
+    as compatible backgrounds. The UI shows model assumptions, units, unavailable receiving environments and partial
+    contributions. Building markers use independent MapLibre DOM markers above the pollution overlays, so every
+    placed building remains selectable when pollutants, time, theme or map pitch change.
 
 Not built yet: connections between buildings and the cross-scenario comparison view. Manual-download sources
 ([data/MANUAL-DOWNLOADS.md](./data/MANUAL-DOWNLOADS.md)) appear once they are prepared: add a `LayerDef` in
@@ -248,6 +296,7 @@ The backend API tests need the Docker database running.
 | `GET/POST /api/building-definitions`, `GET/PATCH/DELETE /api/building-definitions/{id}` | Saved building definitions; edits/deletes never change placed snapshots |
 | `POST /api/building-assessments` | Read-only calculation + pass/fail/unknown checks for a draft at an exact `location`, or over `bounds`/`region` res-6 cells (limit 30,000, else 422) |
 | `POST /api/scenarios/{id}/evaluate` `{stress?, periodDays?, budgets?}` | Unstressed vs stressed per-building results, pooled budgets and totals |
+| `GET /api/scenarios/{id}/timeline` | Daily project emissions/resource totals and dated PM2.5/PM10 baselines for the local timeline display |
 
 Interactive docs: http://localhost:8000/docs
 

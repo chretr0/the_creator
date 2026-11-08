@@ -1,3 +1,4 @@
+import { releaseMedium, pollutantKey, POLLUTANTS } from "./pollutants";
 /**
  * Pure helpers for the building forms: string drafts <-> contract objects.
  *
@@ -166,7 +167,7 @@ export type MaterialDraft = {
   provenance: Provenance;
 };
 
-export type EmissionDraft = { id: string; pollutant: string; rate: string; provenance: Provenance };
+export type EmissionDraft = { id: string; pollutant: string; medium?: import("./pollutants").ReleaseMedium; rate: string; provenance: Provenance };
 
 export type StatsDraft = {
   /** Scalar statistics keyed by STAT_FIELDS path. */
@@ -251,6 +252,7 @@ export function statsToDraft(stats: BuildingStats | undefined | null, parameters
     emissions: (s.emissions ?? []).map((e) => ({
       id: e.id || newId("em"),
       pollutant: e.pollutant ?? "",
+      medium: releaseMedium(e.pollutant, e.medium),
       rate: numStr(e.rateKgPerHour),
       provenance: prov(e.provenance),
     })),
@@ -407,7 +409,7 @@ export function parseStats(draft: StatsDraft, templateParams: TemplateParam[], t
     const r = parseNumber(e.rate, "nonneg");
     if (!e.pollutant.trim()) errors[`emissions.${e.id}.pollutant`] = "Pollutant required";
     if (r.error) errors[`emissions.${e.id}.rate`] = r.error;
-    return { id: e.id, pollutant: e.pollutant.trim(), rateKgPerHour: r.value, provenance: e.provenance };
+    return { id: e.id, pollutant: e.pollutant.trim(), medium: releaseMedium(e.pollutant, e.medium), rateKgPerHour: r.value, provenance: e.provenance };
   });
 
   const known = new Set(templateParams.map((p) => p.key));
@@ -441,7 +443,7 @@ export function newMaterial(): MaterialDraft {
 }
 
 export function newEmission(): EmissionDraft {
-  return { id: newId("em"), pollutant: "", rate: "", provenance: USER };
+  return { id: newId("em"), pollutant: "", medium: "air", rate: "", provenance: USER };
 }
 
 /** Number of errors whose key is one of `prefixes` or starts with it (e.g. "power." or "materials."). */
@@ -473,6 +475,8 @@ export type SiteNeed = {
 
 /** Local air pollutants (mirrors the backend's site_capacity.is_air_pollutant). Greenhouse gases are not. */
 export function isAirPollutant(name: string): boolean {
+  const known = POLLUTANTS.find((p) => p.id === pollutantKey(name));
+  if (known) return known.media.includes("air") && !["co2", "co2e", "ch4", "n2o"].includes(known.id);
   const n = name.toLowerCase().replace(/₂/g, "2").replace(/ₓ/g, "x").replace(/₃/g, "3").replace(/[^a-z0-9]/g, "");
   if (/^(co2|ch4|n2o|ghg|carbondioxide|methane)/.test(n)) return false;
   if (n === "co") return true;
@@ -497,7 +501,7 @@ export function siteNeeds(stats: BuildingStats, parameters: Record<string, Param
   else if (peak !== null) power = `${kw(peak)} peak`;
   else if (derived && itKw !== null) power = `from IT power ${kw(itKw)} × load × PUE`;
   else if (avg !== null) power = `${kw(avg)} average`;
-  const air = (stats.emissions ?? []).filter((e) => isAirPollutant(e.pollutant) && e.rateKgPerHour !== 0).map((e) => e.pollutant);
+  const air = (stats.emissions ?? []).filter((e) => releaseMedium(e.pollutant, e.medium) === "air" && isAirPollutant(e.pollutant) && e.rateKgPerHour !== 0).map((e) => e.pollutant);
   const lumens = num(stats.light?.upwardLumens);
   const mats = [...new Set((stats.materials ?? []).map((m) => m.name.trim()).filter(Boolean))];
   let water: string | null = null;
@@ -618,8 +622,8 @@ export function missingInputs(
         if (unknown(stats.light?.upwardLumens)) add("Upward light (lumens)");
         break;
       case "emission_limit": {
-        const name = (c.pollutant ?? "").trim().toLowerCase();
-        const e = (stats.emissions ?? []).find((x) => x.pollutant.trim().toLowerCase() === name);
+        const name = pollutantKey(c.pollutant ?? "");
+        const e = (stats.emissions ?? []).find((x) => pollutantKey(x.pollutant) === name && releaseMedium(x.pollutant, x.medium) === releaseMedium(c.pollutant ?? "", c.medium));
         if (!name) add("Pollutant name in the emission limit");
         else if (!e || unknown(e.rateKgPerHour)) add(`Emission rate for ${c.pollutant} (kg/h)`);
         hours();
@@ -674,6 +678,7 @@ export type CriterionDraft = {
   amount: string;
   materialName: string;
   pollutant: string;
+  medium?: import("./pollutants").ReleaseMedium;
 };
 
 export function newCriterion(kind: CriterionKind): CriterionDraft {
@@ -689,6 +694,7 @@ export function newCriterion(kind: CriterionKind): CriterionDraft {
     amount: "",
     materialName: "",
     pollutant: "",
+    medium: "air",
   };
 }
 
@@ -705,6 +711,7 @@ export function criterionToDraft(c: Criterion): CriterionDraft {
     amount: numStr(c.amount),
     materialName: c.materialName ?? "",
     pollutant: c.pollutant ?? "",
+    medium: releaseMedium(c.pollutant ?? "", c.medium),
   };
 }
 
@@ -741,6 +748,7 @@ export function parseCriteria(drafts: CriterionDraft[]): { criteria: Criterion[]
     }
     if (d.kind === "emission_limit") {
       c.pollutant = d.pollutant.trim() || null;
+      c.medium = releaseMedium(d.pollutant, d.medium);
       if (!c.pollutant) errors[`${d.id}.pollutant`] = "Name the pollutant";
     }
     return c;

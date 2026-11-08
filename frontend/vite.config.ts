@@ -5,6 +5,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
+    fs: { allow: [".", "../shared"] },
     proxy: {
       "/api": "http://localhost:8000",
     },

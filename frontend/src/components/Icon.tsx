@@ -1,6 +1,10 @@
 import type { CSSProperties } from "react";
 
 const paths = {
+  timeline: <><path d="M3 16h4l4-8 4 5h6M3 3v18h18" /><circle cx="11" cy="8" r="1" /></>,
+  play: <path d="m8 4 12 8-12 8V4Z" />,
+  pause: <><path d="M8 4v16M16 4v16" /></>,
+  reset: <><path d="M4 10a8 8 0 1 1 1 8M4 4v6h6" /></>,
   globe: <><circle cx="12" cy="12" r="9" /><ellipse cx="12" cy="12" rx="4" ry="9" /><path d="M3 12h18M5 6h14M5 18h14" /></>,
   explore: <><circle cx="12" cy="12" r="9" /><path d="m16 8-2.5 5.5L8 16l2.5-5.5L16 8Z" /></>,
   layers: <><path d="m12 3 10 5-10 5L2 8l10-5ZM2 12l10 5 10-5M2 16l10 5 10-5" /></>,

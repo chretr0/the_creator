@@ -203,3 +203,15 @@ def test_layer_threshold_equal_to_displayed_value_passes():
     for bound in ({"min": shown}, {"max": shown}):
         c = Criterion.model_validate({**ghi, **bound})
         assert _layer_check(c, cells, lambda _i: cell).build(0).status == "pass", (raw, shown)
+
+
+def test_emission_totals_keep_media_separate_and_combine_aliases():
+    a = place('A', stats(operatingHoursPerDay=24, emissions=[
+        {'id': 'a', 'pollutant': 'Pb', 'rateKgPerHour': 1},
+        {'id': 's', 'pollutant': 'Lead', 'medium': 'soil', 'rateKgPerHour': 10},
+        {'id': 'c', 'pollutant': 'CO2e (Scope 1+2)', 'rateKgPerHour': 200}]))
+    b = place('B', stats(operatingHoursPerDay=12, emissions=[
+        {'id': 'b', 'pollutant': 'Lead', 'medium': 'air', 'rateKgPerHour': 2}]))
+    emissions = totals(a, b, period_days=1).emissions
+    assert {e.medium: (e.quantity.value, e.quantity.unit) for e in emissions} == {
+        'air': (48, 'kg'), 'soil': (240, 'kg'), 'climate': (4800, 'kgCO₂e')}

@@ -1,3 +1,5 @@
+import PollutantSelect from "./PollutantSelect";
+import { MEDIA, releaseMedium, type ReleaseMedium } from "../lib/pollutants";
 import { useState } from "react";
 import type { CriterionKind } from "../lib/buildings";
 import type { CellLayer } from "../lib/datalayers";
@@ -179,8 +181,9 @@ function CriterionFields({
     case "emission_limit":
       return (
         <div className="row">
-          <Field label="Pollutant" value={d.pollutant} onChange={(v) => update({ pollutant: v })} error={e("pollutant")} numeric={false} placeholder="As named in Air emissions" />
-          {amount(`kg over ${period}`)}
+          <label className="timeline-field">Release destination<select value={releaseMedium(d.pollutant, d.medium)} onChange={(event) => update({ medium: event.target.value as ReleaseMedium, pollutant: "" })}>{Object.entries(MEDIA).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label>
+          <PollutantSelect key={d.medium} medium={releaseMedium(d.pollutant, d.medium)} value={d.pollutant} onChange={(v) => update({ pollutant: v })} error={e("pollutant")} />
+          {amount(`${releaseMedium(d.pollutant, d.medium) === "climate" ? "kgCO₂e" : "kg"} over ${period}`)}
         </div>
       );
     default:

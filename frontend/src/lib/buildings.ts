@@ -92,6 +92,7 @@ export type MaterialItem = {
 export type EmissionItem = {
   id: string;
   pollutant: string;
+  medium?: import("./pollutants").ReleaseMedium;
   rateKgPerHour?: number | null;
   provenance?: Provenance;
 };
@@ -193,6 +194,7 @@ export type Criterion = {
   amount?: number | null;
   materialName?: string | null;
   pollutant?: string | null;
+  medium?: import("./pollutants").ReleaseMedium;
 };
 
 export type SiteAssumptions = {
@@ -335,7 +337,7 @@ export const DEFAULT_ASSUMPTIONS: ScenarioAssumptions = {
 export type Quantity = { value: number | null; unit: string; basis: string; missing: string[] };
 
 export type MaterialTotal = { name: string; phase: "construction" | "operation"; quantity: Quantity };
-export type EmissionTotal = { pollutant: string; quantity: Quantity };
+export type EmissionTotal = { pollutant: string; medium?: import("./pollutants").ReleaseMedium; quantity: Quantity };
 
 export type CostBreakdown = {
   currency: string | null;

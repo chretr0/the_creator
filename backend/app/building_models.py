@@ -137,12 +137,26 @@ class MaterialItem(ApiModel):
 
 
 class EmissionItem(ApiModel):
-    """Emission rate of one named pollutant while operating. Never converted to a concentration."""
+    """Declared release rate while operating, separated by receiving environment."""
 
     id: str = Field(min_length=1, max_length=64)
     pollutant: str = Field(min_length=1, max_length=100)
+    medium: Literal['air', 'soil', 'freshwater', 'marine', 'climate'] = 'air'
     rate_kg_per_hour: NonNeg = None
     provenance: Provenance = Provenance()
+
+    @model_validator(mode="after")
+    def _destination(self):
+        from app.pollutants import BY_ID, pollutant_id, release_medium
+        key = pollutant_id(self.pollutant)
+        if key == 'co2e' and self.medium not in ('air', 'climate'):
+            raise ValueError('CO2e is climate accounting; choose a physical pollutant for soil or water')
+        self.medium = release_medium(self.pollutant, self.medium)
+        # Historical records used unrestricted air-pollutant names. Keep those readable/saveable;
+        # the catalogue limits new dropdown choices without invalidating legacy air releases.
+        if key in BY_ID and self.medium != 'air' and self.medium not in BY_ID[key]['media']:
+            raise ValueError(f'{self.pollutant} is not a supported {self.medium} release')
+        return self
 
 
 class PowerStats(ApiModel):
@@ -297,6 +311,7 @@ class Criterion(ApiModel):
     amount: NonNeg = None
     material_name: ShortText = None
     pollutant: str | None = Field(default=None, max_length=100)
+    medium: Literal['air', 'soil', 'freshwater', 'marine', 'climate'] = 'air'
 
     @field_validator("min", "max")
     @classmethod
@@ -520,6 +535,7 @@ class MaterialTotal(ApiModel):
 
 class EmissionTotal(ApiModel):
     pollutant: str
+    medium: Literal['air', 'soil', 'freshwater', 'marine', 'climate'] = 'air'
     quantity: Quantity
 
 

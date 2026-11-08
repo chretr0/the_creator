@@ -333,8 +333,9 @@ def _emissions(stats: BuildingStats, hours: float | None) -> list[EmissionTotal]
         if hours is None:
             missing.append("operating hours per day")
         value = None if missing else e.rate_kg_per_hour * hours
-        out.append(EmissionTotal(pollutant=e.pollutant, quantity=q(
-            value, KG, "emission rate × operating hours (fixed: not changed by demand stress)", missing)))
+        out.append(EmissionTotal(pollutant=e.pollutant, medium=e.medium, quantity=q(
+            value, 'kgCO₂e' if e.medium == 'climate' else KG,
+            "release rate × operating hours (fixed: not changed by demand stress)", missing)))
     return out
 
 

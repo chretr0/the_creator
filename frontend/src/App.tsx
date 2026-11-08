@@ -21,7 +21,8 @@ import CellInspector, { type CellSelection } from "./components/CellInspector";
 import ProjectEditor from "./components/ProjectEditor";
 import ScenarioPanel, { ScenarioSelect } from "./components/ScenarioPanel";
 import BuildPanel, { type BuildTarget, type PresetRequest, type BuildStage } from "./components/BuildPanel";
-import StressPanel from "./components/StressPanel";
+import TimelinePanel from "./components/TimelinePanel";
+import { type TimelineOverlay, timeLabel } from "./lib/timeline";
 import { StateLegend } from "./components/FormBits";
 import type { CellState } from "./lib/buildings";
 import LayerPanel from "./components/LayerPanel";
@@ -50,7 +51,7 @@ import {
   type InfraLayerId,
   type InfraManifest,
 } from "./lib/infrastructure";
-import { api, keepIfShown, type Project, type ProjectInput, type Scenario, type ScenarioSummary } from "./lib/api";
+import { api, type Project, type ProjectInput, type Scenario, type ScenarioSummary } from "./lib/api";
 import { cellContains, displayCell, normaliseLongitude, simulationCell } from "./lib/h3grid";
 
 type ExploreSection = "library" | "environment" | "infrastructure" | "records" | "context" | "imagery" | "sources";
@@ -63,7 +64,7 @@ const EXPLORE_SECTIONS = [
   { value: "sources", label: "Sources & licences", icon: "info", detail: "Provenance & data limitations" },
 ] as const;
 
-type Tab = "layers" | "search" | "build" | "projects";
+type Tab = "layers" | "search" | "build" | "timeline";
 
 /** "move" = choosing a new location for an existing project. */
 type Mode = { kind: "inspect" } | { kind: "move"; projectId: string };
@@ -153,14 +154,14 @@ export default function App() {
   const [buildStage, setBuildStage] = useState<BuildStage>("building");
   const [buildMapVisible, setBuildMapVisible] = useState(false);
   const [exploreSection, setExploreSection] = useState<ExploreSection>("library");
-  const [scenarioSection, setScenarioSection] = useState<"overview" | "resources" | "stress">("overview");
+  const [timelineSection, setTimelineSection] = useState<"impact" | "projects">("impact");
+  const [timelineOverlay, setTimelineOverlay] = useState<TimelineOverlay | null>(null);
   const [detailView, setDetailView] = useState<"record" | "location">("record");
   const [inspectorOpen, setInspectorOpen] = useState(false);
   const sideBodyRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     sideBodyRef.current?.scrollTo({ top: 0 });
-  }, [sideTab, exploreSection, scenarioSection]);
-  const [stressHost, setStressHost] = useState<HTMLDivElement | null>(null);
+  }, [sideTab, exploreSection, timelineSection]);
   const [buildSiteHost, setBuildSiteHost] = useState<HTMLElement | null>(null);
 
   function navigate(tab: Tab) {
@@ -331,7 +332,7 @@ export default function App() {
     // In the Build tab every map click places the building (moving a project still wins).
     if (sideTab === "build" && mode.kind !== "move") {
       if (!scenario) {
-        setError("Select a scenario first");
+        setError("Select a world first");
         return;
       }
       updateBuildTarget({ latitude, longitude, scenarioId: scenario.id, nonce: Date.now() });
@@ -427,7 +428,7 @@ export default function App() {
   const scenarioActions = {
     onSwitch: (id: string) => loadScenario(id).catch(report),
     onCreate: async () => {
-      const name = prompt("Name for the new (empty) scenario", `World ${String.fromCharCode(65 + scenarios.length)}`);
+      const name = prompt("Name for the new (empty) world", `World ${String.fromCharCode(65 + scenarios.length)}`);
       if (!name?.trim()) return;
       try {
         const s = await api.createScenario(name);
@@ -451,7 +452,7 @@ export default function App() {
     },
     onRename: async () => {
       if (!scenario) return;
-      const name = prompt("Rename scenario", scenario.name);
+      const name = prompt("Rename world", scenario.name);
       if (!name?.trim()) return;
       try {
         const s = await api.renameScenario(scenario.id, name);
@@ -462,7 +463,7 @@ export default function App() {
       }
     },
     onDelete: async () => {
-      if (!scenario || !confirm(`Delete scenario "${scenario.name}" and its projects? This cannot be undone.`)) return;
+      if (!scenario || !confirm(`Delete world "${scenario.name}" and its projects? This cannot be undone.`)) return;
       try {
         await api.deleteScenario(scenario.id);
         const list = await api.listScenarios();
@@ -586,8 +587,6 @@ export default function App() {
     },
     [refreshList, isShown, ctx.setSelection, data.setPicked],
   );
-  // A save result only replaces the scenario it was made for (the user may have switched meanwhile).
-  const applySavedScenario = useCallback((saved: Scenario) => setScenario((cur) => keepIfShown(cur, saved)), []);
   const focusOn = useCallback(
     (latitude: number, longitude: number) => setFocus({ latitude, longitude, zoom: 9, nonce: Date.now() }),
     [],
@@ -595,7 +594,7 @@ export default function App() {
   /** A real example dropped on the map: load it in the Build tab and preview it there (nothing is saved). */
   const dropPreset = (presetId: string, latitude: number, longitude: number) => {
     if (!scenario) {
-      setError("Choose or create a scenario first, then drop the example on the map.");
+      setError("Choose or create a world first, then drop the example on the map.");
       return;
     }
     const nonce = Date.now();
@@ -635,15 +634,14 @@ export default function App() {
     setExploreSection("sources");
   };
 
-  const workspace = sideTab === "build" ? "build" : sideTab === "projects" ? "scenarios" : "explore";
+  const workspace = sideTab === "build" ? "build" : sideTab === "timeline" ? "timeline" : "explore";
+  const activeTimeline = sideTab === "timeline" && timelineSection === "impact" ? timelineOverlay : null;
   const dock =
     inspectorOpen && hasDetail
       ? "details"
       : sideTab === "build"
         ? "site"
-        : sideTab === "projects" && scenario && scenarioSection !== "overview"
-          ? "stress"
-          : null;
+        : null;
 
   return (
     <div className={`app${workspace === "build" ? " building-active" : ""}`}>
@@ -654,9 +652,9 @@ export default function App() {
         <nav className="workspace-nav" aria-label="Main navigation">
           <button aria-current={workspace === "explore" ? "page" : undefined} onClick={() => navigate("layers")}><Icon name="explore" />Explore</button>
           <button aria-current={workspace === "build" ? "page" : undefined} onClick={() => navigate("build")}><Icon name="layers" />Build</button>
-          <button aria-current={workspace === "scenarios" ? "page" : undefined} onClick={() => navigate("projects")}><Icon name="chart" />Scenarios</button>
+          <button aria-current={workspace === "timeline" ? "page" : undefined} onClick={() => navigate("timeline")}><Icon name="timeline" />Timeline</button>
         </nav>
-        <div className="scenario-switcher"><span className="eyebrow">ACTIVE SCENARIO</span><ScenarioSelect scenarios={scenarios} scenario={scenario} onSwitch={scenarioActions.onSwitch} /></div>
+        <div className="scenario-switcher"><span className="eyebrow">ACTIVE WORLD</span><ScenarioSelect scenarios={scenarios} scenario={scenario} onSwitch={scenarioActions.onSwitch} /></div>
         <div className="header-actions">
           <button className="sources-button" onClick={showCredits}><Icon name="info" size={18} /><span>Data & sources</span></button>
           <button className="theme-toggle" onClick={toggleTheme} aria-label={theme === "dark" ? "Switch to day mode" : "Switch to night mode"} title={theme === "dark" ? "Switch to day mode" : "Switch to night mode"}>
@@ -686,13 +684,14 @@ export default function App() {
             tilted={tilted}
             onGridChange={setGrid}
             contextLayers={mapLayers}
-            cellFill={data.cellFill}
+            cellFill={activeTimeline ? null : data.cellFill}
+            timeline={activeTimeline}
             cellTooltip={data.cellTooltip}
             scene={data.scene}
             contextTooltip={contextTooltip}
             imagery={ctx.rasterImagery}
             onViewChange={setView}
-            assessmentCells={assessmentCells}
+            assessmentCells={sideTab === "build" ? assessmentCells : null}
             preview={previewMarker}
             onDropPreset={dropPreset}
           />
@@ -725,15 +724,21 @@ export default function App() {
             </div>
           </div>
 
-          <div className="map-context"><span className="context-dot" />{workspace === "explore" ? "Explore mode" : workspace === "build" ? "Building workspace" : "Scenario workspace"}<span className="map-context-divider" />{projects.length} {projects.length === 1 ? "building" : "buildings"}</div>
+          <div className="map-context"><span className="context-dot" />{workspace === "explore" ? "Explore mode" : workspace === "build" ? "Building workspace" : "Timeline workspace"}<span className="map-context-divider" />{projects.length} {projects.length === 1 ? "building" : "buildings"}</div>
           {!crosshair && !dock && <div className="map-guide"><Icon name="info" size={17} />Click a location to explore its data</div>}
-          {data.activeLayer && !data.outsideRegions && !assessmentCells?.length && (
+          {!activeTimeline && data.activeLayer && !data.outsideRegions && !assessmentCells?.length && (
             <div className="layer-map-legend" aria-label="Active data layer legend">
               <div><strong>{data.activeLayer.name}</strong><span className="muted small block">{data.activeSlice?.label}</span></div>
               <LayerLegend data={data} />
               <span className="muted small legend-unknown"><span className="swatch no-data" /> No data</span>
             </div>
           )}
+          {activeTimeline && activeTimeline.cells.length > 0 && <div className="layer-map-legend timeline-map-legend" aria-label="Timeline map legend">
+            <strong>{activeTimeline.pollutant} · {activeTimeline.mode === "baseline" ? "Historical baseline" : activeTimeline.mode === "added" ? (activeTimeline.medium === "climate" ? "Source contributions" : "Added impact") : "Baseline + added impact"}</strong>
+            <span className="small muted">{timeLabel(activeTimeline.days)} · {activeTimeline.mode === "baseline" ? "CAMS 2024" : "Illustrative estimate"}</span>
+            <div className="timeline-colour-ramp" /><div className="timeline-legend-range small"><span>0</span><span>{activeTimeline.max.toLocaleString(undefined, { maximumSignificantDigits: 3 })} {activeTimeline.unit}</span></div>
+            <span className="small muted">Grey = unknown{activeTimeline.partial && activeTimeline.mode !== "baseline" ? " · known sources only" : ""}</span>
+          </div>}
           <div className="map-credits small">
             <a href="https://openfreemap.org" target="_blank" rel="noreferrer">OpenFreeMap</a>{" "}
             <a href="https://www.openmaptiles.org/" target="_blank" rel="noreferrer">© OpenMapTiles</a> Data from{" "}
@@ -756,7 +761,7 @@ export default function App() {
             <div className="hint" role="status">{buildMapStatus.note ?? "Click the map to place your building"}</div>
           ) : null}
 
-          {assessmentCells && assessmentCells.length > 0 && (
+          {sideTab === "build" && assessmentCells && assessmentCells.length > 0 && (
             <div className="map-legend small" aria-label="Assessment legend">
               <strong>Where it fits{buildMapStatus.loading && <span className="muted"> · updating…</span>}</strong>
               <StateLegend />
@@ -766,9 +771,9 @@ export default function App() {
 
         <aside className="sidebar">
           <div className="workspace-heading">
-            <div className="eyebrow">{sideTab === "build" ? "PLAN & PLACE" : sideTab === "projects" ? "MODEL & COMPARE" : "THE WORLD, IN CONTEXT"}</div>
-            <h1>{sideTab === "build" ? ({ building: "Choose a building", resources: "Resources", impact: "Impact & costs" }[buildStage]) : sideTab === "projects" ? "Your scenarios" : "Explore the world"}</h1>
-            {sideTab !== "build" && <p>{sideTab === "projects" ? "Understand the impact of change." : "Discover the data behind a place."}</p>}
+            <div className="eyebrow">{sideTab === "build" ? "PLAN & PLACE" : sideTab === "timeline" ? "CHANGE OVER TIME" : "THE WORLD, IN CONTEXT"}</div>
+            <h1>{sideTab === "build" ? ({ building: "Choose a building", resources: "Resources", impact: "Impact & costs" }[buildStage]) : sideTab === "timeline" ? "Your timeline" : "Explore the world"}</h1>
+            {sideTab !== "build" && <p>{sideTab === "timeline" ? "See what your projects leave behind." : "Discover the data behind a place."}</p>}
           </div>
           {(sideTab === "layers" || sideTab === "search") && (
             <nav className="explore-tabs" aria-label="Explore views">
@@ -777,8 +782,8 @@ export default function App() {
             </nav>
           )}
 
-          {sideTab === "projects" && <PanelTabs label="Scenario sections" value={scenarioSection} onChange={setScenarioSection} options={[
-            { value: "overview", label: "Overview" }, { value: "resources", label: "Resources" }, { value: "stress", label: "Stress test" },
+          {sideTab === "timeline" && <PanelTabs label="Timeline sections" value={timelineSection} onChange={setTimelineSection} options={[
+            { value: "impact", label: "Environmental impact" }, { value: "projects", label: "Projects" },
           ]} />}
           <div className="side-body" ref={sideBodyRef}>
             {error && (
@@ -885,7 +890,7 @@ export default function App() {
               />
             </div>
 
-            {sideTab === "projects" && scenarioSection === "overview" && (
+            {sideTab === "timeline" && timelineSection === "projects" && (
               <ScenarioPanel
                 scenarios={scenarios}
                 scenario={scenario}
@@ -897,17 +902,15 @@ export default function App() {
                 {...scenarioActions}
               />
             )}
-            {/* Kept mounted so unsaved stress and budget edits survive tab switches (not evaluated while hidden). */}
-            {scenario && (
-              <div hidden={sideTab !== "projects" || scenarioSection === "overview"}>
-                <StressPanel scenario={scenario} section={scenarioSection === "resources" ? "resources" : "stress"} onSection={setScenarioSection} active={sideTab === "projects" && scenarioSection !== "overview"} onSaved={applySavedScenario} resultsHost={stressHost} />
-              </div>
-            )}
+            <div hidden={sideTab !== "timeline" || timelineSection !== "impact"}>
+              <TimelinePanel scenario={scenario} active={sideTab === "timeline" && timelineSection === "impact"}
+                onOverlay={setTimelineOverlay} onFocus={focusOn} onEdit={selectProject} onBuild={() => navigate("build")} />
+            </div>
           </div>
         </aside>
-        <aside className="inspector" hidden={!dock} aria-label={dock === "details" ? "Selected location details" : dock === "site" ? "Site check" : "Scenario results"}>
+        <aside className="inspector" hidden={!dock} aria-label={dock === "details" ? "Selected location details" : dock === "site" ? "Site check" : "Site check"}>
           <div className="inspector-heading">
-            <div><span className="eyebrow">{dock === "details" ? "LOCATION INSIGHTS" : dock === "site" ? "SITE CHECK" : "SCENARIO ANALYSIS"}</span><h2>{dock === "details" || dock === "site" ? "At this location" : "Impact overview"}</h2></div>
+            <div><span className="eyebrow">{dock === "details" ? "LOCATION INSIGHTS" : dock === "site" ? "SITE CHECK" : "SITE CHECK"}</span><h2>{dock === "details" || dock === "site" ? "At this location" : "Impact overview"}</h2></div>
             {dock === "details" && <button className="icon-button" aria-label="Close location details" onClick={() => setInspectorOpen(false)}><Icon name="close" size={18} /></button>}
           </div>
           <div className="inspector-body">
@@ -931,6 +934,7 @@ export default function App() {
                     onClose={() => setSelectedProjectId(null)}
                     catalogue={data.catalogue}
                     periodDays={mergeAssumptions(scenario?.assumptions).periodDays}
+                    contextRevision={JSON.stringify([scenario?.assumptions, projects.map((p) => [p.id, p.updatedAt])])}
                   />
                 )}
 
@@ -1014,7 +1018,6 @@ export default function App() {
               </>
             )}
             </div>
-            <div ref={setStressHost} hidden={dock !== "stress"} />
             <div ref={setBuildSiteHost} className="site-host" hidden={dock !== "site"} />
           </div>
         </aside>

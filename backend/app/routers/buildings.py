@@ -31,6 +31,18 @@ from app.routers.scenarios import PROJECT_COLUMNS, _check_parameters, scenario_a
 router = APIRouter(prefix="/api", tags=["buildings"])
 
 
+@router.get("/scenarios/{scenario_id}/timeline")
+def get_timeline(scenario_id: UUID):
+    from app.timeline import timeline_inputs
+
+    with transaction() as conn:
+        ctx = load_context(conn, scenario_id)
+    try:
+        return timeline_inputs(ctx)
+    except (ValueError, CalcInputError) as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+
 def _jsonb(value) -> Jsonb:
     if hasattr(value, "model_dump"):
         return Jsonb(value.model_dump(mode="json", by_alias=True))

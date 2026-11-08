@@ -20,7 +20,7 @@ export function ScenarioSelect({
   onSwitch,
 }: Pick<Props, "scenarios" | "scenario" | "onSwitch">) {
   return (
-    <select aria-label="Scenario" value={scenario?.id ?? ""} onChange={(e) => onSwitch(e.target.value)}>
+    <select aria-label="World" value={scenario?.id ?? ""} onChange={(e) => onSwitch(e.target.value)}>
       {scenarios.map((s) => (
         <option key={s.id} value={s.id}>
           {s.parentScenarioId ? "↳ " : ""}
@@ -40,9 +40,9 @@ export default function ScenarioPanel(props: Props) {
   return (
     <>
       <section className="panel">
-        <h2>{scenario?.name ?? "No scenario"}</h2>
+        <h2>{scenario?.name ?? "No world"}</h2>
         {parent && <p className="subtitle">Branched from {parent}</p>}
-        <div className="actions scenario-actions">
+        <details className="timeline-details"><summary>Manage world</summary><div className="actions scenario-actions">
           <button onClick={props.onCreate}>New</button>
           <button onClick={props.onBranch} disabled={!scenario}>
             Branch
@@ -53,7 +53,7 @@ export default function ScenarioPanel(props: Props) {
           <button className="danger right" onClick={props.onDelete} disabled={!scenario}>
             Delete
           </button>
-        </div>
+        </div></details>
       </section>
 
       <section className="panel">

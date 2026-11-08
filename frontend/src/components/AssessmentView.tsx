@@ -1,3 +1,4 @@
+import { MEDIA, releaseMedium } from "../lib/pollutants";
 import { useState } from "react";
 import { PanelTabs } from "./PanelNavigation";
 import type {
@@ -14,6 +15,7 @@ import type {
 } from "../lib/buildings";
 import { checkComparison, fmtDays, fmtQuantity, LIGHT_PROXY_NOTE, priceSourceText } from "../lib/buildingForm";
 import { Section, StateBadge, StatusBadge } from "./FormBits";
+import { siteMargin } from "../lib/siteMargin";
 
 /** A value with its unit, or "unknown" plus the inputs that would be needed. Never 0 for missing. */
 export function QuantityText({ q }: { q: Quantity | null | undefined }) {
@@ -183,10 +185,10 @@ export function ResultView({ result, producesPower, producesWater }: { result: B
       {(result.emissions.length > 0 || result.materials.length > 0) && (
         <table className="mini">
           <tbody>
-            {result.emissions.map((e) => (
-              <tr key={`e-${e.pollutant}`}>
+            {result.emissions.map((e, i) => (
+              <tr key={`e-${e.medium}-${e.pollutant}-${i}`}>
                 <th scope="row">
-                  {e.pollutant}
+                  {e.pollutant}<small className="muted"> · {MEDIA[releaseMedium(e.pollutant, e.medium)]}</small>
                   <small className="muted block">emitted {period}</small>
                 </th>
                 <td>
@@ -380,6 +382,7 @@ export function SiteCapacityView({ site }: { site: SiteCapacity }) {
     <div className="site-capacity" title={site.note || undefined}>
       {site.resources.map((r) => {
         const st = resourceStatus(r);
+        const margin = siteMargin(r);
         const ratio = r.needed && r.available ? Math.min(1, r.needed / r.available) : r.needed && r.available === 0 ? 1 : 0;
         return (
           <div key={r.key} className={`site-res res-${st.cls}`} title={r.note ?? undefined}>
@@ -393,15 +396,17 @@ export function SiteCapacityView({ site }: { site: SiteCapacity }) {
             {r.status ? (
               <ResourceSummary r={r} />
             ) : (
-            <div className="site-res-nums num small">
+            <div className="site-res-nums site-res-comparison num small">
               <span>
-                Site provides <strong>{fmtEstimate(r.available, r.unit)}</strong>
+                Tile provides <strong>{fmtEstimate(r.available, r.unit)}</strong>
               </span>
-              {r.needed !== null && (
                 <span>
                   {r.key === "power" && r.note ? "Exports" : "Needs"} <strong>{fmtEstimate(r.needed, r.unit)}</strong>
                 </span>
-              )}
+              <span className={`site-margin ${margin === null ? "" : margin < 0 ? "negative" : "positive"}`} title="Tile provides minus this building’s needs, after nearby projects have been accounted for.">
+                Margin <strong>{margin !== null && margin > 0 ? "+" : ""}{fmtEstimate(margin, r.unit)}</strong>
+                {margin !== null && <small>{margin < 0 ? "Shortfall" : margin > 0 ? "Spare capacity" : "Fully allocated"}</small>}
+              </span>
             </div>
             )}
             {!r.status && r.needed !== null && r.needed > 0 && r.available !== null && (

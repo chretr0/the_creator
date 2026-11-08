@@ -28,6 +28,7 @@ import h3
 import numpy as np
 
 from app import building_prices, features, h3store, layers, site_capacity, site_support
+from app.pollutants import pollutant_id, release_medium
 from app.api_base import ParamValue
 from app.building_calc import LocationContext, average_kw, calculate, fmt_num, is_unknown, q
 from app.building_models import (
@@ -354,7 +355,7 @@ def _definition_check(c: Criterion, stats: BuildingStats, result: BuildingResult
         name = (c.material_name if c.kind == "material_budget" else c.pollutant) or ""
         items = ([m.quantity for m in result.materials if m.name.strip().lower() == name.strip().lower()]
                  if c.kind == "material_budget" else
-                 [e.quantity for e in result.emissions if e.pollutant.strip().lower() == name.strip().lower()])
+                 [e.quantity for e in result.emissions if pollutant_id(e.pollutant) == pollutant_id(name) and e.medium == release_medium(name, c.medium)])
         what = f"{'Use of' if c.kind == 'material_budget' else 'Emissions of'} {name or '(unnamed)'}"
         if not name:
             return _check(c, "unknown", unit="kg", period=period, source=src,
@@ -363,9 +364,10 @@ def _definition_check(c: Criterion, stats: BuildingStats, result: BuildingResult
             return _check(c, "unknown", required_value=c.amount, unit="kg", period=period, source=src,
                           explanation=f"{name} is not declared in the building's statistics (unknown, not zero).")
         known_vals = [x.value for x in items if x.value is not None]
-        total = q(sum(known_vals) if known_vals else None, "kg", "", [m for x in items for m in x.missing])
+        unit = "kgCO₂e" if c.kind == "emission_limit" and release_medium(name, c.medium) == "climate" else "kg"
+        total = q(sum(known_vals) if known_vals else None, unit, "", [m for x in items for m in x.missing])
         basis = "construction (once) + operation over the period" if c.kind == "material_budget" else "rate × operating hours"
-        return _compare_max(c, total, c.amount, "kg", period, f"{src}; {basis}", what)
+        return _compare_max(c, total, c.amount, unit, period, f"{src}; {basis}", what)
     if c.kind == "staffing":
         need, cap = result.staffing_required.value, result.worker_capacity.value
         if need is None or cap is None:
@@ -887,19 +889,19 @@ def _totals(ctx: ScenarioContext, results: dict[UUID, BuildingResult]) -> Scenar
         return out
 
     mats: dict[tuple[str, str], list[tuple[str, Quantity, str]]] = {}
-    ems: dict[str, list[tuple[str, Quantity, str]]] = {}
+    ems: dict[tuple[str, str], list[tuple[str, Quantity, str]]] = {}
     for n, r in named:
         for m in r.materials:
             mats.setdefault((m.name.strip().lower(), m.phase), []).append((n, m.quantity, m.name))
         for e in r.emissions:
-            ems.setdefault(e.pollutant.strip().lower(), []).append((n, e.quantity, e.pollutant))
+            ems.setdefault((e.medium, pollutant_id(e.pollutant)), []).append((n, e.quantity, e.pollutant))
     materials = [
         MaterialTotal(name=v[0][2], phase=phase, quantity=_sum_quantities([(n, x) for n, x, _ in v], "kg", name)[0])
         for (name, phase), v in sorted(mats.items())
     ]
     emissions = [
-        EmissionTotal(pollutant=v[0][2], quantity=_sum_quantities([(n, x) for n, x, _ in v], "kg", key)[0])
-        for key, v in sorted(ems.items())
+        EmissionTotal(pollutant=v[0][2], medium=medium, quantity=_sum_quantities([(n, x) for n, x, _ in v], v[0][1].unit, key)[0])
+        for (medium, key), v in sorted(ems.items())
     ]
     return ScenarioTotals(
         electricity_demand=total("electricityDemand", lambda r: r.electricity_demand, "kWh", "electricity demand"),

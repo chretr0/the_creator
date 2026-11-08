@@ -134,6 +134,10 @@ ZONE_NAMES = {z: (label, ulr) for z, label, ulr, _, _ in LIGHT_ZONES}
 
 
 def is_air_pollutant(name: str) -> bool:
+    from app.pollutants import BY_ID, pollutant_id
+    key = pollutant_id(name)
+    if key in BY_ID:
+        return 'air' in BY_ID[key]['media'] and key not in ('co2', 'co2e', 'ch4', 'n2o')
     n = "".join(ch for ch in name.lower().replace("₂", "2").replace("ₓ", "x").replace("₃", "3") if ch.isalnum())
     if n.startswith(("co2", "ch4", "n2o", "ghg", "carbondioxide", "methane")):
         return False
@@ -482,7 +486,7 @@ def demand_of(btype: str, stats: BuildingStats, result: BuildingResult) -> Deman
         staff, staff_basis = result.worker_capacity.value, "worker capacity (no staffing requirement declared)"
     materials = [(m.name, m.phase, m.quantity_kg) for m in stats.materials if m.name.strip()]
     air = [(e.pollutant, e.rate_kg_per_hour) for e in stats.emissions
-           if is_air_pollutant(e.pollutant) and e.rate_kg_per_hour != 0]
+           if e.medium == 'air' and is_air_pollutant(e.pollutant) and e.rate_kg_per_hour != 0]
     return Demand(result.footprint.value, water, power, export if producer else None, water_out, staff,
                   basis, staff_basis, materials, air, stats.light.upward_lumens, source)
 

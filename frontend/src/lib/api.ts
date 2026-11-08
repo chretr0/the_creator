@@ -1,3 +1,4 @@
+import type { TimelineData } from "./timeline";
 import type {
   AssessmentRequest,
   AssessmentResponse,
@@ -108,6 +109,7 @@ export const api = {
   cell: (h3Id: string, signal?: AbortSignal) => request<CellInfo>(`/api/cells/${h3Id}`, { signal }),
 
   listScenarios: () => request<ScenarioSummary[]>("/api/scenarios"),
+  timeline: (id: string, signal?: AbortSignal) => request<TimelineData>(`/api/scenarios/${id}/timeline`, { signal }),
   getScenario: (id: string) => request<Scenario>(`/api/scenarios/${id}`),
   createScenario: (name: string) => request<Scenario>("/api/scenarios", { method: "POST", json: { name } }),
   branchScenario: (id: string, name: string) =>
