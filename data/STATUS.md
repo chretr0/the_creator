@@ -87,6 +87,7 @@ Caveats for these products:
 | --- | --- | --- |
 | GEO-06 | USGS MRDS CSV | 26 MB |
 | CTX-02 | NASA POWER global NetCDF subsets (`CTX-02/global/`, `fetch_power_global.py`) | 31 MB |
+| CTX-02 | NASA POWER 10 m wind vector climatology (`CTX-02/wind/`, `fetch_power_wind.py`); prepared as the committed `power_wind10m_annual_grid.npz` (0.7 MB, native grid, annual U10M/V10M/WS10M) | 13 MB |
 | IND-04 | NSTA wells (see above) | 38 MB |
 
 ### Global copies kept from the first run (before the rule; `"region": "global"`)

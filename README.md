@@ -113,22 +113,31 @@ for product intent, [CLAUDE-World-Mapping.md](./CLAUDE-World-Mapping.md) for the
     supply minus this building's requirement, after nearby projects are accounted for. Negative means shortfall;
     unknown inputs stay unknown. Air/light indicators with incompatible units are not subtracted.
 
-- **Timeline** replaces the Scenarios / stress-testing UI. Scrub or play from day 1 to five years,
+- **Timeline** replaces the Scenarios / stress-testing UI. Scrub or play from day 0 to five years,
   choose a receiving environment and pollutant, and view illustrative added impact. Where compatible measured
   backgrounds exist, historical Baseline and Combined views are also available.
-  The Projects section retains saved buildings and world management; existing scenario records and APIs remain compatible.
-  - The slider doubles elapsed time: 1, 2, 4, 8, 16, 32, 64, 128, 256, 512 and 1,024 days, then
-    ends at exactly five years (1,826.25 days, using 365.25 days/year). Previous/next buttons and shortcuts
-    use the same steps. Playback advances every 500 ms and stops at five years; Reset returns to day 1.
-    The colour scale stays fixed to the five-year horizon. Opacity is linear in concentration, so faint plume
-    tails are not visually amplified. Colours are relative to the displayed estimate, not health/safety thresholds.
+  Placed buildings are listed (and opened for editing) at the top of **Build**. Worlds are switched, added, branched,
+  renamed and deleted from the **Active world** menu in the header. Existing scenario records and APIs remain compatible.
+  - The slider starts at **day 0**, when operation begins, then steps through round intervals that each go further
+    than the last: 1, 2, 4 and 8 hours; 1, 2 and 4 days; 1 and 2 weeks; 1, 3 and 6 months; 1, 2 and 5 years.
+    Months and years are whole days rounded from 365.25 days/year (30, 91, 183, 365, 731 and 1,826 days).
+    Previous/next buttons use the same steps. Playback advances every 500 ms and stops at five years; Reset returns
+    to day 0, where nothing has been released yet.
+    **Colour scale** is either *Fixed five-year* (colours relative to the five-year peak, so steps are comparable) or
+    *Fit this step* (colours relative to the frame shown; compare steps by the legend maximum). Accumulated air
+    exposure defaults to *Fit this step*, because the first steps are a tiny fraction of the five-year peak and would otherwise be
+    invisible; every other view defaults to *Fixed five-year*. A choice the viewer makes is kept. Opacity is linear
+    in the value, so faint plume tails are not visually amplified. Colours are relative to the displayed estimate,
+    not health/safety thresholds.
+  - The Environment and Pollutant lists only offer what the world's buildings declare. Releases with an unknown rate
+    are listed (and reported as missing inputs); releases declared at exactly zero are not. A world with no
+    releases shows a prompt to add them in the building editor.
   - All projects start at day zero. Emission mass and resource use accumulate from declared operating hours and rates,
     using the existing calculator without legacy stress multipliers. Unknown project contributions are explicitly excluded
     from *known subtotals*, never treated as zero. The API is read-only and does not change source measurements.
   - **Air defaults to Accumulated exposure**, the integral of added concentration since operation began, in
     **µg·day/m³**. This continues increasing as releases continue, even when local air concentration has settled.
-    **Concentration now** remains a separate view in **µg/m³**. Both use the same transport assumptions and a fixed
-    five-year colour scale; day-one accumulated exposure can be very faint against that scale. The cumulative
+    **Concentration now** remains a separate view in **µg/m³**. Both use the same transport assumptions. The cumulative
     quantity is not the mass currently in the air or an inhaled dose. For continuous emissions it integrates each
     age-dependent transport kernel with weight `(elapsed days − puff age in days)`, accounting for arrival time,
     rather than multiplying the final concentration by elapsed time. Baseline/Combined exposure views integrate the
@@ -137,20 +146,31 @@ for product intent, [CLAUDE-World-Mapping.md](./CLAUDE-World-Mapping.md) for the
   - Air uses a **prototype Gaussian puff illustration**, not a forecast or regulatory dispersion model.
     Equation basis: [NOAA's Gaussian horizontal puff concentration](https://www.ready.noaa.gov/documents/AMS2018/html/conc_eqns.html).
     This implementation is not HYSPLIT. It assumes constant wind, uniform vertical mixing, an initial horizontal standard
-    deviation of 750 m, and continuous emissions at each building's daily average. Defaults (3 m/s wind from 270°,
-    500 m mixing height, 200 m²/s horizontal diffusion) are editable **illustrative assumptions**, not site weather.
+    deviation of 750 m, and continuous emissions at each building's daily average.
+  - **Wind is local by default.** Each building's releases drift with the long-term climate wind at its own location:
+    the NASA POWER MERRA-2 annual-mean 10 m wind vector (`U10M`, `V10M`; ~0.5° × 0.625° grid, nearest grid cell).
+    Averaging the components gives the **net drift**: winds that change direction cancel out, so it is slower than the
+    average wind speed (also shown) and is not the most frequent direction. Day-to-day weather is not modelled, and the
+    grid is too coarse for terrain or coastal effects. Buildings with different winds are superposed. *Custom wind*
+    applies one assumed wind to every building instead (default 3 m/s from 270°); if a building has no local wind it
+    uses that assumed wind, and the panel says so. Mixing height (500 m) and horizontal diffusion (200 m²/s) stay
+    editable **illustrative assumptions** either way. The wind grid is a small committed file,
+    `data/prepared/power_wind10m_annual_grid.npz` (~0.7 MB), rebuilt with `scripts/fetch_power_wind.py`.
     Concentration integrates a fixed 2,048-interval logarithmic puff-age grid spanning the supported ten-year calculation
     range (the UI ends at five years), with variance `750² + 2 × diffusion × age`. Each frame includes only ages up to
     its elapsed time; intervals do not shift during playback. Mass is conserved in the unbounded mathematical domain.
     Display is bounded to eight simulation-cell rings (roughly 50 km, varying with location)
     around projects, sampled at resolution-7 display-cell centres. The finer display repeats each parent's coarse
     background; it does not create finer atmospheric observations. Up to 25,000 display cells are supported per world.
+    Each receptor only evaluates the puffs whose exp(−40) footprint can reach its distance from the source (a
+    binary search for the first, an early stop after the last), giving identical results to a full scan. With 25,000
+    cells and three sources a frame takes about 40 ms in the default wind and up to about 400 ms in calm air at five years.
   - PM2.5/PM10 can use the **CAMS 2024 annual mean** (~80 km native grid) as a fixed background. These are historical
     reference conditions, not current readings. CO₂ has no supplied background, so only its added mass concentration is
     shown; atmospheric-column products are never substituted for surface concentration. No chemistry, deposition,
     terrain, stack/plume rise, weather evolution or climate warming is modelled. Local concentrations can level off as
-    pollution moves away while cumulative emitted mass keeps growing. Day 1 means 24 elapsed hours, not the start
-    instant. At the default 3 m/s, air travels 259.2 km/day, so a plume may cross the entire local display on day 1.
+    pollution moves away while cumulative emitted mass keeps growing. At the default 3 m/s, air travels 10.8 km/hour
+    (259.2 km/day), so the plume crosses the ~50 km local display within the first few hours.
     The panel explains this speed and distinguishes instantaneous concentration, accumulated exposure and cumulative
     released mass. The map legend, peak metric and tooltips use the units of the selected measure.
   - **Pollutants & releases** uses the shared `shared/pollutants.json` catalogue (39 identities): gases and particles,

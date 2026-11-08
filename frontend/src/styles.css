@@ -615,7 +615,8 @@ fieldset.classes .toggle, fieldset.radios .toggle { width: 100%; }
 
 /* ---------- Building and scenario workspaces ---------- */
 /* Wizard progress: four compact numbered steps that fit the 410px sidebar. */
-.build-steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; margin: 0; position: relative; }
+/* One equal column per stage, so the steps always span the full width. */
+.build-steps { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 4px; margin: 0; position: relative; width: 100%; }
 .build-steps button { flex-direction: column; justify-content: flex-start; gap: 5px; min-width: 0; padding: 4px 2px 2px; border: 0; background: none; border-radius: 8px; font-size: 11px; font-weight: 550; line-height: 1.25; color: var(--muted); text-align: center; white-space: nowrap; position: relative; }
 .build-steps button:hover:not(:disabled) { background: var(--hover); color: var(--text); }
 .build-steps button > span { display: grid; place-items: center; width: 24px; height: 24px; flex: 0 0 auto; border-radius: 50%; border: 1.5px solid var(--border-strong); background: var(--surface); color: var(--muted); font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; transition: background 140ms, border-color 140ms, color 140ms; }
@@ -732,7 +733,6 @@ fieldset.classes .toggle, fieldset.radios .toggle { width: 100%; }
   .map-credits { max-width: 85%; font-size: 9px; }
   .hint { bottom: 32px; max-width: calc(100% - 24px); white-space: normal; border-radius: 8px; font-size: 11px; padding: 8px; gap: 8px; }
   .map-legend { left: 12px; bottom: 35px; padding: 10px; }
-  .build-steps { max-width: 460px; }
   .layer-catalogue { max-height: 380px; }
   .inspector-heading { position: sticky; top: 114px; z-index: 2; }
   .panel { scroll-margin-top: 122px; }
@@ -834,9 +834,15 @@ fieldset.classes .toggle, fieldset.radios .toggle { width: 100%; }
 .scenario-comparison > h3 { font-size: 12px !important; }
 .scenario-actions { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .scenario-actions button { font-size: 12px; padding: 9px 5px; justify-content: center; margin-left: 0; }
-.scenario-projects button.link { padding: 10px 8px; align-items: flex-start; }
-.scenario-projects .dot { margin-top: 4px; }
-.scenario-projects .right { font-size: 11px; white-space: nowrap; padding-top: 2px; }
+.building-list > p { margin: 0 0 10px; }
+.building-list li { display: flex; align-items: center; gap: 6px; border-radius: var(--radius); }
+.building-list li.editing { background: var(--accent-soft); }
+.building-list button.link { padding: 10px 8px; align-items: flex-start; flex: 1; min-width: 0; }
+.building-list .dot { margin-top: 4px; flex: 0 0 auto; }
+.building-list .result-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.building-list .result-title small { display: block; margin-top: 2px; color: var(--muted); font-size: 11px; font-weight: 400; }
+.building-actions { display: flex; gap: 4px; flex-shrink: 0; padding-right: 4px; }
+.building-actions button { font-size: 12px; padding: 5px 9px; }
 .inspector .scenario-comparison .panel-tabs { margin-top: 12px; }
 .result .panel-tabs { margin-top: 0; }
 .mobile-map-toggle { display: none; }
@@ -908,17 +914,30 @@ fieldset.classes .toggle, fieldset.radios .toggle { width: 100%; }
 .timeline-empty h2, .timeline-empty p { margin: 0; }
 .timeline-controls > .panel-tabs { margin: 14px 0 0; }
 .timeline-badge { font-size: 10px; padding: 3px 7px; border-radius: 6px; color: var(--primary); background: var(--surface-2); }
-.timeline-field { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 12px; font-size: 12px; }
-.timeline-field select { width: 100%; }
+/* One label column so the dropdowns line up; the chevron matches the Build pickers and follows the theme. */
+.timeline-field { position: relative; display: grid; grid-template-columns: 84px minmax(0, 1fr); align-items: center; gap: 10px; font-size: 12px; }
+.timeline-field + .timeline-field { margin-top: 8px; }
+.timeline-field select {
+  width: 100%; height: 40px; padding: 0 34px 0 11px; font-size: 13px; font-weight: 500; color: var(--text);
+  background-color: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--radius);
+  appearance: none; -webkit-appearance: none; cursor: pointer; text-overflow: ellipsis;
+}
+.timeline-field select:hover { border-color: var(--accent-border); background-color: var(--hover); }
+.timeline-field select:focus-visible { border-color: var(--accent); outline: 2px solid var(--accent-soft); outline-offset: 0; }
+.timeline-field::after { content: ""; position: absolute; right: 15px; top: 50%; width: 7px; height: 7px; margin-top: -6px; border-right: 1.5px solid var(--muted); border-bottom: 1.5px solid var(--muted); transform: rotate(45deg); pointer-events: none; }
 .timeline-baseline { line-height: 1.55; margin: 12px 0 20px; }
 .timeline-time { display: grid; gap: 4px; }
 .timeline-time > strong { font-size: 23px; letter-spacing: -.6px; font-weight: 600; }
 .timeline-transport { line-height: 1.55; margin-top: 12px; padding: 10px 12px; border-left: 2px solid var(--primary); background: var(--surface-2); border-radius: 0 6px 6px 0; }
 .timeline-transport summary { cursor: pointer; color: var(--text); font-weight: 600; }
 .timeline-transport p { margin: 8px 0 0; }
+.timeline-winds { margin: 10px 0 12px; }
+.timeline-winds li { display: grid; gap: 2px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+.timeline-winds li:last-child { border-bottom: 0; }
+.timeline-winds small { color: var(--muted); font-size: 11px; line-height: 1.45; }
 .timeline-player { display: grid; grid-template-columns: 36px 28px minmax(0, 1fr) 28px 32px; gap: 5px; align-items: center; margin: 15px 0 10px; }
 .timeline-player input { width: 100%; accent-color: var(--primary); padding: 0; cursor: pointer; }
-.timeline-stops { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; }
+.timeline-stops { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 4px; }
 .timeline-stops button { font-size: 11px; padding: 6px 3px; justify-content: center; }
 .timeline-stops button[aria-pressed="true"] { color: var(--primary); border-color: var(--primary); background: var(--surface-2); }
 .timeline-metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }

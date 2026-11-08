@@ -15,6 +15,7 @@ from app import h3store, layers
 from app.building_assess import ScenarioContext, location_context
 from app.building_calc import calculate
 from app import timeline_environment
+from app.local_wind import local_wind
 
 
 def baseline(cells: list[str], layer_id: str) -> list[float | None]:
@@ -50,6 +51,8 @@ def timeline_inputs(ctx: ScenarioContext) -> dict:
             "id": str(b.id), "name": b.name, "type": b.type,
             "latitude": b.latitude, "longitude": b.longitude,
             "displayCell": h3.latlng_to_cell(b.latitude, b.longitude, 7),
+            # Long-term climate wind at the building (None when the wind grid is not prepared).
+            "wind": local_wind(b.latitude, b.longitude),
             "emissions": [{"pollutant": e.pollutant, "medium": e.medium, "kgPerDay": e.quantity.value,
                            "missing": e.quantity.missing} for e in result.emissions],
             "electricityKwhPerDay": result.electricity_demand.value,

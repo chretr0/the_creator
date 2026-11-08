@@ -20,7 +20,8 @@ import {
 } from "../lib/query";
 import CellInspector, { type CellSelection } from "../components/CellInspector";
 import ProjectDetails from "../components/ProjectDetails";
-import ScenarioPanel, { ScenarioSelect } from "../components/ScenarioPanel";
+import { ScenarioSelect } from "../components/ScenarioPanel";
+import BuildingList from "../components/BuildingList";
 import BuildPanel, { type BuildTarget, type EditRequest, type PresetRequest, type BuildStage } from "../components/BuildPanel";
 import TimelinePanel from "../components/TimelinePanel";
 import { type TimelineOverlay, timeLabel, timelineViewLabel } from "../lib/timeline";
@@ -157,14 +158,13 @@ export default function EarthApp({ onBody }: { onBody: (id: BodyId) => void }) {
   const [buildStage, setBuildStage] = useState<BuildStage>("building");
   const [buildMapVisible, setBuildMapVisible] = useState(false);
   const [exploreSection, setExploreSection] = useState<ExploreSection>("library");
-  const [timelineSection, setTimelineSection] = useState<"impact" | "projects">("impact");
   const [timelineOverlay, setTimelineOverlay] = useState<TimelineOverlay | null>(null);
   const [detailView, setDetailView] = useState<"record" | "location">("record");
   const [inspectorOpen, setInspectorOpen] = useState(false);
   const sideBodyRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     sideBodyRef.current?.scrollTo({ top: 0 });
-  }, [sideTab, exploreSection, timelineSection]);
+  }, [sideTab, exploreSection]);
   const [buildSiteHost, setBuildSiteHost] = useState<HTMLElement | null>(null);
   // Switching body unmounts the whole Earth app, Build draft included: ask first when it has edits.
   const buildDirty = useRef(false);
@@ -190,6 +190,8 @@ export default function EarthApp({ onBody }: { onBody: (id: BodyId) => void }) {
   const [editRequest, setEditRequest] = useState<EditRequest | null>(null);
   /** The placed building the Build tab is editing (null: a new building). */
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
+  // Build has two tabs: the building form (new or editing) and the list of placed buildings.
+  const [buildSection, setBuildSection] = useState<"form" | "list">("form");
   const changeBuildStage = useCallback((stage: BuildStage) => {
     setBuildStage(stage);
     setBuildMapVisible(false);
@@ -414,6 +416,8 @@ export default function EarthApp({ onBody }: { onBody: (id: BodyId) => void }) {
         return;
       }
       setInspectorOpen(false);
+      // Placing or opening a building happens in the form, so a map click from the list goes there.
+      setBuildSection("form");
       if (pickedProjectId && projects.some((p) => p.id === pickedProjectId)) {
         setEditRequest({ projectId: pickedProjectId, nonce: Date.now() });
         return;
@@ -482,6 +486,7 @@ export default function EarthApp({ onBody }: { onBody: (id: BodyId) => void }) {
   function editInBuild(p: Project) {
     setError(null);
     navigate("build");
+    setBuildSection("form");
     setEditRequest({ projectId: p.id, nonce: Date.now() });
   }
 
@@ -492,6 +497,16 @@ export default function EarthApp({ onBody }: { onBody: (id: BodyId) => void }) {
     },
     [isShown],
   );
+  async function deleteFromList(p: Project) {
+    const where = scenario ? ` from ${scenario.name}` : "";
+    if (!confirm(`Remove “${p.name || p.type}”${where}? This can't be undone.`)) return;
+    try {
+      await api.deleteProject(p.id);
+      onProjectDeleted(p);
+    } catch (e) {
+      report(e);
+    }
+  }
   const onProjectDeleted = useCallback(
     (p: Project) => {
       setScenario((s) => (s && s.id === p.scenarioId ? { ...s, projects: s.projects.filter((x) => x.id !== p.id) } : s));
@@ -710,7 +725,7 @@ export default function EarthApp({ onBody }: { onBody: (id: BodyId) => void }) {
   };
 
   const workspace = sideTab === "build" ? "build" : sideTab === "timeline" ? "timeline" : "explore";
-  const activeTimeline = sideTab === "timeline" && timelineSection === "impact" ? timelineOverlay : null;
+  const activeTimeline = sideTab === "timeline" ? timelineOverlay : null;
   const dock =
     inspectorOpen && hasDetail
       ? "details"
@@ -730,7 +745,7 @@ export default function EarthApp({ onBody }: { onBody: (id: BodyId) => void }) {
           <button aria-current={workspace === "build" ? "page" : undefined} onClick={() => navigate("build")}><Icon name="layers" />Build</button>
           <button aria-current={workspace === "timeline" ? "page" : undefined} onClick={() => navigate("timeline")}><Icon name="timeline" />Timeline</button>
         </nav>
-        <div className="scenario-switcher"><span className="eyebrow">ACTIVE WORLD</span><ScenarioSelect scenarios={scenarios} scenario={scenario} onSwitch={scenarioActions.onSwitch} /></div>
+        <div className="scenario-switcher"><span className="eyebrow">ACTIVE WORLD</span><ScenarioSelect scenarios={scenarios} scenario={scenario} {...scenarioActions} /></div>
         <div className="header-actions">
           <button className="sources-button" onClick={showCredits}><Icon name="info" size={18} /><span>Data & sources</span></button>
           <button className="theme-toggle" onClick={toggleTheme} aria-label={theme === "dark" ? "Switch to day mode" : "Switch to night mode"} title={theme === "dark" ? "Switch to day mode" : "Switch to night mode"}>
@@ -821,7 +836,7 @@ export default function EarthApp({ onBody }: { onBody: (id: BodyId) => void }) {
             <strong>{activeTimeline.pollutant} · {timelineViewLabel(activeTimeline.medium, activeTimeline.mode, activeTimeline.measure)}</strong>
             <span className="timeline-legend-time small muted">{timeLabel(activeTimeline.days)} · {activeTimeline.mode === "baseline" ? "CAMS 2024 reference" : "Illustrative estimate"}</span>
             <div className="timeline-colour-ramp" /><div className="timeline-legend-range small"><span>0</span><span>{activeTimeline.max.toLocaleString(undefined, { maximumSignificantDigits: 3 })} {activeTimeline.unit}</span></div>
-            <span className="small muted">Fixed five-year scale · relative intensity</span>
+            <span className="small muted">{activeTimeline.scale === "horizon" ? "Fixed five-year scale" : "Scaled to this step"} · relative intensity</span>
             <span className="small muted">Grey = unknown{activeTimeline.partial && activeTimeline.mode !== "baseline" ? " · known sources only" : ""}</span>
           </div>}
           <div className="map-credits small">
@@ -837,7 +852,7 @@ export default function EarthApp({ onBody }: { onBody: (id: BodyId) => void }) {
             </button>
           </div>
 
-          {sideTab === "build" && (buildMapStatus.note || !buildTarget) ? (
+          {sideTab === "build" && buildSection === "form" && (buildMapStatus.note || !buildTarget) ? (
             <div className="hint" role="status">{buildMapStatus.note ?? "Click the map to place your building"}</div>
           ) : null}
         </main>
@@ -845,9 +860,13 @@ export default function EarthApp({ onBody }: { onBody: (id: BodyId) => void }) {
         <aside className="sidebar">
           <div className="workspace-heading">
             <div className="eyebrow">{sideTab === "build" ? "PLAN & PLACE" : sideTab === "timeline" ? "CHANGE OVER TIME" : "THE WORLD, IN CONTEXT"}</div>
-            <h1>{sideTab === "build" ? ({ building: editingProjectId ? "Edit building" : "Choose a building", resources: "Resources", impact: "Impact & costs" }[buildStage]) : sideTab === "timeline" ? "Your timeline" : "Explore the world"}</h1>
+            <h1>{sideTab === "build" ? (buildSection === "list" ? "Your buildings" : { building: editingProjectId ? "Edit building" : "Choose a building", resources: "Resources", impact: "Impact & costs" }[buildStage]) : sideTab === "timeline" ? "Your timeline" : "Explore the world"}</h1>
             {sideTab !== "build" && <p>{sideTab === "timeline" ? "See what your projects leave behind." : "Discover the data behind a place."}</p>}
           </div>
+          {sideTab === "build" && <PanelTabs label="Build sections" value={buildSection} onChange={setBuildSection} options={[
+            { value: "form", label: editingProjectId ? "Edit building" : "New building" },
+            { value: "list", label: `Buildings (${projects.length})` },
+          ]} />}
           {(sideTab === "layers" || sideTab === "search") && (
             <nav className="explore-tabs" aria-label="Explore views">
               <button aria-pressed={sideTab === "layers"} onClick={() => setSideTab("layers")}><Icon name="layers" size={17} />Data layers</button>
@@ -855,9 +874,6 @@ export default function EarthApp({ onBody }: { onBody: (id: BodyId) => void }) {
             </nav>
           )}
 
-          {sideTab === "timeline" && <PanelTabs label="Timeline sections" value={timelineSection} onChange={setTimelineSection} options={[
-            { value: "impact", label: "Environmental impact" }, { value: "projects", label: "Projects" },
-          ]} />}
           <div className="side-body" ref={sideBodyRef}>
             {error && (
               <div className="error" role="alert" style={{ marginTop: 12 }}>
@@ -944,7 +960,7 @@ export default function EarthApp({ onBody }: { onBody: (id: BodyId) => void }) {
             )}
 
             {/* Kept mounted so the building draft survives tab switches. */}
-            <div className="build-mount" hidden={sideTab !== "build"}>
+            <div className="build-mount" hidden={sideTab !== "build" || buildSection !== "form"}>
               <BuildPanel
                 stage={buildStage}
                 onStage={changeBuildStage}
@@ -968,24 +984,19 @@ export default function EarthApp({ onBody }: { onBody: (id: BodyId) => void }) {
                 onEditing={setEditingProjectId}
                 onSaved={onProjectSaved}
                 onDeleted={onProjectDeleted}
+                onDoneEditing={() => setBuildSection("list")}
                 siteHost={buildSiteHost}
               />
             </div>
-
-            {sideTab === "timeline" && timelineSection === "projects" && (
-              <ScenarioPanel
-                scenarios={scenarios}
-                scenario={scenario}
-                selectedProjectId={selectedProjectId}
-                onSelectProject={(p) => {
-                  selectProject(p);
-                  setFocus({ latitude: p.latitude, longitude: p.longitude, nonce: Date.now() });
-                }}
-                {...scenarioActions}
-              />
+            {sideTab === "build" && buildSection === "list" && (
+              <BuildingList scenario={scenario} editingId={editingProjectId} onNew={() => setBuildSection("form")}
+                onShow={(p) => focusOn(p.latitude, p.longitude)}
+                onEdit={(p) => { editInBuild(p); focusOn(p.latitude, p.longitude); }}
+                onDelete={deleteFromList} />
             )}
-            <div hidden={sideTab !== "timeline" || timelineSection !== "impact"}>
-              <TimelinePanel scenario={scenario} active={sideTab === "timeline" && timelineSection === "impact"}
+
+            <div hidden={sideTab !== "timeline"}>
+              <TimelinePanel scenario={scenario} active={sideTab === "timeline"}
                 onOverlay={setTimelineOverlay} onFocus={focusOn} onEdit={(p) => { editInBuild(p); focusOn(p.latitude, p.longitude); }} onBuild={() => navigate("build")} />
             </div>
           </div>
