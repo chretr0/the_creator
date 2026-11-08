@@ -1,12 +1,12 @@
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Response
+from fastapi import APIRouter, HTTPException, Query, Response
 from fastapi.exceptions import RequestValidationError
 from psycopg import Connection
 from psycopg.types.json import Jsonb
 from pydantic import ValidationError
 
-from app import geo
+from app import geo, moon_buildings
 from app.building_calc import CalcInputError, validate_parameters
 from app.building_models import DefinitionSnapshot, ResourceBudget, ScenarioAssumptions, SiteAssumptions
 from app.db import transaction
@@ -19,6 +19,7 @@ from app.models import (
     ScenarioCreate,
     ScenarioSummary,
     ScenarioUpdate,
+    WorldBody,
 )
 
 router = APIRouter(prefix="/api", tags=["scenarios"])
@@ -134,10 +135,47 @@ def _load_scenario(conn: Connection, scenario_id: UUID) -> dict:
 
 
 def _check_parameters(type_: str, parameters: dict) -> None:
+    """Moon types are checked against shared/moon_buildings.json (null = unknown); Earth types keep the
+    Earth rules, where an unknown value is an absent key, never null."""
     try:
-        validate_parameters(type_, parameters)
+        if moon_buildings.is_moon_type(type_):
+            moon_buildings.validate_parameters(type_, parameters)
+        else:
+            nulls = sorted(k for k, v in parameters.items() if v is None)
+            if nulls:
+                raise CalcInputError("; ".join(f"{k} must not be null (omit it when unknown)" for k in nulls))
+            validate_parameters(type_, parameters)
     except CalcInputError as exc:
         raise HTTPException(422, f"invalid parameters: {exc}") from exc
+
+
+def _scenario_body(conn: Connection, scenario_id: UUID) -> str:
+    row = conn.execute("SELECT body FROM scenario WHERE id = %s", (scenario_id,)).fetchone()
+    if row is None:
+        raise HTTPException(404, "scenario not found")
+    return row["body"]
+
+
+def _check_world(world_body: str, type_: str) -> None:
+    """Moon types belong in Moon worlds and Earth types in Earth worlds."""
+    if moon_buildings.is_moon_type(type_):
+        if world_body != "moon":
+            raise HTTPException(
+                422, f"'{type_}' is a Moon building type: it can only be placed in a Moon world, not an Earth one"
+            )
+    elif world_body == "moon":
+        raise HTTPException(
+            422, f"'{type_}' is an Earth building type: this is a Moon world, which takes only Moon building "
+                 f"types ({', '.join(moon_buildings.MOON_TYPES)})"
+        )
+
+
+def _no_definition_link(type_: str) -> None:
+    if moon_buildings.is_moon_type(type_):
+        raise HTTPException(
+            422, f"sourceDefinitionId is not supported for Moon building types ('{type_}'): "
+                 "Moon buildings are not saved as building definitions"
+        )
 
 
 def _definition_row(conn: Connection, definition_id: UUID) -> dict:
@@ -191,14 +229,16 @@ def _place(latitude: float, longitude: float) -> tuple[float, float, str]:
 
 
 @router.get("/scenarios", response_model=list[ScenarioSummary], response_model_by_alias=True)
-def list_scenarios():
+def list_scenarios(body: WorldBody = Query("earth", description="Only worlds on this body (default Earth)")):
     with transaction() as conn:
         return conn.execute(
             """
             SELECT s.*, count(p.id)::int AS project_count
             FROM scenario s LEFT JOIN project p ON p.scenario_id = s.id
+            WHERE s.body = %s
             GROUP BY s.id ORDER BY s.created_at
-            """
+            """,
+            (body,),
         ).fetchall()
 
 
@@ -206,8 +246,8 @@ def list_scenarios():
 def create_scenario(body: ScenarioCreate):
     with transaction() as conn:
         row = conn.execute(
-            "INSERT INTO scenario (name, assumptions) VALUES (%s, %s) RETURNING id",
-            (body.name.strip(), Jsonb(validated_assumptions(body.assumptions))),
+            "INSERT INTO scenario (name, body, assumptions) VALUES (%s, %s, %s) RETURNING id",
+            (body.name.strip(), body.body, Jsonb(validated_assumptions(body.assumptions))),
         ).fetchone()
         return _load_scenario(conn, row["id"])
 
@@ -258,7 +298,7 @@ def delete_scenario(scenario_id: UUID):
     response_model_by_alias=True,
 )
 def branch_scenario(scenario_id: UUID, body: ScenarioBranch):
-    """Copy a scenario and its projects; the branch keeps the same baseline and model versions.
+    """Copy a scenario and its projects; the branch keeps the same body, baseline and model versions.
     Definition snapshots, site assumptions and scenario assumptions (incl. stress controls) are
     copied by value, so later edits on either side are independent. Budget contributors are
     re-pointed at the copied projects, so the branch evaluates exactly like its parent."""
@@ -266,8 +306,8 @@ def branch_scenario(scenario_id: UUID, body: ScenarioBranch):
         _load_scenario(conn, scenario_id)
         row = conn.execute(
             """
-            INSERT INTO scenario (name, parent_scenario_id, baseline_revision, model_version, assumptions)
-            SELECT %s, id, baseline_revision, model_version, assumptions FROM scenario WHERE id = %s
+            INSERT INTO scenario (name, body, parent_scenario_id, baseline_revision, model_version, assumptions)
+            SELECT %s, body, id, baseline_revision, model_version, assumptions FROM scenario WHERE id = %s
             RETURNING id, assumptions
             """,
             (body.name.strip(), scenario_id),
@@ -308,13 +348,14 @@ def branch_scenario(scenario_id: UUID, body: ScenarioBranch):
 )
 def create_project(scenario_id: UUID, body: ProjectCreate):
     """Place a building. Without `definition` but with `sourceDefinitionId`, the saved definition is
-    snapshotted (and its parameters used when none are given). No definition at all = legacy project."""
+    snapshotted (and its parameters used when none are given). No definition at all = legacy project.
+    Moon types go in Moon worlds only, Earth types in Earth worlds only."""
     latitude, longitude, h3_id = _place(body.latitude, body.longitude)
     parameters, definition = body.parameters, body.definition
     with transaction() as conn:
-        if not conn.execute("SELECT 1 FROM scenario WHERE id = %s", (scenario_id,)).fetchone():
-            raise HTTPException(404, "scenario not found")
+        _check_world(_scenario_body(conn, scenario_id), body.type)
         if body.source_definition_id is not None:
+            _no_definition_link(body.type)
             source = _definition_row(conn, body.source_definition_id)
             if definition is None:
                 if body.type != source["type"]:
@@ -363,6 +404,8 @@ def update_project(project_id: UUID, body: ProjectUpdate):
         latitude, longitude, h3_id = _place(latitude, longitude)
 
         type_ = body.type or current["type"]
+        if body.type is not None:
+            _check_world(_scenario_body(conn, current["scenario_id"]), type_)
         parameters = body.parameters if body.parameters is not None else current["parameters"]
         if body.parameters is not None or body.type is not None:
             _check_parameters(type_, parameters)
@@ -370,6 +413,7 @@ def update_project(project_id: UUID, body: ProjectUpdate):
         if "source_definition_id" in body.model_fields_set:
             source_id = body.source_definition_id
             if source_id is not None:
+                _no_definition_link(type_)
                 _definition_row(conn, source_id)
 
         project = conn.execute(

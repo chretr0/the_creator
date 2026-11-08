@@ -176,9 +176,15 @@ def delete_definition(definition_id: UUID):
 def load_context(conn: Connection, scenario_id: UUID | None) -> ScenarioContext:
     if scenario_id is None:
         return ScenarioContext()
-    row = conn.execute("SELECT assumptions FROM scenario WHERE id = %s", (scenario_id,)).fetchone()
+    row = conn.execute("SELECT assumptions, body FROM scenario WHERE id = %s", (scenario_id,)).fetchone()
     if row is None:
         raise HTTPException(404, "scenario not found")
+    if row["body"] != "earth":
+        # Timeline, evaluation and assessments model Earth buildings, layers and resources only.
+        raise HTTPException(
+            422, f"scenario {scenario_id} is a Moon world: timeline, evaluation and building assessments "
+                 "are only available for Earth worlds"
+        )
     projects = conn.execute(
         f"SELECT {PROJECT_COLUMNS} FROM project WHERE scenario_id = %s ORDER BY created_at, id", (scenario_id,)
     ).fetchall()

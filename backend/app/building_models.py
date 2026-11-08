@@ -51,6 +51,13 @@ BuildingType = Literal[
     # other
     "custom",
 ]
+# Moon building types, placed only in Moon worlds and never saved as building definitions. Keep in sync
+# with shared/moon_buildings.json (same order) and the project type CHECK constraint
+# (db/migrations/V4__moon_worlds.sql).
+MoonBuildingType = Literal[
+    "moon_habitat", "moon_solar_tower", "moon_fission", "moon_storage",
+    "moon_ice_mine", "moon_oxygen_plant", "moon_greenhouse", "moon_landing_pad",
+]
 BuildingCategory = Literal["energy", "water", "extraction", "industry", "agriculture", "commercial", "community",
                            "transport", "waste", "other"]
 ProvenanceKind = Literal["user_assumption", "demo_assumption", "cited"]

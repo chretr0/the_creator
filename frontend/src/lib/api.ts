@@ -35,9 +35,14 @@ export type Project = {
   updatedAt: string;
 };
 
+/** The body a world is on: Earth worlds and Moon worlds are listed separately. */
+export type WorldBody = "earth" | "moon";
+
 export type ScenarioSummary = {
   id: string;
   name: string;
+  /** Older servers leave it out: treat a missing body as Earth. */
+  body?: WorldBody;
   parentScenarioId: string | null;
   baselineRevision: string;
   modelVersion: string;
@@ -108,10 +113,11 @@ export const api = {
   health: () => request<{ status: string }>("/api/health"),
   cell: (h3Id: string, signal?: AbortSignal) => request<CellInfo>(`/api/cells/${h3Id}`, { signal }),
 
-  listScenarios: () => request<ScenarioSummary[]>("/api/scenarios"),
+  listScenarios: (body: WorldBody = "earth") => request<ScenarioSummary[]>(`/api/scenarios?body=${body}`),
   timeline: (id: string, signal?: AbortSignal) => request<TimelineData>(`/api/scenarios/${id}/timeline`, { signal }),
   getScenario: (id: string) => request<Scenario>(`/api/scenarios/${id}`),
-  createScenario: (name: string) => request<Scenario>("/api/scenarios", { method: "POST", json: { name } }),
+  createScenario: (name: string, body: WorldBody = "earth") =>
+    request<Scenario>("/api/scenarios", { method: "POST", json: { name, body } }),
   branchScenario: (id: string, name: string) =>
     request<Scenario>(`/api/scenarios/${id}/branch`, { method: "POST", json: { name } }),
   renameScenario: (id: string, name: string) =>
@@ -139,6 +145,9 @@ export const api = {
   assess: (req: AssessmentRequest, signal?: AbortSignal) =>
     request<AssessmentResponse>("/api/building-assessments", { method: "POST", json: req, signal }),
   updateScenarioAssumptions: (id: string, assumptions: ScenarioAssumptions) =>
+    request<Scenario>(`/api/scenarios/${id}`, { method: "PATCH", json: { assumptions } }),
+  /** Other assumption keys (e.g. `moonBase`): merged key by key and kept as sent. */
+  patchScenarioAssumptions: (id: string, assumptions: Record<string, unknown>) =>
     request<Scenario>(`/api/scenarios/${id}`, { method: "PATCH", json: { assumptions } }),
   /** Overrides preview unsaved controls; saved values are used for anything omitted. */
   evaluateScenario: (id: string, overrides: EvaluateRequest = {}, signal?: AbortSignal) =>
