@@ -1,0 +1,89 @@
+{
+  "id": "MOON-SITE-01-global-20261108",
+  "catalogueSourceId": "MOON-SITE-01",
+  "body": "moon",
+  "provider": "LROC Science Operations Center, Arizona State University (NASA LRO), via NASA PDS",
+  "product": "LROC Anthropogenic Objects point shapefile, -180..180 longitude domain (ANTHROPOGENIC_OBJECTS_180)",
+  "version": "README 'Last updated: 2026-08-14'",
+  "documentationUrl": "https://doi.org/10.1016/j.icarus.2016.05.011",
+  "accessUrl": "https://pds.lroc.im-ldi.com/data/LRO-L-LROC-5-RDR-V1.0/LROLRC_2001/EXTRAS/SHAPEFILE/ANTHROPOGENIC_OBJECTS/ANTHROPOGENIC_OBJECTS_180.ZIP",
+  "accessMethod": "download (HTTPS; the LROC PDS host redirects to pds.mcp.nasa.gov)",
+  "evidenceType": "reported_record",
+  "licence": {
+    "name": "U.S. public domain (NASA PDS)",
+    "attribution": "NASA/GSFC/Arizona State University",
+    "notes": "US-government work, no copyright; credit requested (LROC). Cite the product paper.",
+    "reviewedAt": "2026-11-08"
+  },
+  "citation": "Wagner, R. V., Nelson, D. M., Plescia, J. B., Robinson, M. S., Speyerer, E. J., & Mazarico, E. (2017). Coordinates of anthropogenic features on the Moon. Icarus, 283, 92-103. doi:10.1016/j.icarus.2016.05.011",
+  "frame": "GCS_Moon_2000 (sphere 1737400 m), planetocentric, east-positive, -180..180",
+  "units": {
+    "RADIUS": "metres from the Moon's centre",
+    "UNCERTAIN": "metres",
+    "DATE": "UTC date (launch date for Luna 16, Luna 17, Luna 20, Luna 21, Luna 23, Luna 24 and Surveyor 1)"
+  },
+  "processing": "scripts/moon/prepare_moon_reference.py -> data/prepared/moon/sites/anthropogenic_objects.geojson",
+  "stats": {
+    "kinds": {
+      "retroreflector": 3,
+      "rover": 6,
+      "crewed_landing": 6,
+      "other": 11,
+      "soft_landing": 22,
+      "impact": 25
+    },
+    "heritage": {
+      "null": 14,
+      "landing": 34,
+      "impact": 25
+    },
+    "lrocRows": 71,
+    "release": "2026-08-14",
+    "supplements": [
+      "Luna9",
+      "Luna13"
+    ],
+    "nssdcaSupplements": [
+      "Luna 9",
+      "Luna 13"
+    ],
+    "catalogueSupplements": [],
+    "launchDated": [
+      "Luna 16",
+      "Luna 17",
+      "Luna 20",
+      "Luna 21",
+      "Luna 23",
+      "Luna 24",
+      "Surveyor 1"
+    ],
+    "fields": [
+      "OBJECT_ID",
+      "SHORT_NAME",
+      "VEHCL_NAME",
+      "MISSION",
+      "OBJECT",
+      "LATITUDE",
+      "LON_360",
+      "LONGITUDE",
+      "RADIUS",
+      "RAD_SRC",
+      "COORD_SRC",
+      "UNCERTAIN",
+      "DATE",
+      "REFERENCES"
+    ]
+  },
+  "region": "global",
+  "retrievedAt": "2026-11-08T02:31:13Z",
+  "preparedAt": "2026-11-08T03:00:37Z",
+  "files": [
+    {
+      "path": "ANTHROPOGENIC_OBJECTS_180.ZIP",
+      "url": "https://pds.lroc.im-ldi.com/data/LRO-L-LROC-5-RDR-V1.0/LROLRC_2001/EXTRAS/SHAPEFILE/ANTHROPOGENIC_OBJECTS/ANTHROPOGENIC_OBJECTS_180.ZIP",
+      "resolvedUrl": "https://pds.mcp.nasa.gov/data/store/img/lunar_reconnaissance_orbiter/pds4/lroc/lro-l-lroc-5-rdr/LROLRC_2001/EXTRAS/SHAPEFILE/ANTHROPOGENIC_OBJECTS/ANTHROPOGENIC_OBJECTS_180.ZIP",
+      "bytes": 1569089,
+      "sha256": "f0145e0b8871053f3358c599d356a5af05db70e4da2fe8c91264e84b98e4408b"
+    }
+  ]
+}

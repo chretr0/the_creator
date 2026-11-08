@@ -13,7 +13,21 @@ from fastapi.responses import JSONResponse
 from app import geo
 from app.config import settings
 from app.db import pool
-from app.routers import buildings, cells, features, hazards, infrastructure, layers, power, prepared, scenarios, sources
+from app.routers import (
+    bodies,
+    buildings,
+    cells,
+    features,
+    hazards,
+    infrastructure,
+    layers,
+    moon,
+    moon_layers,
+    power,
+    prepared,
+    scenarios,
+    sources,
+)
 
 
 def warm_default_layer() -> None:
@@ -117,6 +131,9 @@ app.include_router(power.router)
 app.include_router(sources.router)
 app.include_router(layers.router)
 app.include_router(features.router)
+app.include_router(bodies.router)
+app.include_router(moon.router)
+app.include_router(moon_layers.router)
 
 
 @app.get("/api/health")

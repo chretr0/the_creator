@@ -1,7 +1,8 @@
 # New Worlds
 
-Interactive Earth exploration and scenario sandbox (hackathon build). See [CLAUDE-Project-Overview.md](./CLAUDE-Project-Overview.md)
-for product intent and [CLAUDE-World-Mapping.md](./CLAUDE-World-Mapping.md) for the map/H3 contract.
+Interactive Earth exploration and scenario sandbox (hackathon build), now with a first Moon module. See [CLAUDE-Project-Overview.md](./CLAUDE-Project-Overview.md)
+for product intent, [CLAUDE-World-Mapping.md](./CLAUDE-World-Mapping.md) for the map/H3 contract and
+[CLAUDE-Moon-Data-Sources.md](./CLAUDE-Moon-Data-Sources.md) for the Moon data catalogue.
 
 ## What works now
 
@@ -245,6 +246,53 @@ The first request for a layer slice reads its Parquet column once and writes mem
 plus aggregated levels 0–5) to `data/cache/h3/`. Later requests are lookups. The backend warms the default
 solar layer at start-up. Delete `data/cache/h3/` to rebuild; it is regenerated from `data/prepared/`.
 
+## Bodies: Earth and the Moon
+
+The app is body-modular. Earth and the Moon share the H3 grid, the map component, the cell model and the
+evidence rules. H3 cell IDs are the same on both; only lengths (× R) and areas (× R²) change. Each body
+plugs in through a small registry:
+
+- **Backend:** `app/bodies.py` holds the registry (Earth R = 6371.0072 km, h3's authalic radius; Moon
+  R = 1737.4 km, IAU_2015:30100). It provides body-aware cell area, edge length, great-circle distance and
+  geodesic circles. `/api/cells/*?body=moon` returns Moon areas. Moon-only routes live under
+  `/api/moon` (`routers/moon.py` for the reference layers, `routers/moon_layers.py` for the H3 data layers).
+- **Frontend:** `src/bodies/` defines each body: basemap style, initial view, radius, whether day/night
+  theming and 3D tilt apply, and credits. `src/App.tsx` is a shell that mounts either `src/earth/EarthApp.tsx`
+  (the existing app, unchanged) or `src/moon/MoonApp.tsx`. Only one is mounted at a time, so no Earth data is
+  ever fetched for Moon coordinates; Earth's regional boxes would otherwise also match Moon lat/lon. The
+  header's Earth | Moon switch (also `?body=moon`) picks the body. `WorldMap` takes a `body` prop and draws a
+  body-aware scale bar, because MapLibre's own scale and deck.gl metre units assume Earth's radius. Moon
+  overlays are therefore drawn in pixel units or as lat/lon polygons computed on the Moon sphere.
+
+**The Moon module today (Explore only):**
+
+- **Map:** LROC WAC basemap (Lunaserv WMS). Overlays: IAU feature names, hillshade, colour relief,
+  permanently shadowed regions and mare outlines.
+- **Place search:** 9,087 IAU features plus coordinates.
+- **Landed objects (73, from LROC):** coloured by kind, with the six Apollo landings highlighted.
+- **Planned missions and Artemis candidate regions:** marked as planned, dated "as of 2026-11-08".
+- **Heritage keep-out rings:** NASA 2011 recommendations, 2 km around landings and 0.5 km around impacts.
+- **Elevation:** a LOLA H3 layer at res 0–5 (16 ppd source).
+- **Location inspector:** Moon area and edge length, elevation, mare, LAC quad, nearest named features,
+  nearby landed objects and keep-out status.
+- **Sources:** a sources & licences list.
+
+Building, scenarios and the timeline on the Moon come next (catalogue §10–12).
+
+Prepare the Moon data (see [data/README.md](data/README.md) §7):
+
+```bash
+(cd backend && uv run --with pyshp python ../scripts/moon/prepare_moon_reference.py)
+```
+
+```bash
+(cd backend && uv run python ../scripts/moon/prepare_moon_elevation.py)
+```
+
+To add a body, add it to both registries, add a `src/<body>/` workspace, and serve its data under
+`/api/<body>`. The H3 layer format in `data/prepared/moon/h3/layers.json` is the template for new
+per-cell layers such as sunlight, temperature, ice and composition.
+
 ## Layout
 
 ```
@@ -252,6 +300,11 @@ docker-compose.yml        Postgres 17 + Flyway
 db/migrations/            Flyway SQL migrations (V<n>__description.sql)
 backend/                  FastAPI + h3-py + psycopg (managed with uv)
 frontend/                 React + TypeScript + Vite, MapLibre, deck.gl, h3-js
+  src/bodies/             Body registry (Earth, Moon): basemap, radius, view, credits
+  src/earth/EarthApp.tsx  Earth workspace (Explore, Build, Timeline)
+  src/moon/               Moon workspace (Explore)
+scripts/moon/             Moon data preparation (reference layers, LOLA elevation)
+data/prepared/moon/       Prepared Moon layers + provenance (source.json, h3/layers.json)
 ```
 
 ## Running locally
@@ -298,8 +351,14 @@ The backend API tests need the Docker database running.
 | Route | Purpose |
 | --- | --- |
 | `GET /api/health` | Liveness + DB check |
-| `GET /api/cells/locate?latitude=&longitude=&resolution=6` | Cell containing a coordinate |
-| `GET /api/cells/{h3Id}` | Cell geometry, area, neighbours, parent |
+| `GET /api/bodies` | Body registry: id, name, radius, frame, simulation resolution |
+| `GET /api/cells/locate?latitude=&longitude=&resolution=6&body=earth` | Cell containing a coordinate (`body=moon` for Moon areas) |
+| `GET /api/cells/{h3Id}?body=earth` | Cell geometry, area and edge length on the body, neighbours, parent |
+| `GET /api/moon`, `GET /api/moon/layers/{id}` | Moon reference manifest (+ availability) and its layers: landed objects, IAU gazetteer, mare polygons, planned missions / Artemis regions |
+| `GET /api/moon/keepout` | Heritage keep-out rings (geodesic on the Moon sphere) |
+| `GET /api/moon/cells/{h3Id}/context` | Nearest named features, nearby landed objects, keep-out rings, mare and LAC quad for a Moon cell |
+| `GET /api/moon/sources` | Moon data credits (incl. LROC WMS and H3 layer sources) |
+| `GET /api/moon/h3`, `POST /api/moon/h3/{layerId}` `{cells}` | Moon H3 layers and their values for display cells (finer cells resolve to the layer's finest resolution; `null` = no data) |
 | `GET/POST /api/scenarios` | List / create scenarios |
 | `GET/PATCH/DELETE /api/scenarios/{id}` | Load (with projects) / rename / delete; PATCH `assumptions` merges top-level keys (`periodDays`, `budgets`, `stress` validated) |
 | `POST /api/scenarios/{id}/branch` | Branch a scenario |
@@ -328,11 +387,17 @@ Interactive docs: http://localhost:8000/docs
 ## Coordinate contract
 
 - Stored locations: `latitude`, `longitude` (WGS84 degrees, `double precision`), longitude normalised to [-180, 180).
+- Moon coordinates are planetocentric in the IAU_2015:30100 Mean-Earth frame (R = 1737.4 km), longitude positive
+  east, normalised to [-180, 180). Upstream 0–360 longitudes are converted on ingest.
 - H3 IDs are lowercase hex **strings** everywhere (JS, JSON, DB). They are never converted to numbers.
 - Simulation resolution is fixed at 6. Changing the display resolution never changes a project's cell.
 
 ## Known limitations
 
 - Web Mercator projection: latitudes beyond about ±85° are not displayed (cells exist, the map can't show them).
-  A globe projection is a later option once tested with the H3 overlay.
+  A globe projection is a later option once tested with the H3 overlay. On the Moon this hides the core of the
+  south-pole Artemis area (Shackleton is at 89.9°S). Those records are listed and selectable, and a polar inset is
+  the planned fix (catalogue §2.3).
+- Moon tiles come from the live LROC Lunaserv WMS, at about 1 s per tile. Self-hosted PMTiles are the planned
+  replacement (catalogue MOON-MAP-02).
 - `highPrecision` hexagon rendering is on. The ~5,000 cell budget has not been benchmarked on the demo laptop yet.

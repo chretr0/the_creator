@@ -1,0 +1,63 @@
+{
+  "id": "MOON-PLACE-02-global-20261108",
+  "catalogueSourceId": "MOON-PLACE-02",
+  "body": "moon",
+  "provider": "LROC Science Operations Center, Arizona State University (NASA LRO), via NASA PDS",
+  "product": "LROC global mare boundaries polygon shapefile, 65°S-65°N, -180..180 (LROC_GLOBAL_MARE_180)",
+  "version": "2017-09-01 (file dates in the archive)",
+  "documentationUrl": "https://pds.lroc.im-ldi.com/data/LRO-L-LROC-5-RDR-V1.0/LROLRC_2001/EXTRAS/SHAPEFILE/LROC_GLOBAL_MARE/",
+  "accessUrl": "https://pds.lroc.im-ldi.com/data/LRO-L-LROC-5-RDR-V1.0/LROLRC_2001/EXTRAS/SHAPEFILE/LROC_GLOBAL_MARE/LROC_GLOBAL_MARE_180.ZIP",
+  "accessMethod": "download (HTTPS; the LROC PDS host redirects to pds.mcp.nasa.gov)",
+  "evidenceType": "reference_geometry",
+  "licence": {
+    "name": "U.S. public domain (NASA PDS)",
+    "attribution": "NASA/GSFC/Arizona State University",
+    "notes": "US-government work, no copyright; credit requested (LROC). Cite the product paper.",
+    "reviewedAt": "2026-11-08"
+  },
+  "citation": "Nelson, D. M., Koeber, S. D., Daud, K., Robinson, M. S., Watters, T. R., Banks, M. E., & Williams, N. R. (2014). Mapping lunar maria extents and lobate scarps using LROC image products. LPSC 45, abstract 2861.",
+  "frame": "Moon 2000 geographic (sphere 1737400 m), -180..180",
+  "processing": "scripts/moon/prepare_moon_reference.py: make_valid on invalid parts, union per MARE_NAME, Douglas-Peucker 0.015° (preserve topology), snap to 0.001° grid -> data/prepared/moon/regions/mare.geojson",
+  "stats": {
+    "polygonsIn": 644,
+    "names": 97,
+    "invalidRepaired": 7,
+    "verticesIn": 451704,
+    "verticesOut": 143733,
+    "fields": [
+      "ID",
+      "MARE_NAME",
+      "Perimtr_km",
+      "Area_km"
+    ],
+    "nameFixes": {
+      "Chrtien": "Chrétien",
+      "Von Krmn": "Von Kármán",
+      "Crger": "Crüger",
+      "Crger East": "Crüger East",
+      "Crger North": "Crüger North",
+      "Crger F": "Crüger F",
+      "Kohlschtter": "Kohlschütter",
+      "Lacus Somniorium": "Lacus Somniorum",
+      "Lacus Perseveramtiae": "Lacus Perseverantiae"
+    },
+    "namesNotInGazetteer": [
+      "Cognitum East",
+      "Mare Temporis",
+      "South Pole Aitken Basin"
+    ],
+    "features": 97
+  },
+  "region": "global",
+  "retrievedAt": "2026-11-08T02:31:27Z",
+  "preparedAt": "2026-11-08T03:00:37Z",
+  "files": [
+    {
+      "path": "LROC_GLOBAL_MARE_180.ZIP",
+      "url": "https://pds.lroc.im-ldi.com/data/LRO-L-LROC-5-RDR-V1.0/LROLRC_2001/EXTRAS/SHAPEFILE/LROC_GLOBAL_MARE/LROC_GLOBAL_MARE_180.ZIP",
+      "resolvedUrl": "https://pds.mcp.nasa.gov/data/store/img/lunar_reconnaissance_orbiter/pds4/lroc/lro-l-lroc-5-rdr/LROLRC_2001/EXTRAS/SHAPEFILE/LROC_GLOBAL_MARE/LROC_GLOBAL_MARE_180.ZIP",
+      "bytes": 8750199,
+      "sha256": "a85073f6fe05a0b9b38db6cb1d2f667e51c134517debcd1f3b40fda9a58cde88"
+    }
+  ]
+}

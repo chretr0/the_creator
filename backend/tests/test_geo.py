@@ -60,3 +60,41 @@ def test_pentagon_neighbourhood():
 def test_invalid_cell_rejected():
     with pytest.raises(geo.InvalidCell):
         geo.describe_cell("not-a-cell")
+
+
+VALID = "8a2a1072b59ffff"
+
+
+@pytest.mark.parametrize(
+    "bad",
+    [
+        "fffffffffffffffff",  # 17 hex digits: does not fit 64 bits (h3 raised OverflowError)
+        "1" * 28,
+        "-1",  # negative (h3 raised OverflowError)
+        "0x" + VALID,  # int(s, 16) syntax that h3 accepts but is not an H3 id
+        VALID[:4] + "_" + VALID[4:],
+        "+" + VALID,
+        "0" + VALID,
+        "\uff18" + VALID[1:],  # full-width digit
+        "",
+        "   ",
+        "not-a-cell",
+        VALID[:-1] + "x",
+        "8f2830828052d2",  # 14 digits
+    ],
+)
+def test_validate_cell_rejects_anything_but_a_cell_id(bad):
+    with pytest.raises(geo.InvalidCell):
+        geo.validate_cell(bad)
+
+
+@pytest.mark.parametrize("bad", [None, 3, b"8a2a1072b59ffff"])
+def test_validate_cell_rejects_non_strings(bad):
+    with pytest.raises(geo.InvalidCell):
+        geo.validate_cell(bad)
+
+
+def test_validate_cell_strips_and_lowercases():
+    assert geo.validate_cell(VALID) == VALID
+    assert geo.validate_cell(" 8A2A1072B59FFFF\n") == VALID
+

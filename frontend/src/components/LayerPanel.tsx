@@ -12,7 +12,7 @@ import {
   type InfraManifest,
 } from "../lib/infrastructure";
 import type { DataLayersState } from "../lib/useDataLayers";
-import { GeometrySwatch, REGION_LABEL } from "./DataPanel";
+import { GeometrySwatch, INFRASTRUCTURE_RECORDS, RecordToggle, REGION_LABEL } from "./DataPanel";
 
 type Status = { loading: boolean; error: string | null };
 
@@ -62,6 +62,7 @@ export default function LayerPanel(props: Props) {
   const { manifest, visible, companies, status, data } = props;
   const entry = (id: InfraLayerId) => manifest?.layers.find((l) => l.id === id);
   const companyListed = !props.companyFilter || companies.some((c) => c.key === props.companyFilter);
+  const water = INFRASTRUCTURE_RECORDS.map((id) => data.manifest.find((m) => m.id === id)).filter((m) => !!m);
   const related = RELATED_RECORDS.map((id) => data.manifest.find((m) => m.id === id)).filter((m) => !!m);
   const plantKinds = entry("power_plants")?.kinds ?? {};
   const fuels = MAIN_FUELS.filter((f) => plantKinds[f]);
@@ -188,6 +189,13 @@ export default function LayerPanel(props: Props) {
           )}
         </div>
       ))}
+
+      {water.length > 0 && (
+        <>
+          <h3>Water</h3>
+          {water.map((m) => <RecordToggle key={m.id} data={data} meta={m} />)}
+        </>
+      )}
 
       {related.length > 0 && (
         <>

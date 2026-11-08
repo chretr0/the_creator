@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { cellToLatLng, getResolution, gridDisk, getPentagons, latLngToCell } from "h3-js";
 import {
+  parseHexOutlines,
   DEFAULT_CELL_BUDGET,
   SIMULATION_RESOLUTION,
   chooseResolution,
@@ -89,5 +90,21 @@ describe("viewportCells", () => {
     const small = chooseResolution({ west: 0, east: 1, south: 0, north: 1 });
     const large = chooseResolution({ west: 0, east: 40, south: 0, north: 40 });
     expect(large).toBeLessThan(small);
+  });
+});
+
+describe("parseHexOutlines", () => {
+  it("defaults to near the cursor", () => {
+    expect(parseHexOutlines(null)).toBe("near");
+    expect(parseHexOutlines("bogus")).toBe("near");
+  });
+  it("keeps stored modes", () => {
+    expect(parseHexOutlines("all")).toBe("all");
+    expect(parseHexOutlines("near")).toBe("near");
+    expect(parseHexOutlines("off")).toBe("off");
+  });
+  it("migrates the old boolean setting", () => {
+    expect(parseHexOutlines("false")).toBe("off");
+    expect(parseHexOutlines("true")).toBe("near");
   });
 });
