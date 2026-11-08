@@ -23,8 +23,12 @@ import ScenarioPanel, { ScenarioSelect } from "./components/ScenarioPanel";
 import BuildPanel, { type BuildTarget, type PresetRequest, type BuildStage } from "./components/BuildPanel";
 import TimelinePanel from "./components/TimelinePanel";
 import { type TimelineOverlay, timeLabel } from "./lib/timeline";
-import { StateLegend } from "./components/FormBits";
+import SuitabilityLegend from "./components/SuitabilityLegend";
+import BuildLayerChips from "./components/BuildLayerChips";
+import { layerAvailability, loadingByNeed, type LayerNeed } from "./lib/buildLayers";
+import { useBuildLayers } from "./lib/useBuildLayers";
 import type { CellState } from "./lib/buildings";
+import { cellColour, cellLineColour, cellTooltip, effectiveColourBy, factorIndex, STALE_FILL, type ColourBy, type ScreenedArea } from "./lib/suitability";
 import LayerPanel from "./components/LayerPanel";
 import FacilityInspector from "./components/FacilityInspector";
 import Icon from "./components/Icon";
@@ -185,10 +189,76 @@ export default function App() {
     setBuildTarget(target);
     if (target) setInspectorOpen(false);
   }, []);
-  const [assessmentCells, setAssessmentCells] = useState<CellState[] | null>(null);
+  const [screened, setScreened] = useState<ScreenedArea | null>(null);
+  /** The screening overlay's colouring: the overall grade or one suitability factor. */
+  const [colourBy, setColourBy] = useState<ColourBy>("overall");
+  const assessmentCells = screened?.cells ?? null;
+  const stale = !!screened?.stale;
+  const assessmentStyle = useMemo(() => {
+    const profile = screened?.profile ?? null;
+    const by = effectiveColourBy(profile, colourBy);
+    if (stale) {
+      return {
+        key: "stale",
+        fill: () => STALE_FILL,
+        line: () => STALE_FILL,
+        tooltip: () => "Out of date: this shows an earlier version of the building",
+      };
+    }
+    return {
+      key: `${profile?.id ?? "-"}:${by}`,
+      fill: (c: CellState) => cellColour(c, profile, by),
+      line: (c: CellState) => cellLineColour(c, profile, by),
+      tooltip: (c: CellState) => cellTooltip(c, profile, by),
+    };
+  }, [screened?.profile, colourBy, stale]);
+  // When a new profile is drawn, a factor it doesn't grade falls back to the overall grade. Keyed on the
+  // profile only: a factor picked in the site panel while the old map is still shown must survive.
+  const drawnProfile = screened && !screened.stale ? (screened.profile ?? null) : undefined;
+  const drawnProfileId = drawnProfile === undefined ? undefined : (drawnProfile?.id ?? null);
+  useEffect(() => {
+    if (drawnProfile === undefined) return;
+    setColourBy((by) => (by !== "overall" && factorIndex(drawnProfile, by) < 0 ? "overall" : by));
+    // drawnProfileId identifies drawnProfile.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [drawnProfileId]);
+  /** The profile the map is coloured by, so the site panel only marks its factor buttons for that one. */
+  const mapProfileId = screened && !screened.stale ? (screened.profile?.id ?? null) : null;
   const [buildMapStatus, setBuildMapStatus] = useState<{ note: string | null; loading: boolean }>({ note: null, loading: false });
   const ctx = useContextData(view, { country: query.country, admin1: query.admin1 });
   const data = useDataLayers(view, grid.cells);
+  // Map layers about what the building in the Build tab needs: switched on there, off again on leaving.
+  const [buildNeeds, setBuildNeeds] = useState<LayerNeed[]>([]);
+  const layerAvailable = useMemo(() => layerAvailability(manifest?.layers, data.manifest), [manifest, data.manifest]);
+  const buildLayers = useBuildLayers({
+    active: sideTab === "build",
+    needs: buildNeeds,
+    infraVisible: visibleLayers,
+    setInfraVisible: setVisibleLayers,
+    featureEnabled: data.enabled,
+    setFeatureEnabled: data.setEnabled,
+    isAvailable: layerAvailable,
+  });
+  // The build overlay column's bottom edge (px from the map top), so the floating site card in the
+  // narrower layouts can stop below it instead of covering it.
+  const [buildStack, setBuildStack] = useState<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!buildStack) return;
+    const workspaceEl = buildStack.closest<HTMLElement>(".workspace");
+    const update = () => workspaceEl?.style.setProperty("--build-stack-bottom", `${Math.round(buildStack.offsetTop + buildStack.offsetHeight)}px`);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(buildStack);
+    window.addEventListener("resize", update);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", update);
+      workspaceEl?.style.removeProperty("--build-stack-bottom");
+    };
+  }, [buildStack]);
+  const buildLayerLoading = loadingByNeed(buildLayers.entries, (r) =>
+    r.kind === "infra" ? !!infraStatus[r.id]?.loading : !!data.featureStatus[r.id]?.loading,
+  );
 
   const report = useCallback((e: unknown) => setError(e instanceof Error ? e.message : String(e)), []);
 
@@ -215,7 +285,7 @@ export default function App() {
       setMode({ kind: "inspect" });
       // A preview or screening result belongs to the scenario it was made for.
       setBuildTarget(null);
-      setAssessmentCells(null);
+      setScreened(null);
       writeLastScenario(id);
     },
     [],
@@ -692,6 +762,7 @@ export default function App() {
             imagery={ctx.rasterImagery}
             onViewChange={setView}
             assessmentCells={sideTab === "build" ? assessmentCells : null}
+            assessmentStyle={assessmentStyle}
             preview={previewMarker}
             onDropPreset={dropPreset}
           />
@@ -725,6 +796,15 @@ export default function App() {
           </div>
 
           <div className="map-context"><span className="context-dot" />{workspace === "explore" ? "Explore mode" : workspace === "build" ? "Building workspace" : "Timeline workspace"}<span className="map-context-divider" />{projects.length} {projects.length === 1 ? "building" : "buildings"}</div>
+          {workspace === "build" && (
+            // One left-hand column for the build overlays, sized to the map, so they never cover each other.
+            <div className="build-map-stack" ref={setBuildStack}>
+              <BuildLayerChips entries={buildLayers.entries} onToggle={buildLayers.toggle} loading={buildLayerLoading} />
+              {screened && screened.cells.length > 0 && (
+                <SuitabilityLegend area={screened} colourBy={colourBy} onColourBy={setColourBy} loading={buildMapStatus.loading} staleNote={screened.stale ? buildMapStatus.note : null} />
+              )}
+            </div>
+          )}
           {!crosshair && !dock && <div className="map-guide"><Icon name="info" size={17} />Click a location to explore its data</div>}
           {!activeTimeline && data.activeLayer && !data.outsideRegions && !assessmentCells?.length && (
             <div className="layer-map-legend" aria-label="Active data layer legend">
@@ -760,13 +840,6 @@ export default function App() {
           ) : sideTab === "build" && (buildMapStatus.note || !buildTarget) ? (
             <div className="hint" role="status">{buildMapStatus.note ?? "Click the map to place your building"}</div>
           ) : null}
-
-          {sideTab === "build" && assessmentCells && assessmentCells.length > 0 && (
-            <div className="map-legend small" aria-label="Assessment legend">
-              <strong>Where it fits{buildMapStatus.loading && <span className="muted"> · updating…</span>}</strong>
-              <StateLegend />
-            </div>
-          )}
         </main>
 
         <aside className="sidebar">
@@ -880,7 +953,11 @@ export default function App() {
                 catalogue={data.catalogue}
                 target={buildTarget}
                 onTarget={updateBuildTarget}
-                onCells={setAssessmentCells}
+                onArea={setScreened}
+                colourBy={colourBy}
+                onColourBy={setColourBy}
+                mapProfileId={mapProfileId}
+                onNeeds={setBuildNeeds}
                 onBuilt={onBuilt}
                 onFocus={focusOn}
                 active={sideTab === "build"}

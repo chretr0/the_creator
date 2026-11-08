@@ -130,6 +130,16 @@ type Props = {
   scene: SceneImage | null;
   /** Building-assessment screening states for resolution-6 cells, drawn under project markers. */
   assessmentCells?: CellState[] | null;
+  /**
+   * How to draw the screening cells (default: by hard state). `key` changes whenever the colouring does,
+   * e.g. when the map is coloured by one suitability factor instead of the overall grade.
+   */
+  assessmentStyle?: {
+    key: string;
+    fill: (c: CellState) => [number, number, number, number];
+    line: (c: CellState) => [number, number, number, number];
+    tooltip: (c: CellState) => string;
+  } | null;
   /** Ghost marker for a building placement preview (not its physical footprint). */
   preview?: { latitude: number; longitude: number; colour?: RGB } | null;
   /** A real example building dragged from the Build tab and dropped at this point. */
@@ -431,8 +441,9 @@ export default function WorldMap(props: Props) {
         stroked: props.showHexOutlines,
         extruded: false,
         highPrecision: true,
-        getFillColor: (c) => [...STATE_COLOUR[c.state], 110],
-        getLineColor: (c) => [...STATE_COLOUR[c.state], 200],
+        getFillColor: props.assessmentStyle?.fill ?? ((c) => [...STATE_COLOUR[c.state], 110]),
+        getLineColor: props.assessmentStyle?.line ?? ((c) => [...STATE_COLOUR[c.state], 200]),
+        updateTriggers: { getFillColor: props.assessmentStyle?.key, getLineColor: props.assessmentStyle?.key },
         lineWidthUnits: "pixels",
         getLineWidth: 1,
         pickable: true,
@@ -595,7 +606,9 @@ export default function WorldMap(props: Props) {
           return { text: `${p.name || typeLabel(p.type)}\n${typeLabel(p.type)}` };
         }
         if (layer.id === "assessment-cells") {
-          return { text: `${STATE_LABEL[(object as CellState).state]}\nScreening result for this cell` };
+          const c = object as CellState;
+          const style = propsRef.current.assessmentStyle;
+          return { text: style ? style.tooltip(c) : `${STATE_LABEL[c.state]}\nScreening result for this cell` };
         }
         if (layer.id === "infra-points" || layer.id === "infra-footprints") {
           const p = (object as Facility).properties;
@@ -632,6 +645,7 @@ export default function WorldMap(props: Props) {
     props.timeline,
     props.cellFill,
     props.assessmentCells,
+    props.assessmentStyle,
     props.preview,
     props.theme,
     props.showHexOutlines,

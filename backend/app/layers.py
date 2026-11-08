@@ -245,6 +245,7 @@ LAYERS: list[LayerDef] = [
         key_column="h3_r6",
         slices=[
             Slice("detections", "Detections", ("firms_viirs_snpp_2024_h3r6.parquet",), "detections"),
+            Slice("vegetation", "Vegetation fires", ("firms_viirs_snpp_2024_h3r6.parquet",), "type0_vegetation_fire"),
             Slice("days", "Days with a detection", ("firms_viirs_snpp_2024_h3r6.parquet",), "days_with_detection",
                   agg="mean", units="days", display="value"),
             Slice("frp", "Fire radiative power (sum)", ("firms_viirs_snpp_2024_h3r6.parquet",), "frp_sum_mw",

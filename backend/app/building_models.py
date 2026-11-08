@@ -667,9 +667,59 @@ class AssessmentRequest(ApiModel):
         return self
 
 
+# --- site suitability (graded, site_suitability.py) -------------------------------------------
+# A graded "how ideal is this cell for the building type" from every relevant dataset. It never
+# changes the hard assessment state. Types without a profile return None everywhere.
+
+SuitabilityTier = Literal["ideal", "good", "marginal", "unsuitable"]
+
+
+class SuitabilityFactor(ApiModel):
+    """Static description of one factor in a profile."""
+
+    key: str  # e.g. "soil_nitrogen"
+    label: str
+    group: str  # Soil | Climate | Terrain | Land | Water | Energy | People | Air | Hazards
+    unit: str  # display unit of `FactorGrade.value`
+    weight: float
+    constraint: bool  # unsuitable here makes the whole cell unsuitable
+    bands: str  # generated from the envelopes, e.g. "Ideal pH 6.0–7.5 · Good pH 5.5–8.0 · ..."
+    layer_id: str | None  # catalogue layer to view the raw data (None for derived-only factors)
+    slice_id: str | None
+    source: str
+    why: str
+
+
+class SuitabilityProfile(ApiModel):
+    id: str  # e.g. "farm:irrigated:cotton"
+    label: str
+    method: str  # the grading rule, shown verbatim
+    factors: list[SuitabilityFactor]
+
+
+class FactorGrade(ApiModel):
+    key: str
+    tier: SuitabilityTier | None  # None = no data at this cell
+    value: float | None  # in the factor's display unit
+    display: str  # "1.8 g/kg" or "no data"
+    explanation: str
+
+
+class Suitability(ApiModel):
+    profile: SuitabilityProfile
+    tier: SuitabilityTier | None  # None = not enough data to grade
+    score: float | None  # 0–3, 2 dp
+    coverage: float  # 0–1, share of factor weight with data
+    limiting: list[str]  # factor keys graded marginal or unsuitable, worst first, then by weight
+    summary: str
+    factors: list[FactorGrade]  # same order as profile.factors
+
+
 class CellState(ApiModel):
     h3_id: str
     state: AssessmentState
+    tier: SuitabilityTier | None = None
+    grades: str | None = None  # one char per profile factor: '1' ideal … '4' unsuitable, '0' no data
 
 
 class Candidate(ApiModel):
@@ -677,6 +727,7 @@ class Candidate(ApiModel):
     latitude: float
     longitude: float
     assessment: Assessment
+    suitability: Suitability | None = None
 
 
 PriceOfferStatus = Literal[
@@ -740,15 +791,20 @@ class LocationAssessment(ApiModel):
     assessment: Assessment
     site: SiteCapacity | None = None
     utility_prices: list[LocationPriceOffer] = []
+    suitability: Suitability | None = None
 
 
 class AreaAssessment(ApiModel):
     cell_count: int
     counts: dict[AssessmentState, int]
-    cells: list[CellState]  # every assessed res-6 cell (state only), for the map
-    candidates: list[Candidate]  # first `limit` in order: meets, insufficient, fails; then h3 id
+    cells: list[CellState]  # every assessed res-6 cell (state, suitability tier and grades), for the map
+    # first `limit` in order: meets, insufficient, fails; then suitability tier (ideal … unsuitable,
+    # ungraded last); then h3 id
+    candidates: list[Candidate]
     result: BuildingResult  # location-independent calculation
     note: str  # screening caveat
+    suitability: SuitabilityProfile | None = None
+    tier_counts: dict[str, int] | None = None  # ideal, good, marginal, unsuitable, unknown
 
 
 class AssessmentResponse(ApiModel):

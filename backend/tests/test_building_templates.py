@@ -14,6 +14,7 @@ from app.building_models import BuildingCategory, BuildingStats, BuildingType
 from app.building_templates import (
     BY_ID,
     DESCRIPTIVE,
+    SUITABILITY_HINT,
     NUMERIC_PARAMS,
     POWER_PRODUCERS,
     SELECT_PARAMS,
@@ -62,7 +63,8 @@ def test_template_parameters_are_validated(template):
                          ids=lambda t: t.id)
 def test_new_type_parameters_are_descriptive_and_bounded(template):
     for p in template.parameters:
-        assert p.hint and p.hint.endswith(DESCRIPTIVE)
+        graded = (template.id, p.key) in GRADED_PARAMS
+        assert p.hint and p.hint.endswith(SUITABILITY_HINT if graded else DESCRIPTIVE)
         if p.kind == "number":
             lo, _ = NUMERIC_PARAMS[template.id][p.key]
             with pytest.raises(CalcInputError):
@@ -71,6 +73,20 @@ def test_new_type_parameters_are_descriptive_and_bounded(template):
             with pytest.raises(CalcInputError):
                 validate_parameters(template.id, {p.key: "not-an-option"})
             validate_parameters(template.id, {p.key: p.options[0]})
+
+
+# Select fields that change the site-suitability grade (site_suitability.profile_for), never resources.
+GRADED_PARAMS = {("wind_farm", "siting"), ("aquaculture", "system"), ("farm", "irrigation"), ("farm", "cropType")}
+
+
+def test_suitability_parameters_are_labelled_as_such():
+    from app import site_suitability as ss
+    found = {(t.id, p.key) for t in TEMPLATES for p in t.parameters if p.hint and p.hint.endswith(SUITABILITY_HINT)}
+    assert found == GRADED_PARAMS
+    for btype, key in GRADED_PARAMS:  # each one really changes the profile
+        opts = BY_ID[btype].parameters[[p.key for p in BY_ID[btype].parameters].index(key)].options
+        ids = {ss.profile_for(btype, BuildingStats(), {key: o}).id for o in opts}
+        assert len(ids) > 1, (btype, key)
 
 
 def test_descriptive_parameters_do_not_change_results():

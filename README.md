@@ -95,7 +95,13 @@ for product intent and [CLAUDE-World-Mapping.md](./CLAUDE-World-Mapping.md) for 
   2. *Requirements*: map-layer limits (any registered H3 layer), site area, power/energy/water supply, budgets,
      staffing, light and emission limits. Each is optional or required.
   3. *Find locations*: screens resolution-6 cells in the current view or the Arizona/UK region and colours them
-     *meets criteria* / *more information needed* / *fails*, with a candidate list.
+     *meets criteria* / *more information needed* / *fails*, with a candidate list. Building types with a site
+     profile (farms, greenhouses, solar, wind, hydro, data centres, industry, housing and services, …) are also graded
+     *ideal* / *good* / *marginal* / *unsuitable* from every relevant prepared layer (soil nitrogen, pH, organic
+     carbon, texture, rainfall, growing season, slope, land cover, NDVI, water stress, prices, population …); the map
+     legend can colour by the overall grade or any single factor, and the site panel lists each factor's value and band.
+     Map layers about what the building needs (power grid for electricity, rivers and dams for water, mineral sites for
+     materials …) switch on automatically while you build and off again when you leave.
   4. *Preview and place*: re-assesses the exact point (water stress uses the Aqueduct basin containing it) and
      shows every check with values, units and sources. *Build here* saves a snapshot of the definition, so later
      definition edits never change placed buildings.
@@ -294,7 +300,7 @@ The backend API tests need the Docker database running.
 | `GET /api/building-templates` | Predefined building types (42, each with a `category`): fields, units, help; no numeric defaults |
 | `GET /api/building-presets` | Real example buildings: stats and parameters with cited provenance, sources, notes and reference site (read-only) |
 | `GET/POST /api/building-definitions`, `GET/PATCH/DELETE /api/building-definitions/{id}` | Saved building definitions; edits/deletes never change placed snapshots |
-| `POST /api/building-assessments` | Read-only calculation + pass/fail/unknown checks for a draft at an exact `location`, or over `bounds`/`region` res-6 cells (limit 30,000, else 422) |
+| `POST /api/building-assessments` | Read-only calculation + pass/fail/unknown checks for a draft at an exact `location`, or over `bounds`/`region` res-6 cells (limit 30,000, else 422); graded site suitability (`suitability`, per-cell `tier`/`grades`) for types with a profile |
 | `POST /api/scenarios/{id}/evaluate` `{stress?, periodDays?, budgets?}` | Unstressed vs stressed per-building results, pooled budgets and totals |
 | `GET /api/scenarios/{id}/timeline` | Daily project emissions/resource totals and dated PM2.5/PM10 baselines for the local timeline display |
 

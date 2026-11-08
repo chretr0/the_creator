@@ -16,6 +16,7 @@ import { BUILDING_CATEGORIES, PROJECT_TYPES, typeColour, typeLabel } from "../li
 import { useBuildingTemplates } from "../lib/useBuildingTemplates";
 import BuildingForm from "./BuildingForm";
 import { AssessmentView, ResultView } from "./AssessmentView";
+import SuitabilityView from "./SuitabilityView";
 import CriteriaEditor from "./CriteriaEditor";
 import { Section } from "./FormBits";
 
@@ -223,6 +224,7 @@ export default function ProjectEditor({ project, moving, onSave, onMove, onDelet
       {fresh && (
         <>
           <AssessmentView assessment={fresh.value.assessment} site={fresh.value.site} />
+          {fresh.value.suitability && <SuitabilityView suitability={fresh.value.suitability} />}
           <Section title="Calculated usage and costs" meta={`over ${fmtDays(fresh.periodDays)}`}>
             <ResultView result={fresh.value.result} producesPower={template.producesPower} producesWater={template.producesWater} />
           </Section>

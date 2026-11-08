@@ -3,6 +3,7 @@ import { coordLabel, fmtDays, fmtNumber } from "../lib/buildingForm";
 import { fmtEstimate, LocationPrices, resourceStatus, resourceSummaryText, ResultView } from "./AssessmentView";
 import { StateBadge } from "./FormBits";
 import Icon from "./Icon";
+import SuitabilityView, { TierBadge } from "./SuitabilityView";
 
 export type SitePanelProps = {
   buildingName: string; // user's name or the template label
@@ -25,6 +26,11 @@ export type SitePanelProps = {
   onSupport?: (s: SupportSuggestion, presetId: string | null) => void;
   onApplyPrice: (o: LocationPriceOffer) => void;
   onRemovePrice: (r: PriceResource) => void;
+  /** What the map's screening overlay is coloured by: "overall" or a suitability factor key. */
+  colourBy: string;
+  onColourBy: (key: string) => void;
+  /** The suitability profile the map is coloured by; factor buttons show as active only for that one. */
+  mapProfileId: string | null;
 };
 
 /** Site checks that restate a site resource: the resource row is shown and the check is skipped. */
@@ -206,7 +212,10 @@ export default function SitePanel(props: SitePanelProps) {
     body = (
       <>
         <div className="site-verdict">
-          <StateBadge state={location.assessment.state} />
+          <div className="site-badges">
+            <StateBadge state={location.assessment.state} />
+            {location.suitability && <TierBadge tier={location.suitability.tier} />}
+          </div>
           {location.assessment.summary && <span className="small">{location.assessment.summary}</span>}
           {props.loading && <span className="muted small">Updating…</span>}
         </div>
@@ -216,6 +225,13 @@ export default function SitePanel(props: SitePanelProps) {
         </div>
         {suggestions.length > 0 && <SupportOptions suggestions={suggestions} onSupport={props.onSupport} />}
         {props.supportNote && <p className="note small">{props.supportNote}</p>}
+        {location.suitability && (
+          <SuitabilityView
+            suitability={location.suitability}
+            colourBy={props.mapProfileId === location.suitability.profile.id ? props.colourBy : undefined}
+            onColourBy={props.onColourBy}
+          />
+        )}
         <div className="site-panel-section">
           <h4>
             Usage &amp; costs <span className="muted small">over {fmtDays(props.periodDays)}</span>

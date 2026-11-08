@@ -7,7 +7,8 @@ export default defineConfig({
     port: 5173,
     fs: { allow: [".", "../shared"] },
     proxy: {
-      "/api": "http://localhost:8000",
+      // Override to point a second dev server at another backend (e.g. API_PROXY=http://localhost:8001).
+      "/api": process.env.API_PROXY ?? "http://localhost:8000",
     },
   },
 });
