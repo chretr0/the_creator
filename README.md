@@ -284,7 +284,7 @@ plugs in through a small registry:
   body-aware scale bar, because MapLibre's own scale and deck.gl metre units assume Earth's radius. Moon
   overlays are therefore drawn in pixel units or as lat/lon polygons computed on the Moon sphere.
 
-**The Moon module today (Explore only):**
+**Explore on the Moon:**
 
 - **Map:** LROC WAC basemap (Lunaserv WMS). Overlays: IAU feature names, hillshade, colour relief,
   permanently shadowed regions and mare outlines.
@@ -297,7 +297,37 @@ plugs in through a small registry:
   nearby landed objects and keep-out status.
 - **Sources:** a sources & licences list.
 
-Building, scenarios and the timeline on the Moon come next (catalogue §10–12).
+**Build on the Moon (hypothetical base):** shows what the app can do once the right data exists. It reuses
+the worlds and buildings tables: a world has a `body` (`earth` | `moon`, migration V4), the Earth app lists only
+Earth worlds and the Moon's Build workspace only Moon worlds, and each kind of world accepts only its own
+building types.
+
+- **Building types** come from `shared/moon_buildings.json` (read by both sides, like `shared/pollutants.json`):
+  crew habitat, vertical solar array, fission surface power, night power storage, ice mining plant, oxygen plant,
+  greenhouse and landing pad. Defaults are taken from the Moon catalogue §10–11 and tagged by source: NASA
+  requirement or contract value, company claim, estimate, derived, or illustrative assumption. Every value is editable;
+  a blank value is unknown, never zero. The backend (`app/moon_buildings.py`) validates ranges.
+- **Site check** (`frontend/src/moon/buildings.ts`), for the clicked point:
+  - Heritage keep-out rings veto a site.
+  - Landing pads keep other buildings outside their plume radius (default 2 km). Reactors keep habitats and
+    greenhouses outside their radiation radius (default 1 km). Both rings are drawn on the map.
+  - Buildings within 5 km are assumed to share one power and supply network.
+  - Habitats need Earth in view: always on the near side, intermittent near the limb, never on the far side.
+  - Solar arrays get 50% sunlight on flat ground away from the poles. Near the poles it depends on terrain, so the
+    user enters a surveyed sunlit fraction there.
+  - Ice mines need polar latitudes.
+  - Oxygen plants and landing pads prefer mare ground (from the mare outlines).
+  - LOLA elevation is shown. Slopes are not checked, because the prepared grid is too coarse.
+- **Base summary** adds up the world:
+  - Crew housed, and per-person oxygen, water and food (NASA BVAD), less what the habitat recycles, against what
+    the oxygen plant, ice mine and greenhouse make.
+  - Power by day, and through the night (~14.8 days away from the poles, 120 h for an all-polar ridge base, or a
+    value set for the base): fission plus storage.
+  - Landed mass and the cost to deliver it, and the yearly resupply from Earth, at four transport prices from
+    $600/kg to $146,700/kg.
+  - A headline that says whether the base keeps its crew alive, and whether it needs deliveries from Earth to do so.
+- Not modelled: day-to-day operations, maintenance, radiation shielding, spare parts and hardware costs. The Moon
+  timeline comes next.
 
 Prepare the Moon data (see [data/README.md](data/README.md) §7):
 
@@ -322,7 +352,7 @@ backend/                  FastAPI + h3-py + psycopg (managed with uv)
 frontend/                 React + TypeScript + Vite, MapLibre, deck.gl, h3-js
   src/bodies/             Body registry (Earth, Moon): basemap, radius, view, credits
   src/earth/EarthApp.tsx  Earth workspace (Explore, Build, Timeline)
-  src/moon/               Moon workspace (Explore)
+  src/moon/               Moon workspace (Explore, Build)
 scripts/moon/             Moon data preparation (reference layers, LOLA elevation)
 data/prepared/moon/       Prepared Moon layers + provenance (source.json, h3/layers.json)
 ```
@@ -379,7 +409,7 @@ The backend API tests need the Docker database running.
 | `GET /api/moon/cells/{h3Id}/context` | Nearest named features, nearby landed objects, keep-out rings, mare and LAC quad for a Moon cell |
 | `GET /api/moon/sources` | Moon data credits (incl. LROC WMS and H3 layer sources) |
 | `GET /api/moon/h3`, `POST /api/moon/h3/{layerId}` `{cells}` | Moon H3 layers and their values for display cells (finer cells resolve to the layer's finest resolution; `null` = no data) |
-| `GET/POST /api/scenarios` | List / create scenarios |
+| `GET/POST /api/scenarios` | List (`?body=earth` default, or `moon`) / create (`{name, body?}`) worlds |
 | `GET/PATCH/DELETE /api/scenarios/{id}` | Load (with projects) / rename / delete; PATCH `assumptions` merges top-level keys (`periodDays`, `budgets`, `stress` validated) |
 | `POST /api/scenarios/{id}/branch` | Branch a scenario |
 | `GET /api/infrastructure[/{layer}]` | Datacenters, power plants, dams, substations, HV lines, airports, ports (region-tagged) + per-source provenance |

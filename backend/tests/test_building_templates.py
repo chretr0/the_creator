@@ -10,7 +10,7 @@ import pytest
 
 from app import site_capacity, site_support
 from app.building_calc import CalcInputError, calculate, validate_parameters
-from app.building_models import BuildingCategory, BuildingStats, BuildingType
+from app.building_models import BuildingCategory, BuildingStats, BuildingType, MoonBuildingType
 from app.building_templates import (
     BY_ID,
     DESCRIPTIVE,
@@ -123,10 +123,18 @@ def test_support_sets_cover_types_consistently():
     assert site_capacity.SEAWATER_TYPES <= set(TYPES)
 
 
+def _latest_type_check(table: str) -> list[str]:
+    """Types allowed by the newest migration that resets `{table}_type_check`."""
+    for path in sorted(MIGRATIONS.glob("V*__*.sql"), key=lambda p: int(re.match(r"V(\d+)", p.name).group(1)),
+                       reverse=True):
+        block = re.search(rf"ADD CONSTRAINT {table}_type_check\s+CHECK \(type IN \((.*?)\)\);", path.read_text(),
+                          re.S)
+        if block:
+            return re.findall(r"'([a-z_]+)'", block.group(1))
+    raise AssertionError(f"no migration sets {table}_type_check")
+
+
 def test_latest_migration_allows_every_type():
-    latest = max(MIGRATIONS.glob("V*__*.sql"), key=lambda p: int(re.match(r"V(\d+)", p.name).group(1)))
-    sql = latest.read_text()
-    for table in ("project", "building_definition"):
-        block = re.search(rf"ADD CONSTRAINT {table}_type_check\s+CHECK \(type IN \((.*?)\)\);", sql, re.S)
-        assert block, f"{latest.name} does not reset {table}_type_check"
-        assert re.findall(r"'([a-z_]+)'", block.group(1)) == list(TYPES)
+    # Projects take Earth and Moon types; saved definitions are Earth-only.
+    assert _latest_type_check("project") == list(TYPES) + list(typing.get_args(MoonBuildingType))
+    assert _latest_type_check("building_definition") == list(TYPES)

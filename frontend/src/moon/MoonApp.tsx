@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { PolygonLayer } from "@deck.gl/layers";
+import type { Layer } from "@deck.gl/core";
 import { BODIES, type BodyId } from "../bodies";
 import BodySwitch from "../components/BodySwitch";
 import CreditsPanel from "../components/CreditsPanel";
@@ -18,12 +20,30 @@ import MoonPlaceSearch from "./MoonPlaceSearch";
 import MoonRecordInspector, { recordId, type MoonRecord } from "./MoonRecordInspector";
 import { useMoonData } from "./useMoonData";
 import { useMoonH3 } from "./useMoonH3";
+import { ScenarioSelect } from "../components/ScenarioPanel";
+import { geodesicCircle } from "../lib/bodyGeometry";
+import type { Project } from "../lib/api";
+import { moonApi } from "./api";
+import {
+  baseBalance,
+  MOON_BUILDING_BY_TYPE,
+  siteCheck,
+  siteFacts,
+  type MoonBuildingType,
+  type PlacedMoonBuilding,
+  type SiteContext,
+} from "./buildings";
+import { draftFor, draftValues, MoonBaseSummary, MoonBuildForm, MoonBuildingList, MoonSiteCheck, type BuildDraft } from "./MoonBuild";
+import { useMoonBase } from "./useMoonBase";
 import "./moon.css";
 
 type Section = "library" | "overlays" | "sites" | "surface" | "coming" | "sources";
+type Workspace = "explore" | "build";
+type BuildSection = "new" | "list" | "base";
+type Target = { latitude: number; longitude: number };
 
 const HEX_OUTLINES_KEY = "newworlds:hexOutlines";
-const NEXT_PHASE = "Building on the Moon comes next";
+const NEXT_PHASE = "The Timeline comes next on the Moon";
 const MOON = BODIES.moon;
 
 function readHexOutlines(): HexOutlines {
@@ -71,6 +91,16 @@ export default function MoonApp({ onBody }: { onBody: (id: BodyId) => void }) {
   const [tilesNote, setTilesNote] = useState(false);
   const [zoom, setZoom] = useState<number | null>(MOON.initialView.zoom);
   const sideBodyRef = useRef<HTMLDivElement>(null);
+  const [workspace, setWorkspace] = useState<Workspace>("explore");
+  const building = workspace === "build";
+  const base = useMoonBase(building);
+  const [buildSection, setBuildSection] = useState<BuildSection>("new");
+  const [draft, setDraft] = useState<BuildDraft>(() => draftFor("moon_habitat"));
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [target, setTarget] = useState<Target | null>(null);
+  const [site, setSite] = useState<{ key: string; elevationM: number | null; mare: string | null | undefined } | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [placedNote, setPlacedNote] = useState<string | null>(null);
 
   useEffect(() => {
     try {
@@ -81,7 +111,7 @@ export default function MoonApp({ onBody }: { onBody: (id: BodyId) => void }) {
   }, [hexOutlines]);
   useEffect(() => {
     sideBodyRef.current?.scrollTo({ top: 0 });
-  }, [section]);
+  }, [section, workspace, buildSection]);
   useEffect(() => {
     if (show.mare) data.ensureMare();
   }, [show.mare, data.ensureMare]);
@@ -178,6 +208,17 @@ export default function MoonApp({ onBody }: { onBody: (id: BodyId) => void }) {
   function handleMapClick(latitude: number, rawLongitude: number, picked: Picked | null) {
     const longitude = normaliseLongitude(rawLongitude);
     setEdgeHint(null);
+    if (building) {
+      // In Build a click on a placed building opens it; anywhere else chooses (or moves) the site.
+      if (picked?.layerId === "projects") {
+        const b = base.buildings.find((x) => x.id === (picked.object as Project).id);
+        if (b) return startEdit(b);
+      }
+      setTarget({ latitude, longitude });
+      setPlacedNote(null);
+      setBuildSection("new");
+      return;
+    }
     if (picked?.layerId === MOON_LAYER_IDS.sites) return pickSite(picked.object as MoonSite, false);
     if (picked?.layerId === MOON_LAYER_IDS.missions) return pickMission((picked.object as MissionMarker).feature, false);
     if (picked?.layerId === MOON_LAYER_IDS.regions) return pickMission(picked.object as MissionFeature, false);
@@ -256,8 +297,156 @@ export default function MoonApp({ onBody }: { onBody: (id: BodyId) => void }) {
     { value: "sources", label: "Sources & licences", icon: "info", detail: "Provenance & data limitations" },
   ];
 
+  /* ---------------- Build ---------------- */
+
+  const targetKey = target ? `${target.latitude},${target.longitude}` : null;
+  // What the prepared data says about the chosen site: mare or highlands, and LOLA elevation.
+  useEffect(() => {
+    if (!target || !targetKey) return;
+    const ctrl = new AbortController();
+    const cell = simulationCell(target.latitude, target.longitude);
+    const elevation = moonApi.h3Values("elevation", [cell], ctrl.signal).then((r) => r.values[cell] ?? null).catch(() => null);
+    // undefined = unknown (not loaded), null = highlands.
+    const mare = moonApi.cellContext(cell, ctrl.signal).then((c) => c.mare?.name ?? null).catch(() => undefined);
+    Promise.all([elevation, mare]).then(([elevationM, mareName]) => {
+      if (!ctrl.signal.aborted) setSite({ key: targetKey, elevationM, mare: mareName });
+    });
+    return () => ctrl.abort();
+    // targetKey identifies target.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [targetKey]);
+
+  const editing = editingId ? (base.buildings.find((b) => b.id === editingId) ?? null) : null;
+  const others = useMemo(() => base.buildings.filter((b) => b.id !== editingId), [base.buildings, editingId]);
+  const { values: draftVals, problems } = useMemo(() => draftValues(draft), [draft]);
+  const siteContext = useMemo<SiteContext | null>(() => {
+    if (!target || !site || site.key !== targetKey) return null;
+    return {
+      latitude: target.latitude,
+      longitude: target.longitude,
+      elevationM: site.elevationM,
+      mare: site.mare,
+      heritage: keepoutHitsAt(target.latitude, target.longitude, data.keepout, data.sites),
+    };
+  }, [target, targetKey, site, data.keepout, data.sites]);
+  const facts = useMemo(() => (siteContext ? siteFacts(siteContext) : null), [siteContext]);
+  const check = useMemo(
+    () => (facts && siteContext ? siteCheck(draft.type, draftVals, facts, siteContext.heritage, others) : null),
+    [facts, siteContext, draft.type, draftVals, others],
+  );
+  const balance = useMemo(() => baseBalance(base.buildings, base.settings), [base.buildings, base.settings]);
+  const blockReason = !base.world
+    ? "Start a Moon base from the Active world menu first."
+    : Object.keys(problems).length
+      ? "Fix the highlighted values first."
+      : check?.verdict === "unsuitable"
+        ? "Fix the failed checks, or choose another site."
+        : null;
+  const canSave = !!facts && !blockReason;
+  const moonProjects: Project[] = building ? (base.world?.projects ?? []) : NO_PROJECTS;
+
+  function startEdit(b: PlacedMoonBuilding) {
+    setWorkspace("build");
+    setBuildSection("new");
+    setEditingId(b.id);
+    setDraft(draftFor(b.type, b.name, b.values));
+    setTarget({ latitude: b.latitude, longitude: b.longitude });
+    setPlacedNote(null);
+  }
+  function stopEdit(toList = true) {
+    setEditingId(null);
+    setTarget(null);
+    setDraft(draftFor(draft.type));
+    if (toList) setBuildSection("list");
+  }
+  async function deleteBuilding(b: PlacedMoonBuilding) {
+    const label = b.name || MOON_BUILDING_BY_TYPE[b.type].label;
+    if (!confirm(`Remove “${label}” from ${base.world?.name ?? "this base"}? This can't be undone.`)) return;
+    const ok = await base.remove(b.id);
+    if (ok && b.id === editingId) stopEdit();
+  }
+  async function saveBuilding() {
+    if (!target || !canSave || saving) return;
+    setSaving(true);
+    const label = MOON_BUILDING_BY_TYPE[draft.type].label;
+    const input = { type: draft.type, name: draft.name, latitude: target.latitude, longitude: target.longitude, values: draftVals };
+    if (editingId) {
+      const p = await base.update(editingId, input);
+      if (p) setPlacedNote(`Saved “${p.name || label}”.`);
+    } else {
+      const p = await base.place(input);
+      if (p) {
+        setPlacedNote(`Placed “${p.name || label}”. Choose the next building, or open Base to see whether it keeps a crew alive.`);
+        setTarget(null);
+        setDraft(draftFor(draft.type));
+      }
+    }
+    setSaving(false);
+  }
+
+  const worldActions = {
+    onSwitch: (id: string) => {
+      stopEdit(false);
+      setPlacedNote(null);
+      base.switchWorld(id);
+    },
+    onCreate: () => {
+      const name = prompt("Name for the new Moon base", `Moon base ${String.fromCharCode(65 + (base.worlds?.length ?? 0))}`);
+      if (name?.trim()) {
+        stopEdit(false);
+        base.createWorld(name);
+      }
+    },
+    onBranch: () => {
+      if (!base.world) return;
+      const name = prompt("Name for the copy (copies every building)", `${base.world.name} – branch`);
+      if (name?.trim()) base.branchWorld(name);
+    },
+    onRename: () => {
+      if (!base.world) return;
+      const name = prompt("Rename this Moon base", base.world.name);
+      if (name?.trim()) base.renameWorld(name);
+    },
+    onDelete: () => {
+      if (base.world && confirm(`Delete Moon base “${base.world.name}” and its buildings? This cannot be undone.`)) {
+        stopEdit(false);
+        base.deleteWorld();
+      }
+    },
+  };
+
+  // Keep-out rings around landing pads (plume) and reactors (radiation), including the one being placed.
+  const buildLayers = useMemo<Layer[]>(() => {
+    if (!building) return [];
+    type Ring = { id: string; ring: [number, number][]; colour: [number, number, number] };
+    const rings: Ring[] = [];
+    const add = (id: string, type: MoonBuildingType, values: Record<string, number | null>, latitude: number, longitude: number) => {
+      const role = MOON_BUILDING_BY_TYPE[type].role;
+      const km = values.keepoutKm;
+      if ((role !== "landing_pad" && role !== "fission") || !km || km <= 0) return;
+      rings.push({ id, ring: geodesicCircle(latitude, longitude, km, MOON.radiusKm, 96), colour: MOON_BUILDING_BY_TYPE[type].colour });
+    };
+    for (const b of others) add(b.id, b.type, b.values, b.latitude, b.longitude);
+    if (target) add("draft", draft.type, draftVals, target.latitude, target.longitude);
+    return [
+      new PolygonLayer<Ring>({
+        id: "moon-build-keepout",
+        data: rings,
+        getPolygon: (d) => d.ring,
+        stroked: true,
+        filled: true,
+        getFillColor: (d) => [...d.colour, 26],
+        getLineColor: (d) => [...d.colour, 210],
+        lineWidthUnits: "pixels",
+        getLineWidth: 1.5,
+        pickable: false,
+      }),
+    ];
+  }, [building, others, target, draft.type, draftVals]);
+  const mapLayers = useMemo(() => (building ? [...contextLayers, ...buildLayers] : contextLayers), [building, contextLayers, buildLayers]);
+
   const hasDetail = !!(record || selection);
-  const dock = inspectorOpen && hasDetail;
+  const dock = building ? !!target : inspectorOpen && hasDetail;
 
   return (
     <div className="app moon-app">
@@ -278,11 +467,17 @@ export default function MoonApp({ onBody }: { onBody: (id: BodyId) => void }) {
         </a>
         <BodySwitch value="moon" onChange={onBody} />
         <nav className="workspace-nav" aria-label="Main navigation">
-          <button aria-current="page" onClick={() => setSection("library")}>
+          <button
+            aria-current={building ? undefined : "page"}
+            onClick={() => {
+              setWorkspace("explore");
+              setSection("library");
+            }}
+          >
             <Icon name="explore" />
             Explore
           </button>
-          <button className="moon-next" aria-disabled="true" aria-label="Build (comes next on the Moon)" title={NEXT_PHASE} onClick={(e) => e.preventDefault()}>
+          <button aria-current={building ? "page" : undefined} onClick={() => setWorkspace("build")}>
             <Icon name="layers" />
             Build
           </button>
@@ -291,6 +486,16 @@ export default function MoonApp({ onBody }: { onBody: (id: BodyId) => void }) {
             Timeline
           </button>
         </nav>
+        {building && (
+          <div className="scenario-switcher">
+            <span className="eyebrow">ACTIVE WORLD</span>
+            {base.worlds === null ? (
+              <span className="small muted moon-world-loading">{base.loading ? "Loading…" : "Unavailable"}</span>
+            ) : (
+              <ScenarioSelect scenarios={base.worlds} scenario={base.world} {...worldActions} />
+            )}
+          </div>
+        )}
         <div className="header-actions">
           <button className="sources-button" onClick={showSources}>
             <Icon name="info" size={18} />
@@ -307,17 +512,17 @@ export default function MoonApp({ onBody }: { onBody: (id: BodyId) => void }) {
         </div>
       </header>
 
-      <div className={`workspace workspace-explore${dock ? " with-inspector" : ""}`}>
+      <div className={`workspace ${building ? "moon-workspace-build" : "workspace-explore"}${dock ? " with-inspector" : ""}`}>
         <main className="map-wrap moon-map-wrap" aria-label="Interactive map of the Moon">
           <WorldMap
             body={MOON}
             // The Moon map is always black, so map furniture uses its night colours whatever the panels do.
             theme="dark"
             hexOutlines={hexOutlines}
-            projects={NO_PROJECTS}
-            selectedProjectId={null}
-            selectedCell={selection?.h3Id ?? null}
-            crosshair={false}
+            projects={moonProjects}
+            selectedProjectId={building ? editingId : null}
+            selectedCell={building ? (target ? simulationCell(target.latitude, target.longitude) : null) : (selection?.h3Id ?? null)}
+            crosshair={building}
             focus={focus}
             onMapClick={handleMapClick}
             facilities={NO_FACILITIES}
@@ -325,7 +530,7 @@ export default function MoonApp({ onBody }: { onBody: (id: BodyId) => void }) {
             selectedFacilityId={null}
             tilted={false}
             onGridChange={setGrid}
-            contextLayers={contextLayers}
+            contextLayers={mapLayers}
             backgroundLayerIds={BACKGROUND_LAYERS}
             cellFill={h3.cellFill}
             timeline={null}
@@ -358,16 +563,27 @@ export default function MoonApp({ onBody }: { onBody: (id: BodyId) => void }) {
 
           <div className="map-context">
             <span className="context-dot" />
-            Moon · Explore
+            Moon · {building ? "Build" : "Explore"}
             <span className="map-context-divider" />
-            {data.sites ? `${data.sites.length} landed objects` : data.status.sites.loading ? "Loading sites…" : "No site data"}
+            {building
+              ? `${base.buildings.length} ${base.buildings.length === 1 ? "building" : "buildings"}${base.world ? ` in ${base.world.name}` : ""}`
+              : data.sites
+                ? `${data.sites.length} landed objects`
+                : data.status.sites.loading
+                  ? "Loading sites…"
+                  : "No site data"}
           </div>
           {tilesNote && (
             <div className="moon-tiles-note" role="status">
               <span className="pulse-dot" /> Loading LROC tiles…
             </div>
           )}
-          {!dock && !edgeHint && <div className="map-guide"><Icon name="info" size={17} />Click a location to explore its data</div>}
+          {!dock && !edgeHint && !building && <div className="map-guide"><Icon name="info" size={17} />Click a location to explore its data</div>}
+          {building && !target && !edgeHint && (
+            <div className="hint" role="status">
+              {base.world ? `Click the map to place a ${MOON_BUILDING_BY_TYPE[draft.type].label.toLowerCase()}` : "Start a Moon base from the Active world menu"}
+            </div>
+          )}
           {h3.active && (
             <div className="layer-map-legend moon-map-legend" aria-label="Active surface layer legend">
               <MoonH3Legend h3={h3} onMap />
@@ -404,11 +620,80 @@ export default function MoonApp({ onBody }: { onBody: (id: BodyId) => void }) {
 
         <aside className="sidebar">
           <div className="workspace-heading">
-            <div className="eyebrow">THE MOON, IN CONTEXT</div>
-            <h1>Explore the Moon</h1>
-            <p>Landing sites, plans and the ground beneath them.</p>
+            <div className="eyebrow">{building ? "PLAN & PLACE A MOON BASE" : "THE MOON, IN CONTEXT"}</div>
+            <h1>
+              {building
+                ? buildSection === "list"
+                  ? "Your buildings"
+                  : buildSection === "base"
+                    ? "Can it keep a crew alive?"
+                    : editing
+                      ? "Edit building"
+                      : "Build on the Moon"
+                : "Explore the Moon"}
+            </h1>
+            <p>{building ? "A hypothetical base, checked against the Moon data we have." : "Landing sites, plans and the ground beneath them."}</p>
           </div>
+          {building && (
+            <PanelTabs
+              label="Build sections"
+              value={buildSection}
+              onChange={setBuildSection}
+              options={[
+                { value: "new", label: editing ? "Edit building" : "New building" },
+                { value: "list", label: `Buildings (${base.buildings.length})` },
+                { value: "base", label: "Base" },
+              ]}
+            />
+          )}
           <div className="side-body" ref={sideBodyRef}>
+            {building && (
+              <div className="moon-build">
+                {base.error && (
+                  <div className="error" role="alert">
+                    {base.error}
+                    <button className="ghost" onClick={base.clearError} aria-label="Dismiss">
+                      ✕
+                    </button>
+                  </div>
+                )}
+                {placedNote && buildSection === "new" && (
+                  <p className="moon-placed-note" role="status">
+                    {placedNote}
+                  </p>
+                )}
+                {buildSection === "new" && (
+                  <MoonBuildForm
+                    draft={draft}
+                    onDraft={setDraft}
+                    editing={editing}
+                    target={target}
+                    onClearTarget={() => setTarget(null)}
+                    onDone={() => stopEdit()}
+                    onDelete={() => editing && deleteBuilding(editing)}
+                    hasWorld={!!base.world}
+                  />
+                )}
+                {buildSection === "list" && (
+                  <MoonBuildingList
+                    buildings={base.buildings}
+                    worldName={base.world?.name ?? null}
+                    editingId={editingId}
+                    onShow={(b) => fly(b.latitude, b.longitude, 10)}
+                    onEdit={(b) => {
+                      startEdit(b);
+                      fly(b.latitude, b.longitude, 10);
+                    }}
+                    onDelete={deleteBuilding}
+                    onNew={() => setBuildSection("new")}
+                  />
+                )}
+                {buildSection === "base" && (
+                  <MoonBaseSummary key={base.world?.id ?? "none"} balance={balance} settings={base.settings} onSettings={base.saveSettings} hasWorld={!!base.world} />
+                )}
+              </div>
+            )}
+            <div hidden={building}>
             {section === "library" ? (
               <section className="panel section-library">
                 {data.notPrepared && <NotPreparedHint what="Moon reference data" script={PREPARE_REFERENCE_SCRIPT} />}
@@ -488,21 +773,51 @@ export default function MoonApp({ onBody }: { onBody: (id: BodyId) => void }) {
               <CreditsPanel sources={data.sources} activeLayers={activeCredits} />
               {data.status.sources.error && <p className="warn small moon-pad">Couldn’t load the source list: {data.status.sources.error}</p>}
             </div>
+            </div>
           </div>
         </aside>
 
-        <aside className="inspector" hidden={!dock} aria-label="Selected location details">
+        <aside className="inspector" hidden={!dock} aria-label={building ? "Site check" : "Selected location details"}>
           <div className="inspector-heading">
             <div>
-              <span className="eyebrow">{record ? (record.kind === "site" ? "ON THE SURFACE" : "PLANNED") : "LOCATION INSIGHTS"}</span>
-              <h2>{record ? (record.kind === "site" ? "Landed object" : record.feature.properties.kind === "artemis_region" ? "Artemis region" : "Planned mission") : "At this location"}</h2>
+              <span className="eyebrow">{building ? "SITE CHECK" : record ? (record.kind === "site" ? "ON THE SURFACE" : "PLANNED") : "LOCATION INSIGHTS"}</span>
+              <h2>
+                {building
+                  ? editing
+                    ? editing.name || MOON_BUILDING_BY_TYPE[editing.type].label
+                    : "At this location"
+                  : record
+                    ? record.kind === "site"
+                      ? "Landed object"
+                      : record.feature.properties.kind === "artemis_region"
+                        ? "Artemis region"
+                        : "Planned mission"
+                    : "At this location"}
+              </h2>
             </div>
-            <button className="icon-button" aria-label="Close location details" onClick={() => setInspectorOpen(false)}>
+            <button
+              className="icon-button"
+              aria-label={building ? "Close the site check" : "Close location details"}
+              onClick={() => (building ? (editing ? stopEdit() : setTarget(null)) : setInspectorOpen(false))}
+            >
               <Icon name="close" size={18} />
             </button>
           </div>
           <div className="inspector-body">
-            {dock && (
+            {building && target && (
+              <MoonSiteCheck
+                type={draft.type}
+                facts={facts}
+                items={check?.items ?? []}
+                verdict={check?.verdict ?? null}
+                editing={!!editing}
+                saving={saving}
+                canSave={canSave}
+                blockReason={facts ? blockReason : null}
+                onSave={saveBuilding}
+              />
+            )}
+            {!building && dock && (
               <>
                 {record && selection && (
                   <PanelTabs

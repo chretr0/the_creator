@@ -1,6 +1,7 @@
 import type { ProjectType } from "./api";
 import type { BuildingCategory, BuildingTemplate, BuildingType } from "./buildings";
 import type { IconName } from "../components/Icon";
+import { isMoonBuildingType, MOON_BUILDING_BY_TYPE } from "../moon/buildings";
 
 /**
  * Parameter definitions only: names, units and meaning. No default coefficient values are
@@ -206,10 +207,12 @@ export function fallbackTemplate(type: ProjectType): BuildingTemplate {
   };
 }
 
-export const typeLabel = (type: string) => PROJECT_TYPE_BY_ID[type as ProjectType]?.label ?? type;
+// Moon building types live in their own catalogue (shared/moon_buildings.json) but share the map markers.
+const moonType = (type: string) => (isMoonBuildingType(type) ? MOON_BUILDING_BY_TYPE[type] : undefined);
+export const typeLabel = (type: string) => PROJECT_TYPE_BY_ID[type as ProjectType]?.label ?? moonType(type)?.label ?? type;
 export const typeColour = (type: string): [number, number, number] =>
-  PROJECT_TYPE_BY_ID[type as ProjectType]?.colour ?? [96, 108, 128];
-export const typeIcon = (type: string): IconName => PROJECT_TYPE_BY_ID[type as ProjectType]?.icon ?? "building";
+  PROJECT_TYPE_BY_ID[type as ProjectType]?.colour ?? moonType(type)?.colour ?? [96, 108, 128];
+export const typeIcon = (type: string): IconName => PROJECT_TYPE_BY_ID[type as ProjectType]?.icon ?? moonType(type)?.icon ?? "building";
 export const typeCategory = (type: string): BuildingCategory => PROJECT_TYPE_BY_ID[type as ProjectType]?.category ?? "other";
 
 export type TemplateGroup = { category: BuildingCategory; label: string; icon: IconName; templates: BuildingTemplate[] };

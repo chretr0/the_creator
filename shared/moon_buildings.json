@@ -1,0 +1,146 @@
+{
+  "version": 1,
+  "note": "Hypothetical lunar base building types. Figures come from CLAUDE-Moon-Data-Sources.md §10–11. Tags: K = contract value or NASA requirement, C = company claim, M = measured or flown, E = independent estimate, D = derived here, ASSUMP = illustrative assumption. A null default means unknown (never zero): users may enter a value.",
+  "tags": {
+    "K": "NASA requirement or contract value",
+    "C": "Company claim",
+    "M": "Measured or flown",
+    "E": "Independent estimate",
+    "D": "Derived here",
+    "ASSUMP": "Illustrative assumption"
+  },
+  "lifeSupport": {
+    "oxygenKgPerCrewDay": 0.84,
+    "waterKgPerCrewDay": 2.5,
+    "foodKgPerCrewDay": 1.83,
+    "tag": "K",
+    "source": "NASA Baseline Values and Assumptions Document (BVAD) Rev 2: oxygen 0.84 kg, drinking water 2.0 + food water 0.5 kg, food 1.83 kg per crew member per day"
+  },
+  "transportCases": [
+    { "id": "optimistic", "label": "Optimistic", "usdPerKg": 600, "tag": "D", "note": "4 tankers at $10M a launch, 100 t landed, reused lander" },
+    { "id": "central", "label": "Central", "usdPerKg": 14000, "tag": "D", "note": "10 tankers at $50M a launch, 50 t landed, lander expended (+$100M)" },
+    { "id": "spacex_list", "label": "SpaceX list price", "usdPerKg": 100000, "tag": "C", "note": "$100M per tonne, no earlier than 2028" },
+    { "id": "conservative", "label": "Conservative", "usdPerKg": 146700, "tag": "D", "note": "20 tankers at $100M a launch, 15 t landed, reused lander" }
+  ],
+  "defaultTransportCase": "central",
+  "buildings": [
+    {
+      "type": "moon_habitat",
+      "label": "Crew habitat",
+      "role": "habitat",
+      "icon": "house",
+      "colour": [96, 200, 255],
+      "example": "NASA Foundation Surface Habitat",
+      "description": "Pressurised living quarters with life support. Crew breathe oxygen, drink and use water and eat food every day; recycling cuts how much must be made locally or shipped from Earth.",
+      "params": [
+        { "key": "crew", "label": "Crew", "unit": "people", "default": 4, "min": 1, "max": 50, "integer": true, "tag": "K", "note": "Foundation Surface Habitat: 4 crew, short stays." },
+        { "key": "powerKw", "label": "Power demand", "unit": "kW", "default": 15, "min": 0, "max": 2000, "tag": "ASSUMP", "note": "No published figure for the Foundation Surface Habitat: an illustrative load for life support, thermal control and equipment." },
+        { "key": "waterRecoveryPct", "label": "Water recycled", "unit": "%", "default": 90, "min": 0, "max": 99, "tag": "ASSUMP", "note": "Share of used water reclaimed (urine, sweat, humidity). The ISS reached 98% in 2023." },
+        { "key": "oxygenRecoveryPct", "label": "Oxygen regenerated", "unit": "%", "default": 40, "min": 0, "max": 95, "tag": "ASSUMP", "note": "Share of breathed oxygen recovered from exhaled CO₂. Today's stations recover part of it." },
+        { "key": "reserveDays", "label": "Stored reserves", "unit": "days", "default": 30, "min": 0, "max": 1000, "integer": true, "tag": "ASSUMP", "note": "Oxygen, water and food stored on site to bridge gaps between deliveries." },
+        { "key": "landedMassT", "label": "Landed mass", "unit": "t", "default": 12, "min": 0, "max": 1000, "tag": "K", "note": "Foundation Surface Habitat landed-mass limit." }
+      ]
+    },
+    {
+      "type": "moon_solar_tower",
+      "label": "Vertical solar array",
+      "role": "solar",
+      "icon": "sun",
+      "colour": [255, 204, 64],
+      "example": "NASA Vertical Solar Array Technology (VSAT)",
+      "description": "Solar panels on a tall mast. They produce power only while the Sun is up, so output depends on how much of the time the site is lit.",
+      "params": [
+        { "key": "ratedKw", "label": "Rated output", "unit": "kW", "default": 10, "min": 0, "max": 1000, "tag": "K", "note": "VSAT: 10 kW per array (a 50 kW class also exists)." },
+        { "key": "sunlitFraction", "label": "Surveyed sunlit fraction", "unit": "0–1", "default": null, "min": 0, "max": 1, "tag": "ASSUMP", "note": "Leave blank to use the site model: 0.5 on flat ground away from the poles. Near the poles it depends on terrain: ridges are lit 0.7–0.9 of the time (LOLA illumination maps), crater floors never." },
+        { "key": "mastHeightM", "label": "Mast height", "unit": "m", "default": 10, "min": 1, "max": 50, "tag": "K", "note": "At least 5 m, goal 10 m: height lifts panels above nearby shadows near the poles." },
+        { "key": "landedMassT", "label": "Landed mass", "unit": "t", "default": 0.2, "min": 0, "max": 100, "tag": "K", "note": "45–65 W/kg: 154–222 kg for 10 kW." }
+      ]
+    },
+    {
+      "type": "moon_fission",
+      "label": "Fission surface power",
+      "role": "fission",
+      "icon": "bolt",
+      "colour": [255, 112, 67],
+      "example": "NASA Fission Surface Power",
+      "description": "A small nuclear reactor: steady power day and night for about ten years. Crewed buildings must stay outside its radiation keep-out.",
+      "params": [
+        { "key": "outputKw", "label": "Electrical output", "unit": "kW", "default": 40, "min": 0, "max": 10000, "tag": "K", "note": "40 kWe for 10 years (a 2025 directive asks for at least 100 kWe)." },
+        { "key": "keepoutKm", "label": "Radiation keep-out", "unit": "km", "default": 1, "min": 0, "max": 10, "tag": "K", "note": "Dose at most 5 rem/yr above background at 1 km: crewed buildings stay outside." },
+        { "key": "landedMassT", "label": "Landed mass", "unit": "t", "default": 6, "min": 0, "max": 1000, "tag": "K", "note": "At most 6,000 kg." }
+      ]
+    },
+    {
+      "type": "moon_storage",
+      "label": "Night power storage",
+      "role": "storage",
+      "icon": "battery",
+      "colour": [180, 140, 255],
+      "example": "Regenerative fuel cell",
+      "description": "Stores daytime solar energy and releases it through the lunar night, which lasts about two weeks away from the poles.",
+      "params": [
+        { "key": "capacityKwh", "label": "Usable capacity", "unit": "kWh", "default": 2000, "min": 0, "max": 1000000, "tag": "D", "note": "10 kW through a 200-hour night = 2,000 kWh." },
+        { "key": "maxOutputKw", "label": "Maximum output", "unit": "kW", "default": 10, "min": 0, "max": 10000, "tag": "K", "note": "Power the fuel cell can deliver at once." },
+        { "key": "landedMassT", "label": "Landed mass", "unit": "t", "default": null, "min": 0, "max": 1000, "tag": "ASSUMP", "note": "No public figure. Enter one if known; otherwise its delivery cost stays unknown." }
+      ]
+    },
+    {
+      "type": "moon_ice_mine",
+      "label": "Ice mining plant",
+      "role": "ice_mine",
+      "icon": "water",
+      "colour": [64, 224, 208],
+      "example": "Thermal extraction from polar ice",
+      "description": "Heats icy regolith from permanently shadowed craters and collects the water. Water can be drunk, or split into oxygen and hydrogen.",
+      "params": [
+        { "key": "waterKgPerDay", "label": "Water produced", "unit": "kg/day", "default": 66.7, "min": 0, "max": 1000000, "tag": "E", "note": "2.78 kg of water an hour (thermal extraction estimate)." },
+        { "key": "energyKwhPerKg", "label": "Energy per kg", "unit": "kWh/kg", "default": 2.85, "min": 0, "max": 100, "tag": "E", "note": "2.6 kWh of heat + 0.25 kWh of electricity per kg, all supplied as electricity here." },
+        { "key": "landedMassT", "label": "Landed mass", "unit": "t", "default": null, "min": 0, "max": 1000, "tag": "ASSUMP", "note": "No public figure. Enter one if known." }
+      ]
+    },
+    {
+      "type": "moon_oxygen_plant",
+      "label": "Oxygen plant",
+      "role": "oxygen_plant",
+      "icon": "molecule",
+      "colour": [236, 120, 200],
+      "example": "Hydrogen reduction of ilmenite",
+      "description": "Extracts oxygen from lunar soil. Mare basalts are rich in ilmenite (FeTiO₃), the easiest mineral to reduce; highlands need more energy-hungry processes.",
+      "params": [
+        { "key": "oxygenKgPerDay", "label": "Oxygen produced", "unit": "kg/day", "default": 10, "min": 0, "max": 100000, "tag": "ASSUMP", "note": "Production target." },
+        { "key": "energyKwhPerKg", "label": "Energy per kg", "unit": "kWh/kg", "default": 24.3, "min": 0, "max": 500, "tag": "E", "note": "Ilmenite reduction: 24.3 ± 5.8 kWh per kg at 10 wt% ilmenite. Molten regolith electrolysis ~21; carbothermal ~75 in the lab." },
+        { "key": "landedMassT", "label": "Landed mass", "unit": "t", "default": null, "min": 0, "max": 1000, "tag": "ASSUMP", "note": "No public figure. Enter one if known." }
+      ]
+    },
+    {
+      "type": "moon_greenhouse",
+      "label": "Greenhouse",
+      "role": "greenhouse",
+      "icon": "sprout",
+      "colour": [110, 200, 90],
+      "example": "Pressurised LED-lit plant growth unit",
+      "description": "Grows food under artificial light and releases oxygen as the plants photosynthesise. Every figure here is illustrative: no lunar greenhouse has public specifications.",
+      "params": [
+        { "key": "areaM2", "label": "Growing area", "unit": "m²", "default": 50, "min": 0, "max": 100000, "tag": "ASSUMP", "note": "Area under LED lighting." },
+        { "key": "powerKwPerM2", "label": "Power per m²", "unit": "kW/m²", "default": 0.3, "min": 0, "max": 5, "tag": "ASSUMP", "note": "Lighting, pumps and climate control." },
+        { "key": "foodKgPerM2Day", "label": "Food per m²", "unit": "kg/m²/day", "default": 0.02, "min": 0, "max": 1, "tag": "ASSUMP", "note": "Edible food harvested per m² per day." },
+        { "key": "oxygenKgPerM2Day", "label": "Oxygen per m²", "unit": "kg/m²/day", "default": 0.02, "min": 0, "max": 1, "tag": "ASSUMP", "note": "Oxygen released by the plants per m² per day." },
+        { "key": "landedMassT", "label": "Landed mass", "unit": "t", "default": null, "min": 0, "max": 1000, "tag": "ASSUMP", "note": "No public figure. Enter one if known." }
+      ]
+    },
+    {
+      "type": "moon_landing_pad",
+      "label": "Landing pad",
+      "role": "landing_pad",
+      "icon": "plane",
+      "colour": [205, 210, 222],
+      "example": "Sintered regolith pad for a 100 t lander",
+      "description": "A hardened pad so landers do not blast regolith across the base. Rocket plumes still throw ejecta for kilometres, so other buildings keep their distance.",
+      "params": [
+        { "key": "diameterM", "label": "Pad diameter", "unit": "m", "default": 60, "min": 5, "max": 500, "tag": "D", "note": "About three times the lander's footprint (NASA/Purdue 2025)." },
+        { "key": "keepoutKm", "label": "Plume keep-out", "unit": "km", "default": 2, "min": 0, "max": 20, "tag": "K", "note": "NASA keeps surface vehicles ~2 km away during landings." },
+        { "key": "landedMassT", "label": "Landed mass", "unit": "t", "default": null, "min": 0, "max": 1000, "tag": "ASSUMP", "note": "Sintered from local regolith; the equipment's mass is not public." }
+      ]
+    }
+  ]
+}

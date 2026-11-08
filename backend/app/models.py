@@ -6,9 +6,14 @@ from uuid import UUID
 from pydantic import AfterValidator, Field
 
 from app.api_base import ApiModel, ParamValue
-from app.building_models import BuildingType, DefinitionSnapshot, SiteAssumptions
+from app.building_models import BuildingType, DefinitionSnapshot, MoonBuildingType, SiteAssumptions
 
-ProjectType = BuildingType  # one list of types for projects and definitions
+# Earth types (also used by saved definitions) followed by Moon types (Moon worlds only).
+ProjectType = Literal[BuildingType, MoonBuildingType]
+# The body a scenario (world) lives on; fixed at creation.
+WorldBody = Literal["earth", "moon"]
+# Project parameters: null = unknown (accepted for Moon types; Earth types reject it, omit the key instead).
+ProjectParamValue = ParamValue | None
 
 __all__ = ["ApiModel", "ParamValue"]  # re-exported for existing imports
 
@@ -57,7 +62,7 @@ class ProjectCreate(ApiModel):
     name: str = Field(default="", max_length=NAME_MAX)
     latitude: float = Field(ge=-90, le=90)
     longitude: float
-    parameters: dict[str, ParamValue] = {}
+    parameters: dict[str, ProjectParamValue] = {}
     # Building-system fields (CLAUDE.Building-System.md). Without `definition` but with
     # `source_definition_id`, the server snapshots that saved definition.
     definition: DefinitionSnapshot | None = None
@@ -70,7 +75,7 @@ class ProjectUpdate(ApiModel):
     name: str | None = Field(default=None, max_length=NAME_MAX)
     latitude: float | None = Field(default=None, ge=-90, le=90)
     longitude: float | None = None
-    parameters: dict[str, ParamValue] | None = None
+    parameters: dict[str, ProjectParamValue] | None = None
     definition: DefinitionSnapshot | None = None
     source_definition_id: UUID | None = None  # explicit null clears the link
     site: SiteAssumptions | None = None
@@ -85,7 +90,7 @@ class Project(ApiModel):
     longitude: float
     h3_id: str
     h3_resolution: int
-    parameters: dict[str, ParamValue]
+    parameters: dict[str, ProjectParamValue]
     # Always present in responses: legacy rows are adapted (all new statistics unknown).
     definition: DefinitionSnapshot
     source_definition_id: UUID | None = None
@@ -96,6 +101,7 @@ class Project(ApiModel):
 
 class ScenarioCreate(ApiModel):
     name: str = Field(min_length=1, max_length=NAME_MAX)
+    body: WorldBody = "earth"
     assumptions: Assumptions = {}
 
 
@@ -111,6 +117,7 @@ class ScenarioBranch(ApiModel):
 class ScenarioSummary(ApiModel):
     id: UUID
     name: str
+    body: WorldBody
     parent_scenario_id: UUID | None
     baseline_revision: str
     model_version: str
@@ -122,6 +129,7 @@ class ScenarioSummary(ApiModel):
 class Scenario(ApiModel):
     id: UUID
     name: str
+    body: WorldBody
     parent_scenario_id: UUID | None
     baseline_revision: str
     model_version: str
