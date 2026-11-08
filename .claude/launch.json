@@ -12,6 +12,18 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev", "--prefix", "frontend"],
       "port": 5173
+    },
+    {
+      "name": "backend-alt",
+      "runtimeExecutable": "uv",
+      "runtimeArgs": ["run", "--directory", "backend", "uvicorn", "app.main:app", "--reload", "--port", "8001"],
+      "port": 8001
+    },
+    {
+      "name": "frontend-alt",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": ["-c", "API_PROXY=http://localhost:8001 npm run dev --prefix frontend -- --port 5174 --strictPort"],
+      "port": 5174
     }
   ]
 }

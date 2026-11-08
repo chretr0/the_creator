@@ -8,7 +8,6 @@ import type {
   BuildingDefinition,
   BuildingPreset,
   BuildingType,
-  CellState,
   DefinitionSnapshot,
   LocationAssessment,
   SupportSuggestion,
@@ -30,6 +29,8 @@ import { groupTemplates, typeColour, typeIcon } from "../lib/projectTypes";
 import { useBuildingTemplates } from "../lib/useBuildingTemplates";
 import { useBuildingPresets } from "../lib/useBuildingPresets";
 import { presetPlace, presetToForm, splitPresetsByType } from "../lib/presets";
+import { screenedArea, type ScreenedArea } from "../lib/suitability";
+import { layerNeeds, type LayerNeed } from "../lib/buildLayers";
 import type { MapView } from "./WorldMap";
 import BuildingForm from "./BuildingForm";
 import CriteriaEditor from "./CriteriaEditor";
@@ -59,7 +60,13 @@ type Props = {
   /** Set on any map click while the Build tab is open. */
   target: BuildTarget | null;
   onTarget: (t: BuildTarget | null) => void;
-  onCells: (cells: CellState[] | null) => void;
+  /** The live screening of the visible map (null while hidden or before the first result). */
+  onArea: (area: ScreenedArea | null) => void;
+  /** What the map's screening overlay is coloured by: "overall" or a suitability factor key. */
+  colourBy: string;
+  onColourBy: (key: string) => void;
+  /** The suitability profile the map is currently coloured by (null: none, or out of date). */
+  mapProfileId: string | null;
   /** `stay`: keep the Build tab open (a supporting building is previewed next). */
   onBuilt: (p: Project, opts?: { stay?: boolean }) => void;
   onFocus: (latitude: number, longitude: number) => void;
@@ -71,6 +78,8 @@ type Props = {
   presetRequest?: PresetRequest | null;
   /** Right-hand inspector element to portal the live SitePanel into (null until mounted). */
   siteHost: HTMLElement | null;
+  /** Map layers about what the building needs (electricity → grid, water → rivers …), as specs change. */
+  onNeeds?: (needs: LayerNeed[]) => void;
 };
 
 /** The server's cap on one area screening (resolution-6 cells, ~36 km² each). */
@@ -97,7 +106,7 @@ const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 const fieldCount = (n: number) => `${n} field${n === 1 ? "" : "s"}`;
 
 export default function BuildPanel(props: Props) {
-  const { stage, onStage, scenario, view, catalogue, target, onTarget, onCells, onBuilt, onFocus, presetRequest, siteHost, active, onMapStatus } = props;
+  const { stage, onStage, scenario, view, catalogue, target, onTarget, onArea, onBuilt, onFocus, presetRequest, siteHost, active, onMapStatus } = props;
   const { templates, templateFor, error: templatesError } = useBuildingTemplates();
   const { presets, loaded: presetsLoaded, error: presetsError } = useBuildingPresets();
   const ids = useId();
@@ -157,6 +166,26 @@ export default function BuildPanel(props: Props) {
   const firstErrorStep = stepErrors.findIndex((n) => n > 0);
   const currency = parsed.stats.costs?.currency || "currency";
   const periodDays = useMemo(() => mergeAssumptions(scenario?.assumptions).periodDays, [scenario?.assumptions]);
+
+  // Which map layers the building's needs call for; reported only when they change.
+  const needs = useMemo(
+    () =>
+      layerNeeds({
+        type,
+        stats: parsed.stats,
+        parameters: parsed.parameters,
+        producesPower: template.producesPower,
+        producesWater: template.producesWater,
+      }),
+    [type, parsed, template.producesPower, template.producesWater],
+  );
+  const needsKey = JSON.stringify(needs);
+  const onNeeds = props.onNeeds;
+  useEffect(() => {
+    onNeeds?.(needs);
+    // needsKey captures `needs`.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [needsKey, onNeeds]);
 
   const scenarioId = scenario?.id ?? null;
   const baseRequest = useMemo(
@@ -335,9 +364,20 @@ export default function BuildPanel(props: Props) {
   }, [b?.west, b?.east, b?.south, b?.north]);
   const boundsKey = JSON.stringify(areaBounds);
 
+  // A result for an earlier version of the building stays visible while it is being refreshed; when no
+  // refresh can run (a note explains why: zoom in, fix fields, request failed) it is shown as out of date.
+  // Once greyed out it stays so until a result for the current building arrives (it is not repainted
+  // in the old building's grades while the refresh runs).
+  const areaMismatch = !!areaResult && areaResult.key !== inputKey;
+  const [areaGreyed, setAreaGreyed] = useState(false);
   useEffect(() => {
-    onCells(active && areaResult ? areaResult.area.cells : null);
-  }, [active, areaResult, onCells]);
+    if (!areaMismatch) setAreaGreyed(false);
+    else if (areaNote) setAreaGreyed(true);
+  }, [areaMismatch, areaNote]);
+  const areaStale = areaMismatch && (areaGreyed || !!areaNote);
+  useEffect(() => {
+    onArea(active && areaResult ? screenedArea(areaResult.area, areaStale) : null);
+  }, [active, areaResult, areaStale, onArea]);
 
   useEffect(() => {
     if (!active || !scenarioId) return;
@@ -347,8 +387,8 @@ export default function BuildPanel(props: Props) {
     setAreaNote(null);
     const ctrl = new AbortController();
     const key = inputKey;
+    setAreaLoading(true); // "updating…" from the moment a refresh is scheduled, not after the debounce
     const timer = setTimeout(async () => {
-      setAreaLoading(true);
       try {
         const r = await api.assess({ ...baseRequest, bounds: areaBounds, limit: 1 }, ctrl.signal);
         if (!ctrl.signal.aborted && r.area) setAreaResult({ key, area: r.area });
@@ -705,6 +745,9 @@ export default function BuildPanel(props: Props) {
             onSupport={canBuild ? placeWithSupport : undefined}
             onApplyPrice={(o) => setStats((st) => applyLocationPrice(st, o))}
             onRemovePrice={(r) => setStats((st) => removeLocationPrice(st, r))}
+            colourBy={props.colourBy}
+            onColourBy={props.onColourBy}
+            mapProfileId={props.mapProfileId}
           />,
           siteHost,
         )}
