@@ -254,57 +254,77 @@ export function LayerLegend({ data }: { data: DataLayersState }) {
   );
 }
 
+/** Record datasets shown in the Infrastructure section instead of Mapped records. */
+export const INFRASTRUCTURE_RECORDS = ["hydrorivers"];
+
+/** Mapped records, grouped by theme. Datasets not listed here appear under "Other records". */
+const RECORD_GROUPS: { label: string; ids: string[] }[] = [
+  { label: "Resources & industry", ids: ["mrds", "tri_facilities", "nsta_wellbores"] },
+  { label: "Water", ids: ["wqp_sites", "aqueduct_baseline", "aqueduct_future", "hydrobasins_l6"] },
+];
+
 export function RecordsPanel({ data }: { data: DataLayersState }) {
-  const { manifest, enabled, featureData, featureStatus } = data;
-  const [selectedRecord, setSelectedRecord] = useState("");
-  const recordId = manifest.some((m) => m.id === selectedRecord) ? selectedRecord : manifest[0]?.id ?? "";
-  const mapped = manifest.filter((m) => m.geometry !== "table");
+  const { manifest } = data;
+  const mapped = manifest.filter((m) => m.geometry !== "table" && !INFRASTRUCTURE_RECORDS.includes(m.id));
   const tables = manifest.filter((m) => m.geometry === "table" && m.available);
+  const grouped = new Set(RECORD_GROUPS.flatMap((g) => g.ids));
+  const groups = [
+    ...RECORD_GROUPS.map((g) => ({ label: g.label, items: g.ids.map((id) => mapped.find((m) => m.id === id)).filter((m) => !!m) })),
+    { label: "Other records", items: mapped.filter((m) => !grouped.has(m.id)) },
+  ].filter((g) => g.items.length > 0);
 
   return (
     <section className="panel">
-      <label className="field" style={{ marginTop: 0 }}><span>Dataset</span><select value={recordId} onChange={(e) => setSelectedRecord(e.target.value)}>{manifest.map((m) => <option key={m.id} value={m.id}>{m.name}{enabled[m.id] ? " · on map" : ""}</option>)}</select></label>
-      <p className="muted small">Changing the dataset here keeps your other enabled layers on the map.</p>
+      <p className="muted small" style={{ marginTop: 0 }}>Turn on any number of datasets. Filters appear under each one while it is on the map.</p>
       {mapped.length === 0 && <p className="muted small">No record layers available.</p>}
-      {mapped.map((m) => {
-        const on = !!enabled[m.id];
-        const st = featureStatus[m.id];
-        const fd = featureData[m.id];
-        return (
-          <div key={m.id} hidden={recordId !== m.id}>
-            <label className="toggle">
-              <input
-                type="checkbox"
-                checked={on}
-                disabled={!m.available}
-                onChange={() => data.setEnabled((e) => ({ ...e, [m.id]: !e[m.id] }))}
-              />
-              <GeometrySwatch meta={m} />
-              <span>{m.name}</span>
-              <span className="muted small right">
-                {m.regions.length && m.regions[0] !== "global" ? m.regions.map((r) => REGION_LABEL[r] ?? r).join(", ") : ""}
-              </span>
-            </label>
-            {on && (
-              <div className="sub">
-                {st?.loading && <p className="muted small">Loading…</p>}
-                {st?.error && <p className="warn small">{st.error}</p>}
-                {!st?.loading && !st?.error && fd && (
-                  <p className="muted small">
-                    {fd.matched.toLocaleString()} in view{fd.truncated ? " · zoom in to see all" : ""}
-                  </p>
-                )}
-                <FeatureFilters data={data} meta={m} />
-                {m.geometry === "polygon" && m.valueField && <PolygonLegend meta={m} />}
-              </div>
-            )}
-          </div>
-        );
-      })}
-      {tables.map((t) =>
-        t.id === "neso_carbon_intensity" ? <div key={t.id} hidden={recordId !== t.id}><CarbonIntensityCard meta={t} /></div> : null,
+      {groups.map((g) => (
+        <div key={g.label}>
+          <h3>{g.label}</h3>
+          {g.items.map((m) => <RecordToggle key={m.id} data={data} meta={m} />)}
+        </div>
+      ))}
+      {tables.length > 0 && (
+        <>
+          <h3>Tables</h3>
+          {tables.map((t) => (t.id === "neso_carbon_intensity" ? <CarbonIntensityCard key={t.id} meta={t} /> : null))}
+        </>
       )}
     </section>
+  );
+}
+
+/** One record dataset: an on/off toggle, plus its status and filters while it is on. */
+export function RecordToggle({ data, meta: m, filters = true }: { data: DataLayersState; meta: FeatureLayerMeta; filters?: boolean }) {
+  const on = !!data.enabled[m.id];
+  const st = data.featureStatus[m.id];
+  const fd = data.featureData[m.id];
+  return (
+    <div>
+      <label className="toggle">
+        <input type="checkbox" checked={on} disabled={!m.available} onChange={() => data.setEnabled((e) => ({ ...e, [m.id]: !e[m.id] }))} />
+        <GeometrySwatch meta={m} />
+        <span>
+          {m.name}
+          {m.regions.length && m.regions[0] !== "global" ? (
+            <small className="muted"> · {m.regions.map((r) => REGION_LABEL[r] ?? r).join(", ")}</small>
+          ) : null}
+        </span>
+        {!m.available && <span className="muted small right">Not prepared</span>}
+      </label>
+      {on && (
+        <div className="sub">
+          {st?.loading && <p className="muted small">Loading…</p>}
+          {st?.error && <p className="warn small">{st.error}</p>}
+          {!st?.loading && !st?.error && fd && (
+            <p className="muted small">
+              {fd.matched.toLocaleString()} in view{fd.truncated ? " · zoom in to see all" : ""}
+            </p>
+          )}
+          {filters && <FeatureFilters data={data} meta={m} />}
+          {filters && m.geometry === "polygon" && m.valueField && <PolygonLegend meta={m} />}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -388,16 +408,18 @@ function PolygonLegend({ meta }: { meta: FeatureLayerMeta }) {
 function CarbonIntensityCard({ meta }: { meta: FeatureLayerMeta }) {
   const [table, setTable] = useState<CarbonIntensity | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [opened, setOpened] = useState(false);
   useEffect(() => {
+    if (!opened) return;
     const ctrl = new AbortController();
     dataApi
       .table<CarbonIntensity>(meta.id, ctrl.signal)
       .then(setTable)
       .catch((e) => !ctrl.signal.aborted && setError(String(e.message ?? e)));
     return () => ctrl.abort();
-  }, [meta.id]);
+  }, [meta.id, opened]);
   return (
-    <details style={{ marginTop: 12 }}>
+    <details onToggle={(e) => e.currentTarget.open && setOpened(true)}>
       <summary>{meta.name}</summary>
       {error && <p className="warn">{error}</p>}
       {table && (

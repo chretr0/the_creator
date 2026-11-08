@@ -29,6 +29,17 @@ export const MERCATOR_MAX_LAT = 85.0511;
 const MAX_CHUNK_DEGREES = 60;
 const EARTH_RADIUS_KM = 6371.0088;
 
+/** How hexagon borders are drawn: everywhere, only around the mouse, or not at all. */
+export type HexOutlines = "all" | "near" | "off";
+export const HEX_OUTLINE_MODES: readonly HexOutlines[] = ["all", "near", "off"];
+export const HEX_OUTLINE_LABEL: Record<HexOutlines, string> = { all: "All", near: "Near cursor", off: "Off" };
+
+/** Parse a stored setting. The old boolean setting maps "false" to off; anything else falls back to near. */
+export function parseHexOutlines(stored: string | null): HexOutlines {
+  if (stored === "false") return "off";
+  return HEX_OUTLINE_MODES.includes(stored as HexOutlines) ? (stored as HexOutlines) : "near";
+}
+
 export type Bounds = {
   /** May be < -180 or > 180 when the map shows wrapped world copies. */
   west: number;

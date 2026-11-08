@@ -321,6 +321,35 @@ details[open] > summary { margin-bottom: 6px; }
 .toolbar .label { padding: 0 6px 0 8px; color: var(--muted); font-size: 14px; }
 .toolbar .sep { width: 1px; align-self: stretch; background: var(--border); margin: 4px 2px; }
 
+.grid-outlines { position: relative; display: flex; }
+.grid-outlines-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 20;
+  display: grid;
+  min-width: 200px;
+  padding: 4px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+}
+.toolbar .grid-outlines-menu button {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  text-align: left;
+  color: var(--text);
+}
+.toolbar .grid-outlines-menu button:hover, .toolbar .grid-outlines-menu button:focus-visible { background: var(--surface-2); }
+.toolbar .grid-outlines-menu button[aria-checked="true"] { color: var(--accent-strong); }
+.grid-outlines-menu strong { display: block; font-size: 13px; font-weight: 600; }
+.grid-outlines-menu small { display: block; color: var(--muted); font-size: 12px; }
+.grid-outlines-check { width: 14px; flex: none; font-size: 13px; }
+
 .place-search { position: relative; width: min(350px, 100%); flex: 1 1 230px; max-width: 400px; }
 .place-search > .icon { position: absolute; left: 13px; top: 13px; color: var(--muted); pointer-events: none; }
 .place-search input { border-color: var(--border-strong); box-shadow: var(--shadow); padding: 12px 12px 12px 40px; font-size: 13px; }
