@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { ICON_NAMES } from "../components/Icon";
 import {
   baseBalance,
+  buildingShare,
   defaultValues,
   formatUsd,
   isMoonBuildingType,
@@ -201,5 +202,22 @@ describe("base balance", () => {
     ]);
     expect(b.headline.status).toBe("pass");
     expect(b.headline.text).toMatch(/keeps 1 crew alive on its own/);
+  });
+});
+
+describe("buildingShare", () => {
+  const transport = { id: "t", label: "Test", usdPerKg: 1_000, tag: "ASSUMP" as const, note: "" };
+  it("counts power and landed mass the way the base balance does", () => {
+    const reactor = placed("moon_fission", 0, 0, { outputKw: 40, landedMassT: 6 });
+    const habitat = placed("moon_habitat", 0, 0, { powerKw: 15, landedMassT: 12 });
+    expect(buildingShare(reactor, transport)).toEqual({ powerKw: 40, massT: 6, deliveryUsd: 6_000_000 });
+    expect(buildingShare(habitat, transport)).toEqual({ powerKw: -15, massT: 12, deliveryUsd: 12_000_000 });
+    const total = baseBalance([reactor, habitat], { transportCase: TRANSPORT_CASES[0].id, nightHours: null });
+    expect(total.power.daySupplyKw - total.power.demandKw).toBe(40 - 15);
+    expect(total.mass.knownT).toBe(6 + 12);
+  });
+  it("keeps unknown demand and mass unknown, not zero", () => {
+    const mine = placed("moon_ice_mine", 0, 0, { waterKgPerDay: null, landedMassT: null });
+    expect(buildingShare(mine, transport)).toEqual({ powerKw: null, massT: null, deliveryUsd: null });
   });
 });

@@ -1,11 +1,12 @@
 /**
- * The Moon Build workspace panels: choose and configure a building, list the base's buildings, see whether
- * the base can keep its crew alive, and check a site before placing.
+ * The Moon Build workspace panels: choose and configure a building, list the base's buildings, check a site
+ * before placing; and the World totals page: whether the base can keep its crew alive, and what it adds up to.
  */
 import { useState } from "react";
 import Icon from "../components/Icon";
 import { formatLatLon } from "./geo";
 import {
+  buildingShare,
   LIFE_SUPPORT,
   MOON_BUILDINGS,
   MOON_BUILDING_BY_TYPE,
@@ -297,13 +298,18 @@ function Meter({ label, have, need, unit }: { label: string; have: number; need:
 
 export function MoonBaseSummary({
   balance,
+  buildings,
   settings,
   onSettings,
+  onShow,
   hasWorld,
 }: {
   balance: BaseBalance;
+  buildings: PlacedMoonBuilding[];
   settings: BaseSettings;
   onSettings: (patch: Partial<BaseSettings>) => void;
+  /** Show a building on the map. */
+  onShow: (b: PlacedMoonBuilding) => void;
   hasWorld: boolean;
 }) {
   const [nightRaw, setNightRaw] = useState(settings.nightHours === null ? "" : String(settings.nightHours));
@@ -400,6 +406,7 @@ export function MoonBaseSummary({
         {mass.unknown.length > 0 && <p className="warn small">Landed mass unknown for {mass.unknown.join(", ")}: not included in the delivery cost.</p>}
         <p className="small muted">Transport only: no hardware, construction or operating costs.</p>
       </section>
+      {buildings.length > 0 && <ByBuilding buildings={buildings} balance={balance} onShow={onShow} />}
       <section className="panel">
         <h2>Assumptions</h2>
         <div className="moon-param">
@@ -430,6 +437,65 @@ export function MoonBaseSummary({
         </p>
       </section>
     </>
+  );
+}
+
+/** Each building's daytime power (+ adds, − draws), landed mass and delivery cost, with the base's totals. */
+function ByBuilding({ buildings, balance, onShow }: { buildings: PlacedMoonBuilding[]; balance: BaseBalance; onShow: (b: PlacedMoonBuilding) => void }) {
+  const signedKw = (kw: number | null) => (kw === null ? "unknown" : `${kw > 0 ? "+" : kw < 0 ? "−" : ""}${num(Math.abs(kw))} kW`);
+  const { power, mass, cost } = balance;
+  const netKw = power.daySupplyKw - power.demandKw;
+  return (
+    <section className="panel totals-panel">
+      <div className="panel-head">
+        <h2>By building</h2>
+        <span className="small muted">daytime power</span>
+      </div>
+      <table className="mini totals-table by-building">
+        <thead>
+          <tr>
+            <th scope="col">Building</th>
+            <th scope="col">Power</th>
+            <th scope="col">Mass</th>
+            <th scope="col">To land</th>
+          </tr>
+        </thead>
+        <tbody>
+          {buildings.map((b) => {
+            const def = MOON_BUILDING_BY_TYPE[b.type];
+            const share = buildingShare(b, cost.case);
+            return (
+              <tr key={b.id}>
+                <td>
+                  <button className="link totals-building" title="Show on the map" onClick={() => onShow(b)}>
+                    <span className="dot" style={{ background: rgb(def.colour) }} />
+                    <span className="result-title">
+                      {b.name || def.label}
+                      <small>{def.label}</small>
+                    </span>
+                  </button>
+                </td>
+                <td className={`num${share.powerKw === null ? " muted" : ""}`}>{signedKw(share.powerKw)}</td>
+                <td className={`num${share.massT === null ? " muted" : ""}`}>{share.massT === null ? "unknown" : `${num(share.massT)} t`}</td>
+                <td className={`num${share.deliveryUsd === null ? " muted" : ""}`}>{share.deliveryUsd === null ? "unknown" : formatUsd(share.deliveryUsd)}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+        <tfoot>
+          <tr>
+            <th scope="row">Base total</th>
+            <td className="num">{signedKw(netKw)}</td>
+            <td className="num">{num(mass.knownT)} t</td>
+            <td className="num">{formatUsd(cost.deliveryUsd)}</td>
+          </tr>
+        </tfoot>
+      </table>
+      <p className="small muted totals-note">
+        Power is what each building adds by day (fission, solar) minus what it draws; storage only helps at night.
+        {power.unknownDemand.length > 0 || mass.unknown.length > 0 ? " Totals leave out values marked unknown." : ""} Choose a building to see it on the map.
+      </p>
+    </section>
   );
 }
 

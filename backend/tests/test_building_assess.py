@@ -79,6 +79,42 @@ def test_total_is_unknown_not_zero_when_nothing_is_known():
     assert z.electricity_demand.value == 0 and not z.electricity_demand.missing
 
 
+def test_world_balance_is_generated_minus_used_across_all_buildings():
+    plant = place("Plant", stats(operatingHoursPerDay=24, power={"averageOutputKw": 1000, "averageDemandKw": 50},
+                               water={"inputM3PerHour": 1, "outputM3PerHour": 5}))
+    office = place("Office", stats(operatingHoursPerDay=10, power={"averageDemandKw": 100}, water={"inputM3PerHour": 2}))
+    t = totals(plant, office, period_days=1)
+    assert t.electricity_output.value == pytest.approx(24_000)
+    assert t.electricity_demand.value == pytest.approx(24 * 50 + 10 * 100)
+    assert t.electricity_net.value == pytest.approx(24_000 - 2_200) and not t.electricity_net.missing
+    assert t.water_net.value == pytest.approx(24 * 5 - (24 * 1 + 10 * 2))
+    # Nothing generates power: the balance is minus what is used, not unknown.
+    only_use = totals(office, period_days=1)
+    assert only_use.electricity_output.value == 0
+    assert only_use.electricity_net.value == pytest.approx(-1_000)
+
+
+def test_world_balance_is_partial_or_unknown_with_the_inputs_it_lacks():
+    known = place("Known", stats(operatingHoursPerDay=24, power={"averageDemandKw": 10}))
+    blank = place("Blank", stats())
+    partial = totals(known, blank, period_days=1).electricity_net
+    assert partial.value == pytest.approx(-240)
+    assert "electricity demand of Blank" in partial.missing and "partial" in partial.basis
+    unknown = totals(blank, period_days=1).electricity_net
+    assert unknown.value is None and unknown.missing == ["electricity demand of Blank"]
+
+
+def test_footprint_staff_and_peak_totals():
+    a = place("A", stats(footprintM2=2_000, workers={"staffingRequired": 30}, power={"peakDemandKw": 400}))
+    b = place("B", stats(footprintM2=500, workers={"staffingRequired": 5}))
+    t = totals(a, b)
+    assert (t.footprint.value, t.footprint.unit) == (2_500, "m²") and not t.footprint.missing
+    assert (t.staffing_required.value, t.staffing_required.unit) == (35, "people")
+    assert t.peak_demand.value == 400 and t.peak_demand.missing == ["peak demand of B"]
+    assert "upper bound" in t.peak_demand.basis
+    assert t.unknown_buildings["peakDemand"] == ["B"]
+
+
 def test_costs_without_currency_are_not_summed_together():
     a = place("A", stats(costs={"constructionTotal": 1_000_000}))
     b = place("B", stats(costs={"constructionTotal": 500_000}))

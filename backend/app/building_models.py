@@ -847,14 +847,19 @@ class BuildingEvaluation(ApiModel):
 class ScenarioTotals(ApiModel):
     electricity_demand: Quantity
     electricity_output: Quantity
+    electricity_net: Quantity  # everything generated minus everything used, across the world
+    peak_demand: Quantity  # summed peaks: an upper bound (assumes they coincide)
     water_demand: Quantity
     water_output: Quantity
+    water_net: Quantity  # everything produced minus everything used, across the world
     construction_cost: list[Quantity]  # one per currency
     operating_cost: list[Quantity]  # one per currency (known part)
     materials: list[MaterialTotal]  # summed by name + phase
     emissions: list[EmissionTotal]  # summed by pollutant, never across pollutants
     light: Quantity
     worker_capacity: Quantity
+    staffing_required: Quantity
+    footprint: Quantity
     unknown_buildings: dict[str, list[str]] = {}  # metric -> building names with unknown value
 
 

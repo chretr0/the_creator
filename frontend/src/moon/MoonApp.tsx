@@ -38,8 +38,8 @@ import { useMoonBase } from "./useMoonBase";
 import "./moon.css";
 
 type Section = "library" | "overlays" | "sites" | "surface" | "coming" | "sources";
-type Workspace = "explore" | "build";
-type BuildSection = "new" | "list" | "base";
+type Workspace = "explore" | "build" | "totals";
+type BuildSection = "new" | "list";
 type Target = { latitude: number; longitude: number };
 
 const HEX_OUTLINES_KEY = "newworlds:hexOutlines";
@@ -93,7 +93,8 @@ export default function MoonApp({ onBody }: { onBody: (id: BodyId) => void }) {
   const sideBodyRef = useRef<HTMLDivElement>(null);
   const [workspace, setWorkspace] = useState<Workspace>("explore");
   const building = workspace === "build";
-  const base = useMoonBase(building);
+  const totals = workspace === "totals";
+  const base = useMoonBase(building || totals);
   const [buildSection, setBuildSection] = useState<BuildSection>("new");
   const [draft, setDraft] = useState<BuildDraft>(() => draftFor("moon_habitat"));
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -219,6 +220,10 @@ export default function MoonApp({ onBody }: { onBody: (id: BodyId) => void }) {
       setBuildSection("new");
       return;
     }
+    if (totals && picked?.layerId === "projects") {
+      const b = base.buildings.find((x) => x.id === (picked.object as Project).id);
+      if (b) return startEdit(b);
+    }
     if (picked?.layerId === MOON_LAYER_IDS.sites) return pickSite(picked.object as MoonSite, false);
     if (picked?.layerId === MOON_LAYER_IDS.missions) return pickMission((picked.object as MissionMarker).feature, false);
     if (picked?.layerId === MOON_LAYER_IDS.regions) return pickMission(picked.object as MissionFeature, false);
@@ -343,7 +348,7 @@ export default function MoonApp({ onBody }: { onBody: (id: BodyId) => void }) {
         ? "Fix the failed checks, or choose another site."
         : null;
   const canSave = !!facts && !blockReason;
-  const moonProjects: Project[] = building ? (base.world?.projects ?? []) : NO_PROJECTS;
+  const moonProjects: Project[] = building || totals ? (base.world?.projects ?? []) : NO_PROJECTS;
 
   function startEdit(b: PlacedMoonBuilding) {
     setWorkspace("build");
@@ -376,7 +381,7 @@ export default function MoonApp({ onBody }: { onBody: (id: BodyId) => void }) {
     } else {
       const p = await base.place(input);
       if (p) {
-        setPlacedNote(`Placed “${p.name || label}”. Choose the next building, or open Base to see whether it keeps a crew alive.`);
+        setPlacedNote(`Placed “${p.name || label}”. Choose the next building, or open World totals to see whether it keeps a crew alive.`);
         setTarget(null);
         setDraft(draftFor(draft.type));
       }
@@ -468,7 +473,7 @@ export default function MoonApp({ onBody }: { onBody: (id: BodyId) => void }) {
         <BodySwitch value="moon" onChange={onBody} />
         <nav className="workspace-nav" aria-label="Main navigation">
           <button
-            aria-current={building ? undefined : "page"}
+            aria-current={workspace === "explore" ? "page" : undefined}
             onClick={() => {
               setWorkspace("explore");
               setSection("library");
@@ -486,7 +491,7 @@ export default function MoonApp({ onBody }: { onBody: (id: BodyId) => void }) {
             Timeline
           </button>
         </nav>
-        {building && (
+        {(building || totals) && (
           <div className="scenario-switcher">
             <span className="eyebrow">ACTIVE WORLD</span>
             {base.worlds === null ? (
@@ -496,6 +501,16 @@ export default function MoonApp({ onBody }: { onBody: (id: BodyId) => void }) {
             )}
           </div>
         )}
+        <button
+          className="world-totals-tab"
+          aria-label="World totals"
+          aria-current={totals ? "page" : undefined}
+          onClick={() => setWorkspace("totals")}
+          title="Everything your Moon base uses, makes and costs to land, added up"
+        >
+          <Icon name="chart" size={17} />
+          <span>World totals</span>
+        </button>
         <div className="header-actions">
           <button className="sources-button" onClick={showSources}>
             <Icon name="info" size={18} />
@@ -512,7 +527,7 @@ export default function MoonApp({ onBody }: { onBody: (id: BodyId) => void }) {
         </div>
       </header>
 
-      <div className={`workspace ${building ? "moon-workspace-build" : "workspace-explore"}${dock ? " with-inspector" : ""}`}>
+      <div className={`workspace ${building ? "moon-workspace-build" : totals ? "workspace-totals" : "workspace-explore"}${dock ? " with-inspector" : ""}`}>
         <main className="map-wrap moon-map-wrap" aria-label="Interactive map of the Moon">
           <WorldMap
             body={MOON}
@@ -563,9 +578,9 @@ export default function MoonApp({ onBody }: { onBody: (id: BodyId) => void }) {
 
           <div className="map-context">
             <span className="context-dot" />
-            Moon · {building ? "Build" : "Explore"}
+            Moon · {building ? "Build" : totals ? "World totals" : "Explore"}
             <span className="map-context-divider" />
-            {building
+            {building || totals
               ? `${base.buildings.length} ${base.buildings.length === 1 ? "building" : "buildings"}${base.world ? ` in ${base.world.name}` : ""}`
               : data.sites
                 ? `${data.sites.length} landed objects`
@@ -578,7 +593,7 @@ export default function MoonApp({ onBody }: { onBody: (id: BodyId) => void }) {
               <span className="pulse-dot" /> Loading LROC tiles…
             </div>
           )}
-          {!dock && !edgeHint && !building && <div className="map-guide"><Icon name="info" size={17} />Click a location to explore its data</div>}
+          {!dock && !edgeHint && workspace === "explore" && <div className="map-guide"><Icon name="info" size={17} />Click a location to explore its data</div>}
           {building && !target && !edgeHint && (
             <div className="hint" role="status">
               {base.world ? `Click the map to place a ${MOON_BUILDING_BY_TYPE[draft.type].label.toLowerCase()}` : "Start a Moon base from the Active world menu"}
@@ -620,19 +635,15 @@ export default function MoonApp({ onBody }: { onBody: (id: BodyId) => void }) {
 
         <aside className="sidebar">
           <div className="workspace-heading">
-            <div className="eyebrow">{building ? "PLAN & PLACE A MOON BASE" : "THE MOON, IN CONTEXT"}</div>
-            <h1>
+            <div className="eyebrow">{building ? "PLAN & PLACE A MOON BASE" : totals ? "ADDED UP" : "THE MOON, IN CONTEXT"}</div>
+            <h1>{building ? (buildSection === "list" ? "Your buildings" : editing ? "Edit building" : "Build on the Moon") : totals ? "World totals" : "Explore the Moon"}</h1>
+            <p>
               {building
-                ? buildSection === "list"
-                  ? "Your buildings"
-                  : buildSection === "base"
-                    ? "Can it keep a crew alive?"
-                    : editing
-                      ? "Edit building"
-                      : "Build on the Moon"
-                : "Explore the Moon"}
-            </h1>
-            <p>{building ? "A hypothetical base, checked against the Moon data we have." : "Landing sites, plans and the ground beneath them."}</p>
+                ? "A hypothetical base, checked against the Moon data we have."
+                : totals
+                  ? "Can the base keep a crew alive, and what does it add up to?"
+                  : "Landing sites, plans and the ground beneath them."}
+            </p>
           </div>
           {building && (
             <PanelTabs
@@ -642,7 +653,6 @@ export default function MoonApp({ onBody }: { onBody: (id: BodyId) => void }) {
               options={[
                 { value: "new", label: editing ? "Edit building" : "New building" },
                 { value: "list", label: `Buildings (${base.buildings.length})` },
-                { value: "base", label: "Base" },
               ]}
             />
           )}
@@ -688,12 +698,38 @@ export default function MoonApp({ onBody }: { onBody: (id: BodyId) => void }) {
                     onNew={() => setBuildSection("new")}
                   />
                 )}
-                {buildSection === "base" && (
-                  <MoonBaseSummary key={base.world?.id ?? "none"} balance={balance} settings={base.settings} onSettings={base.saveSettings} hasWorld={!!base.world} />
+              </div>
+            )}
+            {totals && (
+              <div className="moon-build">
+                {base.error && (
+                  <div className="error" role="alert">
+                    {base.error}
+                    <button className="ghost" onClick={base.clearError} aria-label="Dismiss">
+                      ✕
+                    </button>
+                  </div>
+                )}
+                {base.worlds === null ? (
+                  <section className="panel">
+                    <p className="muted small" role="status">
+                      {base.loading ? "Loading your Moon base…" : "Moon bases are unavailable right now."}
+                    </p>
+                  </section>
+                ) : (
+                <MoonBaseSummary
+                  key={base.world?.id ?? "none"}
+                  balance={balance}
+                  buildings={base.buildings}
+                  settings={base.settings}
+                  onSettings={base.saveSettings}
+                  onShow={(b) => fly(b.latitude, b.longitude, 10)}
+                  hasWorld={!!base.world}
+                />
                 )}
               </div>
             )}
-            <div hidden={building}>
+            <div hidden={workspace !== "explore"}>
             {section === "library" ? (
               <section className="panel section-library">
                 {data.notPrepared && <NotPreparedHint what="Moon reference data" script={PREPARE_REFERENCE_SCRIPT} />}
