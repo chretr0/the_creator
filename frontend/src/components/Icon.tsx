@@ -23,6 +23,19 @@ const paths = {
   building: <><path d="M4 21V5h10v16M14 11h6v10M2 21h20M7 9h4M7 13h4M7 17h4M17 15h.01M17 18h.01" /></>,
   bolt: <path d="m13 2-9 12h7l-1 8 10-13h-8l1-7Z" />,
   chevron: <path d="m8 10 4 4 4-4" />,
+  // ---- weather & grid ----
+  cloud: <path d="M7 19a5 5 0 0 1-.6-9.96A6 6 0 0 1 18 9.5a4.75 4.75 0 0 1-.25 9.5H7Z" />,
+  cloudSun: <><path d="M12 2v2M4.9 4.9l1.4 1.4M2 12h2M19.1 4.9l-1.4 1.4M15.5 9.2A4 4 0 1 0 8.4 13" /><path d="M9 21a4 4 0 0 1-.4-7.98A5 5 0 0 1 18.3 13a3.5 3.5 0 0 1-.3 8H9Z" /></>,
+  cloudMoon: <><path d="M14.5 3.5a5 5 0 0 0 6 6 5 5 0 0 1-6.6 3.6" /><path d="M8 21a4 4 0 0 1-.4-7.98A5 5 0 0 1 17.3 13a3.5 3.5 0 0 1-.3 8H8Z" /></>,
+  rain: <><path d="M7 15a5 5 0 0 1-.6-9.96A6 6 0 0 1 18 5.5a4.75 4.75 0 0 1-.25 9.5H7Z" /><path d="m8 18-1 3M12.5 18l-1 3M17 18l-1 3" /></>,
+  drizzle: <><path d="M7 15a5 5 0 0 1-.6-9.96A6 6 0 0 1 18 5.5a4.75 4.75 0 0 1-.25 9.5H7Z" /><path d="M8 19h.01M12 21h.01M16 19h.01" /></>,
+  snow: <><path d="M7 15a5 5 0 0 1-.6-9.96A6 6 0 0 1 18 5.5a4.75 4.75 0 0 1-.25 9.5H7Z" /><path d="M8 19h.01M12 18h.01M16 19h.01M10 21.5h.01M14 21.5h.01" /></>,
+  storm: <><path d="M7 15a5 5 0 0 1-.6-9.96A6 6 0 0 1 18 5.5a4.75 4.75 0 0 1-.25 9.5" /><path d="m13 12-3 5h4l-3 5" /></>,
+  fog: <path d="M5 9a6 6 0 0 1 11.6-2A4.5 4.5 0 0 1 19.5 11M3 14h18M5 18h14M8 22h8" />,
+  thermometer: <path d="M14 14.8V4a2 2 0 0 0-4 0v10.8a4 4 0 1 0 4 0ZM12 11v6" />,
+  navigation: <path d="m12 2 7 19-7-4-7 4 7-19Z" />,
+  pylon: <path d="M8 22 12 2l4 20M6 7h12M5 11h14M9.5 15h5M8.6 19.5h6.8M9.5 15 16 7M14.5 15 8 7" />,
+  map: <path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Zm0 0v14m6-12v14" />,
   // ---- building types (24×24, stroke only) ----
   wind: <><path d="M12 11v10M9 21h6M12 7.5V2.5M10.7 9.8 6.4 12.6M13.3 9.8l4.3 2.8" /><circle cx="12" cy="9" r="1.5" /></>,
   dam: <path d="M9 4h3l5 16H9V4ZM2 9h4M2 13c1 0 1.5.8 3.5.8M2 17c1 0 1.5.8 3.5.8M18 17c1 0 1.5.8 2 .8M18 20.5h4" />,
@@ -67,6 +80,6 @@ export type IconName = keyof typeof paths;
 export const ICON_NAMES = Object.keys(paths) as IconName[];
 
 /** Small, consistent line icons; labels stay on the actual controls. */
-export default function Icon({ name, size = 20, style }: { name: IconName; size?: number; style?: CSSProperties }) {
-  return <svg className="icon" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={style}>{paths[name]}</svg>;
+export default function Icon({ name, size = 20, style, className }: { name: IconName; size?: number; style?: CSSProperties; className?: string }) {
+  return <svg className={className ? `icon ${className}` : "icon"}width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={style}>{paths[name]}</svg>;
 }

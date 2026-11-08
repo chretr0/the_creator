@@ -254,54 +254,102 @@ export async function searchImageryDays(product: "S30" | "L30", b: Bounds, days 
 
 export const isoDay = (d: Date) => d.toISOString().slice(0, 10);
 
-/* ---------------- Point weather (Open-Meteo: GFS / ECMWF) ---------------- */
+/* ---------------- Point weather (Open-Meteo) ---------------- */
 
-export type WeatherModel = "gfs_seamless" | "ecmwf_ifs025";
-export const WEATHER_MODELS: Record<WeatherModel, string> = {
-  gfs_seamless: "NOAA GFS",
-  ecmwf_ifs025: "ECMWF IFS 0.25°",
-};
-export type PointWeather = {
-  model: WeatherModel;
+export type ForecastHour = { time: string; tempC: number | null; precipProb: number | null; wind100m: number | null };
+export type ForecastDay = { date: string; code: number | null; maxC: number | null; minC: number | null; precipMm: number | null };
+export type PointForecast = {
+  /** Local time at the location, ISO without offset. */
   time: string;
-  temperatureC: number | null;
-  windSpeed10m: number | null;
-  windDirection10m: number | null;
-  next24h: {
-    tempMinC: number | null;
-    tempMaxC: number | null;
-    wind100mMean: number | null;
-    wind100mMax: number | null;
+  timezone: string;
+  current: {
+    tempC: number | null;
+    feelsLikeC: number | null;
+    humidity: number | null;
+    code: number | null;
+    isDay: boolean;
+    windSpeed: number | null;
+    windDirection: number | null;
   };
+  hours: ForecastHour[];
+  days: ForecastDay[];
 };
 
-export async function loadWeather(lat: number, lon: number, model: WeatherModel, signal?: AbortSignal): Promise<PointWeather> {
+/** Current conditions, the next 24 hours and a three-day outlook at a point (Open-Meteo best-match model). */
+export async function loadForecast(lat: number, lon: number, signal?: AbortSignal): Promise<PointForecast> {
   const url =
     `https://api.open-meteo.com/v1/forecast?latitude=${lat.toFixed(4)}&longitude=${lon.toFixed(4)}` +
-    `&current=temperature_2m,wind_speed_10m,wind_direction_10m&hourly=temperature_2m,wind_speed_100m` +
-    `&forecast_hours=24&wind_speed_unit=ms&timezone=UTC&models=${model}`;
+    `&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,is_day,wind_speed_10m,wind_direction_10m` +
+    `&hourly=temperature_2m,precipitation_probability,wind_speed_100m&forecast_hours=24` +
+    `&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum&forecast_days=3` +
+    `&wind_speed_unit=ms&timezone=auto`;
+  type Arr = (number | null)[] | undefined;
   type R = {
-    current?: { time: string; temperature_2m?: number; wind_speed_10m?: number; wind_direction_10m?: number };
-    hourly?: { temperature_2m?: (number | null)[]; wind_speed_100m?: (number | null)[] };
+    timezone?: string;
+    current?: {
+      time: string;
+      temperature_2m?: number;
+      apparent_temperature?: number;
+      relative_humidity_2m?: number;
+      weather_code?: number;
+      is_day?: number;
+      wind_speed_10m?: number;
+      wind_direction_10m?: number;
+    };
+    hourly?: { time?: string[]; temperature_2m?: Arr; precipitation_probability?: Arr; wind_speed_100m?: Arr };
+    daily?: { time?: string[]; weather_code?: Arr; temperature_2m_max?: Arr; temperature_2m_min?: Arr; precipitation_sum?: Arr };
   };
   const r = await getJson<R>(url, signal);
-  const nums = (a?: (number | null)[]) => (a ?? []).filter((x): x is number => typeof x === "number");
-  const t = nums(r.hourly?.temperature_2m);
-  const w = nums(r.hourly?.wind_speed_100m);
+  const at = (a: Arr, i: number) => (typeof a?.[i] === "number" ? (a[i] as number) : null);
+  const c = r.current;
   return {
-    model,
-    time: r.current?.time ?? "",
-    temperatureC: r.current?.temperature_2m ?? null,
-    windSpeed10m: r.current?.wind_speed_10m ?? null,
-    windDirection10m: r.current?.wind_direction_10m ?? null,
-    next24h: {
-      tempMinC: t.length ? Math.min(...t) : null,
-      tempMaxC: t.length ? Math.max(...t) : null,
-      wind100mMean: w.length ? w.reduce((a, b) => a + b, 0) / w.length : null,
-      wind100mMax: w.length ? Math.max(...w) : null,
+    time: c?.time ?? "",
+    timezone: r.timezone ?? "UTC",
+    current: {
+      tempC: c?.temperature_2m ?? null,
+      feelsLikeC: c?.apparent_temperature ?? null,
+      humidity: c?.relative_humidity_2m ?? null,
+      code: c?.weather_code ?? null,
+      isDay: c?.is_day !== 0,
+      windSpeed: c?.wind_speed_10m ?? null,
+      windDirection: c?.wind_direction_10m ?? null,
     },
+    hours: (r.hourly?.time ?? []).map((time, i) => ({
+      time,
+      tempC: at(r.hourly?.temperature_2m, i),
+      precipProb: at(r.hourly?.precipitation_probability, i),
+      wind100m: at(r.hourly?.wind_speed_100m, i),
+    })),
+    days: (r.daily?.time ?? []).map((date, i) => ({
+      date,
+      code: at(r.daily?.weather_code, i),
+      maxC: at(r.daily?.temperature_2m_max, i),
+      minC: at(r.daily?.temperature_2m_min, i),
+      precipMm: at(r.daily?.precipitation_sum, i),
+    })),
   };
 }
+
+export type WeatherKind = "clear" | "partly" | "cloudy" | "fog" | "drizzle" | "rain" | "snow" | "storm";
+/** WMO weather interpretation code → a short label and an icon family. */
+export function describeWeather(code: number | null): { label: string; kind: WeatherKind } {
+  if (code === null) return { label: "Unknown", kind: "cloudy" };
+  if (code === 0) return { label: "Clear", kind: "clear" };
+  if (code === 1) return { label: "Mostly clear", kind: "partly" };
+  if (code === 2) return { label: "Partly cloudy", kind: "partly" };
+  if (code === 3) return { label: "Overcast", kind: "cloudy" };
+  if (code === 45 || code === 48) return { label: "Fog", kind: "fog" };
+  if (code >= 51 && code <= 57) return { label: "Drizzle", kind: "drizzle" };
+  if (code >= 61 && code <= 67) return { label: code >= 65 ? "Heavy rain" : "Rain", kind: "rain" };
+  if (code >= 71 && code <= 77) return { label: "Snow", kind: "snow" };
+  if (code >= 80 && code <= 82) return { label: "Showers", kind: "rain" };
+  if (code === 85 || code === 86) return { label: "Snow showers", kind: "snow" };
+  if (code >= 95) return { label: "Thunderstorm", kind: "storm" };
+  return { label: "Cloudy", kind: "cloudy" };
+}
+
+/** 0–360° → the nearest of eight compass points. */
+export const compass = (deg: number) => ["N", "NE", "E", "SE", "S", "SW", "W", "NW"][Math.round((((deg % 360) + 360) % 360) / 45) % 8];
 
 /* ---------------- Place search ---------------- */
 
