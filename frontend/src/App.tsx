@@ -35,7 +35,7 @@ import Icon from "./components/Icon";
 import { useTheme } from "./lib/useTheme";
 import { BackLink, PanelTabs } from "./components/PanelNavigation";
 import DataPanel, { RecordsPanel, PreparedScenes, LayerLegend } from "./components/DataPanel";
-import { FieldList } from "./components/BaselineBlock";
+import { FieldList } from "./components/LocationData";
 import CreditsPanel from "./components/CreditsPanel";
 import { useDataLayers } from "./lib/useDataLayers";
 import { mergeAssumptions } from "./lib/buildingForm";
@@ -1069,10 +1069,8 @@ export default function App() {
                       if (p) selectProject(p);
                     }}
                     facilities={allFacilities}
-                    power={ctx.power}
-                    powerStatus={ctx.status.power}
-                    onLoadPower={(lat, lon) => ctx.requestPower(lat, lon)}
-                    onClearPower={() => ctx.setPower(null)}
+                    gridOnMap={ctx.power}
+                    onShowGrid={ctx.setPower}
                     featureManifest={data.manifest}
                     onShowLayer={(layerId, sliceId) => {
                       const l = data.catalogue.find((x) => x.id === layerId);
