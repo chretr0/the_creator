@@ -4,6 +4,7 @@ import ContextPanel, { ImageryPanel } from "./components/ContextPanel";
 import ContextInspector from "./components/ContextInspector";
 import SearchPanel from "./components/SearchPanel";
 import PlaceSearch from "./components/PlaceSearch";
+import GridOutlinesMenu from "./components/GridOutlinesMenu";
 import { CONTEXT_LAYER_IDS, useContextData } from "./lib/useContextData";
 import type { CablePath, Earthquake, Fire, LandingPoint, PowerFeature } from "./lib/context";
 import {
@@ -56,12 +57,12 @@ import {
   type InfraManifest,
 } from "./lib/infrastructure";
 import { api, type Project, type ProjectInput, type Scenario, type ScenarioSummary } from "./lib/api";
-import { cellContains, displayCell, normaliseLongitude, simulationCell } from "./lib/h3grid";
+import { cellContains, displayCell, normaliseLongitude, parseHexOutlines, simulationCell, type HexOutlines } from "./lib/h3grid";
 
 type ExploreSection = "library" | "environment" | "infrastructure" | "records" | "context" | "imagery" | "sources";
 const EXPLORE_SECTIONS = [
   { value: "environment", label: "Environment", icon: "sun", detail: "Climate, water, land & more" },
-  { value: "infrastructure", label: "Infrastructure", icon: "building", detail: "Energy, grid, datacentres & transport" },
+  { value: "infrastructure", label: "Infrastructure", icon: "building", detail: "Energy, grid, datacentres, transport & rivers" },
   { value: "records", label: "Mapped records", icon: "pin", detail: "Features, filters & datasets" },
   { value: "context", label: "Context & hazards", icon: "globe", detail: "Boundaries, fires & quakes" },
   { value: "imagery", label: "Satellite imagery", icon: "layers", detail: "Products, dates & prepared scenes" },
@@ -76,11 +77,11 @@ type Mode = { kind: "inspect" } | { kind: "move"; projectId: string };
 const LAST_SCENARIO_KEY = "newworlds:lastScenario";
 const HEX_OUTLINES_KEY = "newworlds:hexOutlines";
 
-function readHexOutlines(): boolean {
+function readHexOutlines(): HexOutlines {
   try {
-    return localStorage.getItem(HEX_OUTLINES_KEY) !== "false";
+    return parseHexOutlines(localStorage.getItem(HEX_OUTLINES_KEY));
   } catch {
-    return true;
+    return "near";
   }
 }
 
@@ -145,14 +146,14 @@ export default function App() {
   const [companyFilter, setCompanyFilter] = useState<string | null>(null);
   const [selectedFacilityId, setSelectedFacilityId] = useState<string | null>(null);
   const [tilted, setTilted] = useState(false);
-  const [showHexOutlines, setShowHexOutlines] = useState(readHexOutlines);
+  const [hexOutlines, setHexOutlines] = useState<HexOutlines>(readHexOutlines);
   useEffect(() => {
     try {
-      localStorage.setItem(HEX_OUTLINES_KEY, String(showHexOutlines));
+      localStorage.setItem(HEX_OUTLINES_KEY, hexOutlines);
     } catch {
       // Keep the control usable when browser storage is unavailable.
     }
-  }, [showHexOutlines]);
+  }, [hexOutlines]);
   const [view, setView] = useState<MapView | null>(null);
   const [sideTab, setSideTab] = useState<Tab>("layers");
   const [buildStage, setBuildStage] = useState<BuildStage>("building");
@@ -741,7 +742,7 @@ export default function App() {
         <main className="map-wrap" aria-label="Interactive world map">
           <WorldMap
             theme={theme}
-            showHexOutlines={showHexOutlines}
+            hexOutlines={hexOutlines}
             projects={projects}
             selectedProjectId={selectedProjectId}
             selectedCell={selection?.h3Id ?? null}
@@ -786,9 +787,7 @@ export default function App() {
                 <Icon name="plus" size={17} /> Add building
               </button>
               <span className="sep" />
-              <button className={showHexOutlines ? "active" : ""} aria-label="Hexagon outlines" aria-pressed={showHexOutlines} onClick={() => setShowHexOutlines((shown) => !shown)} title={showHexOutlines ? "Hide hexagon outlines" : "Show hexagon outlines"}>
-                <Icon name="hexagon" size={17} /> Grid
-              </button>
+              <GridOutlinesMenu value={hexOutlines} onChange={setHexOutlines} />
               <button className={tilted ? "active" : ""} aria-pressed={tilted} onClick={() => setTilted((t) => !t)} title="Tilt the map and show 3D buildings when zoomed in">
                 3D
               </button>

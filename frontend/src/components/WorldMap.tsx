@@ -5,8 +5,9 @@ import { H3HexagonLayer } from "@deck.gl/geo-layers";
 import { impactColour, timeLabel, type ImpactCell, type TimelineOverlay } from "../lib/timeline";
 import { GeoJsonLayer, LineLayer, ScatterplotLayer, TextLayer } from "@deck.gl/layers";
 import { WebMercatorViewport, type Layer, type PickingInfo } from "@deck.gl/core";
+import { getResolution, gridDiskDistances, latLngToCell } from "h3-js";
 import type { Project } from "../lib/api";
-import { normaliseLongitude, viewportCells, type ViewportCells } from "../lib/h3grid";
+import { normaliseLongitude, viewportCells, type HexOutlines, type ViewportCells } from "../lib/h3grid";
 import { typeColour, typeLabel } from "../lib/projectTypes";
 import { PRESET_DRAG_TYPE, STATE_COLOUR, STATE_LABEL, type CellState } from "../lib/buildings";
 import { facilityMetric, facilityTitle, formatKv, formatKw, LAYER_META, type Facility } from "../lib/infrastructure";
@@ -25,6 +26,16 @@ function stemHeightM(map: maplibregl.Map, tilted: boolean): number {
   const metresPerPx = (40075016.686 * Math.cos((map.getCenter().lat * Math.PI) / 180)) / (512 * 2 ** map.getZoom());
   return Math.min(STEM_HEIGHT_M, STEM_MAX_PX * metresPerPx);
 }
+// Hexagon borders are drawn only near the cursor: this many rings around the hovered cell,
+// fading out with distance.
+const PROXIMITY_RINGS = 3;
+type ProximityCell = { h3: string; ring: number };
+
+function proximityCells(centre: string | null): ProximityCell[] {
+  if (!centre) return [];
+  return gridDiskDistances(centre, PROXIMITY_RINGS).flatMap((ring, i) => ring.map((h3) => ({ h3, ring: i })));
+}
+
 // Facility labels appear from this zoom and are thinned by a screen-space grid budget, the same
 // approach as gods-eye-view (one label per grid cell, highest priority wins, capped total).
 const LABEL_MIN_ZOOM = 5;
@@ -104,8 +115,8 @@ export type SceneImage = { id: string; url: string; bounds: [number, number, num
 
 type Props = {
   theme: Theme;
-  /** Show hexagon borders; fills, markers and picking remain available when hidden. */
-  showHexOutlines: boolean;
+  /** Hexagon borders everywhere, only near the cursor, or off; fills, markers and picking are unaffected. */
+  hexOutlines: HexOutlines;
   projects: Project[];
   selectedProjectId: string | null;
   selectedCell: string | null;
@@ -158,6 +169,10 @@ export default function WorldMap(props: Props) {
   const [labelled, setLabelled] = useState<Facility[]>([]);
   const [stemM, setStemM] = useState(0);
   const [dropping, setDropping] = useState(false);
+  const [hoverCell, setHoverCell] = useState<string | null>(null);
+  const gridResolution = useRef(0);
+  const cursor = useRef<{ lat: number; lng: number } | null>(null);
+  gridResolution.current = grid.resolution;
 
   // Keep latest callbacks without re-creating the map.
   const propsRef = useRef(props);
@@ -219,6 +234,20 @@ export default function WorldMap(props: Props) {
       applyBasemapTheme(map, basemapRef.current, propsRef.current.theme);
     });
     map.on("moveend", refreshGrid);
+    // Track the display cell under the cursor; state only changes when it moves to another cell.
+    const trackHover = (e: maplibregl.MapMouseEvent) => {
+      const { lat, lng } = e.lngLat;
+      if (!(lat >= -90 && lat <= 90)) return;
+      cursor.current = { lat, lng: normaliseLongitude(lng) };
+      const cell = latLngToCell(lat, normaliseLongitude(lng), gridResolution.current);
+      setHoverCell((prev) => (prev === cell ? prev : cell));
+    };
+    const clearHover = () => {
+      cursor.current = null;
+      setHoverCell(null);
+    };
+    map.on("mousemove", trackHover);
+    map.on("mouseout", clearHover);
     // The inspector and workspace panels resize the canvas without a window resize.
     const resize = new ResizeObserver(() => map.resize());
     resize.observe(containerRef.current!);
@@ -400,6 +429,17 @@ export default function WorldMap(props: Props) {
     const colourTrigger = [facilities, facilityColour];
     const dark = props.theme === "dark";
     const selectionLine: [number, number, number, number] = dark ? [150, 192, 255, 255] : [15, 23, 42, 255];
+    const proximityRgb: RGB = props.cellFill ? (dark ? [148, 163, 184] : [51, 65, 85]) : dark ? [140, 172, 214] : [70, 98, 136];
+    const proximityAlpha = dark ? 150 : 130;
+    // After a zoom changes the display resolution, re-resolve the cursor's cell at the new one.
+    const pos = cursor.current;
+    const centre =
+      hoverCell && getResolution(hoverCell) !== grid.resolution && pos
+        ? latLngToCell(pos.lat, pos.lng, grid.resolution)
+        : hoverCell;
+    const nearCursor = props.hexOutlines === "near" ? proximityCells(centre) : [];
+    // Overlay outlines (timeline, assessment, buildings, selection) carry meaning: hidden only when off.
+    const overlayOutlines = props.hexOutlines !== "off";
 
     const layers = [
       new H3HexagonLayer<string>({
@@ -407,7 +447,8 @@ export default function WorldMap(props: Props) {
         data: grid.cells,
         getHexagon: (d) => d,
         filled: true,
-        stroked: props.showHexOutlines,
+        // In "near" mode borders are drawn by "grid-proximity" around the cursor instead.
+        stroked: props.hexOutlines === "all",
         extruded: false,
         highPrecision: true,
         // Neutral "no data" styling unless a baseline layer is active.
@@ -420,13 +461,26 @@ export default function WorldMap(props: Props) {
         autoHighlight: true,
         highlightColor: [59, 130, 246, 60],
       }),
+      new H3HexagonLayer<ProximityCell>({
+        id: "grid-proximity",
+        data: nearCursor,
+        getHexagon: (c) => c.h3,
+        filled: false,
+        stroked: true,
+        extruded: false,
+        highPrecision: true,
+        getLineColor: (c) => [...proximityRgb, Math.round(proximityAlpha * (1 - c.ring / (PROXIMITY_RINGS + 1)))],
+        updateTriggers: { getLineColor: [proximityRgb.join(), proximityAlpha] },
+        lineWidthUnits: "pixels",
+        getLineWidth: 1,
+      }),
       ...props.contextLayers,
       new H3HexagonLayer<ImpactCell>({
         id: "timeline-impact",
         data: props.timeline?.cells.filter((c) => c.relevant !== false) ?? [],
         getHexagon: (c) => c.h3Id,
         getFillColor: (c) => impactColour(c.value, props.timeline?.max ?? 1),
-        stroked: props.showHexOutlines,
+        stroked: overlayOutlines,
         getLineColor: [80, 115, 150, 90],
         lineWidthMinPixels: 0.5,
         pickable: true,
@@ -438,7 +492,7 @@ export default function WorldMap(props: Props) {
         data: props.assessmentCells ?? [],
         getHexagon: (c) => c.h3Id,
         filled: true,
-        stroked: props.showHexOutlines,
+        stroked: overlayOutlines,
         extruded: false,
         highPrecision: true,
         getFillColor: props.assessmentStyle?.fill ?? ((c) => [...STATE_COLOUR[c.state], 110]),
@@ -453,7 +507,7 @@ export default function WorldMap(props: Props) {
         data: projects,
         getHexagon: (p) => p.h3Id,
         filled: true,
-        stroked: props.showHexOutlines,
+        stroked: overlayOutlines,
         extruded: false,
         highPrecision: true,
         getFillColor: (p) => [...typeColour(p.type), 60],
@@ -466,7 +520,7 @@ export default function WorldMap(props: Props) {
         data: selectedCell ? [selectedCell] : [],
         getHexagon: (d) => d,
         filled: true,
-        stroked: props.showHexOutlines,
+        stroked: overlayOutlines,
         extruded: false,
         highPrecision: true,
         getFillColor: [37, 99, 235, 40],
@@ -632,6 +686,7 @@ export default function WorldMap(props: Props) {
     });
   }, [
     grid,
+    hoverCell,
     labelled,
     stemM,
     props.projects,
@@ -648,7 +703,7 @@ export default function WorldMap(props: Props) {
     props.assessmentStyle,
     props.preview,
     props.theme,
-    props.showHexOutlines,
+    props.hexOutlines,
   ]);
 
   // Preset drag-and-drop. HTML5 drag events bubble from the MapLibre and deck.gl canvases to the
