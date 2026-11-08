@@ -2,7 +2,7 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { cellToLatLng, gridDisk } from "h3-js";
 import Icon from "./Icon";
-import { api, ApiError, type Project, type Scenario } from "../lib/api";
+import { api, ApiError, type Project, type ProjectInput, type Scenario } from "../lib/api";
 import type {
   AreaAssessment,
   BuildingDefinition,
@@ -43,6 +43,9 @@ export type BuildTarget = { latitude: number; longitude: number; scenarioId: str
 /** Ask the panel to load a real example into the form (e.g. after it was dropped on the map). */
 export type PresetRequest = { id: string; nonce: number };
 
+/** Ask the panel to load a placed building into the form to edit it (e.g. after it was clicked on the map). */
+export type EditRequest = { projectId: string; nonce: number };
+
 export type BuildStage = "building" | "resources" | "impact";
 
 export const BUILD_STAGES: { id: BuildStage; label: string }[] = [
@@ -80,7 +83,56 @@ type Props = {
   siteHost: HTMLElement | null;
   /** Map layers about what the building needs (electricity → grid, water → rivers …), as specs change. */
   onNeeds?: (needs: LayerNeed[]) => void;
+  /** Whether the form holds unsaved edits (false again on unmount), so leaving can ask first. */
+  onDirtyChange?: (dirty: boolean) => void;
+  /** Load this placed building into the form to edit it; a new nonce loads it again. */
+  editRequest?: EditRequest | null;
+  /** The placed building being edited (null: the form is a new building). */
+  onEditing?: (projectId: string | null) => void;
+  /** A placed building's changes were saved. */
+  onSaved?: (p: Project) => void;
+  /** A placed building was deleted while being edited. */
+  onDeleted?: (p: Project) => void;
 };
+
+/** Everything the form holds, so a new-building draft can be put aside while a placed building is edited. */
+type FormState = {
+  type: BuildingType;
+  templateId: string | null;
+  definitionId: string | null;
+  name: string;
+  description: string;
+  stats: StatsDraft;
+  criteria: CriterionDraft[];
+  basedOn: BuildingPreset | null;
+  /** The form as last loaded (see `hasEdits`). */
+  loadedState: string;
+};
+
+/** The new-building draft put aside while a placed building is edited, restored afterwards. */
+type Stash = FormState & { target: BuildTarget | null; stage: BuildStage; reached: number; hasEdits: boolean };
+
+const EMPTY_SNAPSHOT: DefinitionSnapshot = { schemaVersion: 1, name: "", description: "", stats: {}, criteria: [] };
+
+/** A placed building as form state (legacy projects may come without a snapshot). */
+function projectForm(p: Project): FormState {
+  const snap = { ...EMPTY_SNAPSHOT, ...(p.definition ?? {}) };
+  const stats = statsToDraft(snap.stats, p.parameters ?? {});
+  const description = snap.description ?? "";
+  return {
+    type: p.type,
+    templateId: snap.templateId ?? null,
+    definitionId: null,
+    name: p.name,
+    description,
+    stats,
+    criteria: (snap.criteria ?? []).map(criterionToDraft),
+    basedOn: null,
+    loadedState: JSON.stringify([p.name, description, stats]),
+  };
+}
+
+const projectTarget = (p: Project): BuildTarget => ({ latitude: p.latitude, longitude: p.longitude, scenarioId: p.scenarioId, nonce: Date.now() });
 
 /** The server's cap on one area screening (resolution-6 cells, ~36 km² each). */
 const MAX_AREA_CELLS = 30_000;
@@ -140,6 +192,31 @@ export default function BuildPanel(props: Props) {
   const hasEdits = formState !== loadedState;
   const markLoaded = (n: string, d: string, st: StatsDraft) => setLoadedState(JSON.stringify([n, d, st]));
 
+  // ---- editing a placed building ----
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const editing = editingId ? (scenario?.projects.find((p) => p.id === editingId) ?? null) : null;
+  /** The form as loaded from (or last saved to) the placed building; any difference is unsaved. */
+  const [editBase, setEditBase] = useState<FormState | null>(null);
+  const [stash, setStash] = useState<Stash | null>(null);
+  const [editNote, setEditNote] = useState<string | null>(null);
+  const editKey = (f: Pick<FormState, "type" | "templateId" | "name" | "description" | "stats" | "criteria">) =>
+    JSON.stringify([f.type, templateFor(f.type, f.templateId).id, f.name, f.description, f.stats, f.criteria]);
+  const editDirty = !!editing && !!editBase && editKey({ type, templateId, name, description, stats, criteria }) !== editKey(editBase);
+  const moved = !!editing && !!target && (target.latitude !== editing.latitude || target.longitude !== editing.longitude);
+  const editChanged = editDirty || moved;
+  const editName = editing ? editing.name || template.label : "";
+
+  const onDirtyChange = props.onDirtyChange;
+  const dirty = hasEdits || editChanged || !!stash?.hasEdits;
+  useEffect(() => {
+    onDirtyChange?.(dirty);
+    return () => onDirtyChange?.(false);
+  }, [dirty, onDirtyChange]);
+  const onEditing = props.onEditing;
+  useEffect(() => {
+    onEditing?.(editingId);
+  }, [editingId, onEditing]);
+
   const [definitions, setDefinitions] = useState<BuildingDefinition[]>([]);
   const [defsError, setDefsError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -195,8 +272,10 @@ export default function BuildPanel(props: Props) {
       stats: parsed.stats,
       parameters: parsed.parameters,
       criteria: crit.criteria,
+      // A placed building being edited is not counted twice in shared budgets.
+      ...(editingId ? { excludeProjectId: editingId } : {}),
     }),
-    [scenarioId, type, parsed, crit.criteria],
+    [scenarioId, type, parsed, crit.criteria, editingId],
   );
   /**
    * Revision of every input an assessment depends on; results for another revision are stale. The
@@ -273,8 +352,20 @@ export default function BuildPanel(props: Props) {
       onTarget(null); // don't preview a different building than the one dropped
       return setPresetNote("That example couldn't be loaded, so nothing is previewed.");
     }
+    if (editingId) {
+      // A dropped example is a new building: stop editing the placed one, back to the draft, then load it.
+      if (editDirty && !confirm(`Discard your unsaved changes to “${editName}”?`)) {
+        if (editing) onTarget(projectTarget(editing));
+        return;
+      }
+      const keepDraft = !!stash?.hasEdits && !confirm(`Replace your building draft with “${p.name}”? Your edits to the form will be lost (limits are kept).`);
+      endEditing(false);
+      if (keepDraft) onTarget(null);
+      else loadPreset(p, true);
+      return;
+    }
     if (!loadPreset(p)) onTarget(null); // kept the user's draft: don't preview it at the drop point unasked
-    // loadPreset only sets state.
+    // loadPreset and endEditing only set state.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [presetRequest, presets, presetsLoaded, presetsError]);
 
@@ -296,19 +387,150 @@ export default function BuildPanel(props: Props) {
 
   function startOver() {
     if (!confirm("Clear this definition and start again? Saved definitions and placed buildings are not affected.")) return;
-    setDefinitionId(null);
-    setBasedOn(null);
-    setName("");
-    setDescription("");
-    const st = statsToDraft(templateFor(type, templateId).defaults ?? {}, {});
-    setStats(st);
-    markLoaded("", "", st);
-    setCriteria([]);
-    setSaveNote(null);
+    applyForm(blankForm());
     onTarget(null);
     setReached(0);
     onStage("building");
   }
+
+  function currentForm(): FormState {
+    return { type, templateId, definitionId, name, description, stats, criteria, basedOn, loadedState };
+  }
+
+  function applyForm(f: FormState) {
+    setType(f.type);
+    setTemplateId(f.templateId);
+    setDefinitionId(f.definitionId);
+    setName(f.name);
+    setDescription(f.description);
+    setStats(f.stats);
+    setCriteria(f.criteria);
+    setBasedOn(f.basedOn);
+    setLoadedState(f.loadedState);
+    setSaveNote(null);
+    setPresetNote(null);
+    setSupportNote(null);
+  }
+
+  /** An empty building of the current type, starting from the template's documented defaults. */
+  function blankForm(): FormState {
+    const st = statsToDraft(templateFor(type, templateId).defaults ?? {}, {});
+    return { type, templateId, definitionId: null, name: "", description: "", stats: st, criteria: [], basedOn: null, loadedState: JSON.stringify(["", "", st]) };
+  }
+
+  /** Load a placed building into the form. A new-building draft is put aside until editing ends. */
+  function startEditing(p: Project) {
+    if (editingId === p.id) {
+      if (moved) onTarget(projectTarget(p)); // clicking the building again puts it back where it is placed
+      return;
+    }
+    if (editing && editChanged && !confirm(`Discard your unsaved changes to “${editName}”?`)) return;
+    if (!editingId) setStash({ ...currentForm(), target, stage, reached, hasEdits });
+    const f = projectForm(p);
+    applyForm(f);
+    setEditBase(f);
+    setEditingId(p.id);
+    setEditNote(null);
+    setBuildError(null);
+    setReached(BUILD_STAGES.length - 1); // a placed building is complete: every step is open
+    onTarget(projectTarget(p));
+  }
+
+  /** Back to the new-building draft that was put aside (or an empty one). */
+  function endEditing(restoreTarget = true) {
+    const s = stash;
+    setEditingId(null);
+    setEditBase(null);
+    setStash(null);
+    setEditNote(null);
+    setBuildError(null);
+    applyForm(s ?? blankForm());
+    setReached(s?.reached ?? 0);
+    if (s && s.stage !== stage) onStage(s.stage);
+    if (restoreTarget) onTarget(s?.target ?? null);
+  }
+
+  function stopEditing() {
+    if (editChanged && !confirm(`Discard your unsaved changes to “${editName}”?`)) return;
+    endEditing();
+  }
+
+  /** Undo every unsaved change: the form and the location go back to the placed building. */
+  function discardEdits() {
+    if (!editing) return;
+    const f = projectForm(editing);
+    applyForm(f);
+    setEditBase(f);
+    setEditNote(null);
+    setBuildError(null);
+    onTarget(projectTarget(editing));
+  }
+
+  async function saveEditing() {
+    if (!editing || !target || buildingRef.current) return;
+    if (errorCount) return setBuildError("Fix the highlighted fields first.");
+    const saved = currentForm();
+    const patch: Partial<ProjectInput> = {
+      type,
+      name: name.trim() || template.label,
+      parameters: parsed.parameters,
+      definition: snapshot(),
+    };
+    // Coordinates are only sent when moved, so exact stored values are never re-rounded.
+    if (moved) {
+      patch.latitude = target.latitude;
+      patch.longitude = target.longitude;
+    }
+    if (definitionId) patch.sourceDefinitionId = definitionId;
+    buildingRef.current = true;
+    setBuilding(true);
+    setBuildError(null);
+    try {
+      const updated = await api.updateProject(editing.id, patch);
+      setEditBase(saved);
+      setLoadedState(JSON.stringify([saved.name, saved.description, saved.stats])); // nothing unsaved to lose now
+      setEditNote(`Saved “${updated.name || template.label}”.`);
+      props.onSaved?.(updated);
+      onTarget(projectTarget(updated));
+    } catch (e) {
+      setBuildError(message(e)); // the changes are kept
+    } finally {
+      buildingRef.current = false;
+      setBuilding(false);
+    }
+  }
+
+  async function deleteEditing() {
+    if (!editing || !scenario) return;
+    if (!confirm(`Remove “${editName}” from ${scenario.name}? This can't be undone.`)) return;
+    const p = editing;
+    try {
+      await api.deleteProject(p.id);
+      endEditing();
+      props.onDeleted?.(p);
+    } catch (e) {
+      setBuildError(message(e));
+    }
+  }
+
+  // A placed building clicked on the map (or "Edit" elsewhere): load it, once per request.
+  const handledEdit = useRef<number | null>(null);
+  const editRequest = props.editRequest;
+  useEffect(() => {
+    if (!editRequest || handledEdit.current === editRequest.nonce || !scenario) return;
+    handledEdit.current = editRequest.nonce;
+    const p = scenario.projects.find((x) => x.id === editRequest.projectId);
+    if (p) startEditing(p);
+    // startEditing only sets state.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editRequest, scenario]);
+
+  // The building being edited is gone (deleted elsewhere, or another world is shown): back to the draft.
+  useEffect(() => {
+    if (editingId && scenario && !scenario.projects.some((p) => p.id === editingId)) endEditing();
+    // endEditing only sets state.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editingId, scenario]);
 
   async function saveDefinition(asNew: boolean) {
     if (!name.trim()) return setSaveNote({ ok: false, text: "Give the building a name before saving." });
@@ -447,6 +669,11 @@ export default function BuildPanel(props: Props) {
     if (target && scenario && target.scenarioId !== scenario.id) onTarget(null);
   }, [target, scenario, onTarget]);
 
+  // While editing, the building always has a location: clearing it (Esc) puts it back where it is placed.
+  useEffect(() => {
+    if (editing && !target) onTarget(projectTarget(editing));
+  }, [editing, target, onTarget]);
+
   useEffect(() => {
     if (!target || !targetOk || errorCount) return;
     const ctrl = new AbortController();
@@ -549,7 +776,9 @@ export default function BuildPanel(props: Props) {
 
 
   const colour = `rgb(${typeColour(type).join(",")})`;
-  const canBuild = targetOk && !building && !errorCount && (locFresh || !!locError);
+  const canBuild = editing
+    ? targetOk && !building && !errorCount && editChanged
+    : targetOk && !building && !errorCount && (locFresh || !!locError);
   const blocked = firstErrorStep >= 0
     ? `Fix ${fieldCount(stepErrors[firstErrorStep])} in ${BUILD_STAGES[firstErrorStep].label}`
     : null;
@@ -562,6 +791,26 @@ export default function BuildPanel(props: Props) {
   return (
     <div className="build-workflow">
       <div className="workflow-header">
+        {editing && (
+          <div className="edit-banner" role="status">
+            <span className="dot" style={{ background: colour }} />
+            <div className="edit-banner-text">
+              <span className="eyebrow">EDITING PLACED BUILDING</span>
+              <strong>{editName}</strong>
+              <small className={editChanged ? "warn" : "muted"}>
+                {editChanged ? "Unsaved changes: save them in the site check" : "Change it here, or click the map to move it"}
+              </small>
+            </div>
+            <div className="edit-banner-actions">
+              <button type="button" className="ghost danger" onClick={deleteEditing}>
+                Delete
+              </button>
+              <button type="button" onClick={stopEditing} title={stash ? "Stop editing and go back to your new building" : "Stop editing"}>
+                Done
+              </button>
+            </div>
+          </div>
+        )}
         <nav className="build-steps" aria-label="Building workflow">
           {BUILD_STAGES.map((s, i) => (
             <button
@@ -698,7 +947,7 @@ export default function BuildPanel(props: Props) {
             <button type="button" onClick={() => onStage(BUILD_STAGES[stageIndex - 1].id)}>
               Back
             </button>
-          ) : (
+          ) : editing ? null : (
             <button type="button" className="ghost" onClick={startOver}>
               Start over
             </button>
@@ -740,9 +989,10 @@ export default function BuildPanel(props: Props) {
             building={building}
             buildError={buildError}
             supportNote={supportNote}
-            onBuild={() => buildHere()}
+            onBuild={() => (editing ? saveEditing() : buildHere())}
             onCancel={() => onTarget(null)}
-            onSupport={canBuild ? placeWithSupport : undefined}
+            onSupport={canBuild && !editing ? placeWithSupport : undefined}
+            edit={editing ? { moved, changed: editChanged, note: editChanged ? null : editNote, onDiscard: discardEdits, onStop: stopEditing } : null}
             onApplyPrice={(o) => setStats((st) => applyLocationPrice(st, o))}
             onRemovePrice={(r) => setStats((st) => removeLocationPrice(st, r))}
             colourBy={props.colourBy}

@@ -348,6 +348,11 @@ export const EVIDENCE_LABEL: Record<string, string> = {
   modelled: "model output",
   reanalysis: "reanalysis (model + observations)",
   reference: "reference service",
+  // Moon sources
+  reference_gazetteer: "reference gazetteer (IAU names)",
+  planned: "planned / announced",
+  rule: "rule or recommendation",
+  orbital_retrieval: "orbital retrieval",
 };
 
 type Bounds = { west: number; south: number; east: number; north: number };

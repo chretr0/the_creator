@@ -462,3 +462,38 @@ Run these for every source before writing an adapter (catalogue §19):
 - [ ] Missing values are recognised as nodata, not 0.
 - [ ] `source.json` is filled in, including licence, attribution text, version and retrieval date.
 - [ ] Note the date the data describes, which is not the date you downloaded it.
+
+---
+
+## 7. Moon data (`MOON-*` sources)
+
+The Moon catalogue is [CLAUDE-Moon-Data-Sources.md](../CLAUDE-Moon-Data-Sources.md). The same rules apply: every layer has provenance, missing values are null (never 0), and approximate positions are flagged.
+
+**Where it lives**
+
+- `data/raw/MOON-<ID>/`: downloads (gitignored) plus a committed `source.json` with URL, redirect target, retrieval time, size, sha256, licence and credit.
+- `data/prepared/moon/`: what the backend serves under `/api/moon`.
+  - `source.json`: manifest of sources and layers.
+  - `sites/anthropogenic_objects.geojson`: landers, rovers, impacts, retroreflectors, with heritage keep-out class.
+  - `places/gazetteer.json`: IAU names.
+  - `regions/mare.geojson`: mare outlines.
+  - `missions/planned.geojson`: planned missions and Artemis candidate regions.
+  - `h3/`: H3 layers. `layers.json` is committed; the Parquet files are gitignored.
+- Frame: IAU_2015:30100 Moon Mean-Earth, R = 1737.4 km, planetocentric, longitudes normalised to [-180, 180).
+- The Moon is prepared globally. The Earth `arizona` / `uk` region rule does not apply (catalogue §2.4).
+
+**Regenerate**
+
+```bash
+(cd backend && uv run --with pyshp python ../scripts/moon/prepare_moon_reference.py)   # add --refresh to re-download
+(cd backend && uv run python ../scripts/moon/prepare_moon_elevation.py)                # LOLA elevation H3 layer (MOON-TOPO-02)
+```
+
+Run the block from the repo root; each line runs in a subshell, so the shell stays where it was. `pyshp` is pulled in for that one run; it is not a backend dependency. Downloads are cached in `data/raw/`, so a re-run without `--refresh` works offline.
+
+**Gotchas the reference script handles**
+
+- **LROC `DATE`:** documented as the arrival date, but it holds the launch date for the Luna 16–24 landers and rovers and for Surveyor 1. Each of those rows gets a `dateNote` with the NASA NSSDCA landing date (Luna 23's comes from its NSSDCA Master Catalog entry, because the Soviet-missions page lists only its launch). The script prints a warning if a launch-dated row has no NSSDCA landing date.
+- **LROC `RADIUS`:** distance from the Moon's centre in metres. `elevationM = RADIUS − 1 737 400`.
+- **Gazetteer `center_lon`:** 0–360, converted to ±180. A diameter of 0 means "unknown" and becomes null.
+- **Mare DBF:** lost its diacritics (`Chrtien`, `Von Krmn`); names are restored to IAU spelling. 7 self-intersecting polygons are repaired.

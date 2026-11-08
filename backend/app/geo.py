@@ -5,7 +5,12 @@
 - H3 IDs are always lowercase hex strings.
 """
 
+import re
+
 import h3
+
+from app import bodies
+from app.bodies import EARTH, Body
 
 SIMULATION_RESOLUTION = 6
 MAX_RESOLUTION = 15
@@ -40,14 +45,30 @@ def simulation_cell(latitude: float, longitude: float) -> str:
     return h3.latlng_to_cell(latitude, longitude, SIMULATION_RESOLUTION)
 
 
+_CELL_ID = re.compile(r"[0-9a-f]{15}")
+
+
 def validate_cell(h3_id: str) -> str:
-    h3_id = h3_id.strip().lower()
-    if not h3.is_valid_cell(h3_id):
-        raise InvalidCell(f"{h3_id!r} is not a valid H3 cell")
-    return h3_id
+    """The stripped, lower-case id of a valid H3 cell; raises InvalidCell for anything else.
+
+    Only the canonical 15-hex-digit form gets as far as h3: its parser is int(s, 16), which also
+    takes "0x"/"+"/"_"/leading zeros/full-width digits and raises OverflowError (not ValueError)
+    on ids that do not fit 64 bits, e.g. "fffffffffffffffff" or "-1".
+    """
+    s = h3_id.strip().lower() if isinstance(h3_id, str) else None
+    try:
+        ok = s is not None and _CELL_ID.fullmatch(s) is not None and h3.is_valid_cell(s)
+    except (ValueError, TypeError, OverflowError):
+        ok = False
+    if not ok:
+        raise InvalidCell(f"{s if s is not None else h3_id!r} is not a valid H3 cell")
+    return s
 
 
-def describe_cell(h3_id: str) -> dict:
+def describe_cell(h3_id: str, body: Body | str = EARTH) -> dict:
+    """Cell geometry and hierarchy. IDs, centre and boundary are body-independent; lengths and
+    areas use the body's radius (Earth: identical to h3's km values)."""
+    body = bodies.get(body)
     h3_id = validate_cell(h3_id)
     resolution = h3.get_resolution(h3_id)
     lat, lng = h3.cell_to_latlng(h3_id)
@@ -61,7 +82,9 @@ def describe_cell(h3_id: str) -> dict:
         "is_pentagon": h3.is_pentagon(h3_id),
         "centre": {"latitude": lat, "longitude": lng},
         "boundary": ring,
-        "area_km2": h3.cell_area(h3_id, unit="km^2"),
+        "body": body.id,
+        "area_km2": bodies.cell_area_km2(h3_id, body),
+        "edge_length_km": bodies.edge_length_km(resolution, body),
         "neighbours": neighbours,
         "parent": h3.cell_to_parent(h3_id, resolution - 1) if resolution > 0 else None,
         "simulation_cell": (

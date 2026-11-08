@@ -1,0 +1,154 @@
+{
+  "body": "moon",
+  "generatedAt": "2026-11-08T03:00:37Z",
+  "generator": "scripts/moon/prepare_moon_reference.py",
+  "frame": "IAU_2015:30100 Moon Mean-Earth, planetocentric, east-positive longitude in [-180, 180), R = 1737.4 km",
+  "sources": {
+    "MOON-SITE-01": {
+      "id": "MOON-SITE-01",
+      "name": "LROC Anthropogenic Objects",
+      "provider": "LROC Science Operations Center, Arizona State University (NASA Lunar Reconnaissance Orbiter), via NASA PDS",
+      "licence": "U.S. public domain (NASA PDS); credit requested",
+      "attribution": "NASA/GSFC/Arizona State University. Wagner, R. V. et al. (2017) Coordinates of anthropogenic features on the Moon. Icarus 283, 92-103, doi:10.1016/j.icarus.2016.05.011",
+      "evidenceType": "reported_record",
+      "url": "https://pds.lroc.im-ldi.com/data/LRO-L-LROC-5-RDR-V1.0/LROLRC_2001/EXTRAS/SHAPEFILE/ANTHROPOGENIC_OBJECTS/ANTHROPOGENIC_OBJECTS_180.ZIP",
+      "retrievedAt": "2026-11-08T02:31:13Z",
+      "limitations": [
+        "Only objects located in LROC NAC images are listed; Luna 9 and Luna 13 are added from NASA NSSDCA (MOON-SITE-01-SUPPLEMENT), while impact sites never seen from orbit (Luna 2, Ranger 4, SMART-1, Lunar Prospector, most LM ascent stages and spent stages) are not included.",
+        "DATE is documented as the arrival date, but for Luna 16, Luna 17, Luna 20, Luna 21, Luna 23, Luna 24 and Surveyor 1 it holds the launch date; affected rows carry a dateNote.",
+        "elevationM = RADIUS - 1 737 400 m: height above the reference sphere, not above a geoid or local terrain.",
+        "Coordinate uncertainty is LROC's own figure (metres); 0 m means a laser-ranging position.",
+        "kind is derived from LROC's OBJECT text by this project; heritage marks which NASA-2011 keep-out radius the backend draws (see MOON-SITE-06)."
+      ],
+      "commercialUse": true,
+      "notes": "71 LROC rows (release of 2026-08-14) plus 2 supplement rows. Name = SHORT_NAME; VEHCL_NAME kept as `vehicle`."
+    },
+    "MOON-SITE-01-SUPPLEMENT": {
+      "id": "MOON-SITE-01-SUPPLEMENT",
+      "name": "Soft landings missing from the LROC list (supplement)",
+      "provider": "NASA Space Science Data Coordinated Archive (NSSDCA)",
+      "licence": "U.S. public domain (NASA)",
+      "attribution": "NASA NSSDCA, D. R. Williams: Soviet Missions to the Moon; Surveyor missions",
+      "evidenceType": "reported_record",
+      "url": "https://nssdc.gsfc.nasa.gov/planetary/lunar/lunarussr.html",
+      "retrievedAt": "2026-11-08",
+      "limitations": [
+        "Reported landing positions (0.01° precision), not measured from orbit: the Luna 9 and Luna 13 landers have not been identified in LROC images, so their true positions may differ.",
+        "Added because CLAUDE-Moon-Data-Sources.md §9 (MOON-SITE-01 gotcha 3) lists them as missing; every §9 soft landing with a coordinate was found in the LROC file, so no catalogue coordinate had to be added."
+      ],
+      "commercialUse": true,
+      "notes": "Rows: Luna9, Luna13. Landing dates (supplement rows and dateNotes) come from NASA NSSDCA: https://nssdc.gsfc.nasa.gov/planetary/lunar/lunarussr.html, https://nssdc.gsfc.nasa.gov/nmc/spacecraft/display.action?id=1974-084A, https://nssdc.gsfc.nasa.gov/planetary/lunar/surveyor.html."
+    },
+    "MOON-PLACE-01": {
+      "id": "MOON-PLACE-01",
+      "name": "Gazetteer of Planetary Nomenclature (Moon centre points)",
+      "provider": "IAU Working Group for Planetary System Nomenclature (WGPSN) / USGS Astrogeology Science Center",
+      "licence": "U.S. public domain (USGS); names are IAU-approved nomenclature",
+      "attribution": "Gazetteer of Planetary Nomenclature, Planetary Geomatics Group of the USGS Astrogeology Science Center, https://planetarynames.wr.usgs.gov. International Astronomical Union (IAU) Working Group for Planetary System Nomenclature (WGPSN)",
+      "evidenceType": "reference_gazetteer",
+      "url": "https://asc-planetarynames-data.s3.us-west-2.amazonaws.com/MOON_nomenclature_center_pts.zip",
+      "retrievedAt": "2026-11-08T02:31:25Z",
+      "limitations": [
+        "Centre points and nominal diameters only; names are labels, not surveyed boundaries.",
+        "The file is rebuilt nightly upstream; this copy is a snapshot at retrievedAt.",
+        "A diameter of 0 upstream (unknown, e.g. Statio landing-site names) is null here.",
+        "approved is the IAU approval year (the gazetteer stores most dates as 1 January of that year) or the full date when one is given.",
+        "A lettered crater's origin is null when it only repeats its parent crater's eponym; read it from the parent entry (same name without the letter)."
+      ],
+      "commercialUse": true,
+      "notes": "Approved ('Adopted by IAU') names only; longitudes converted from 0-360 to ±180; coordinates rounded to 4 decimals (~3 m); diameters to 3 significant figures; id = USGS Feature ID; type = singular descriptor ('Crater, craters' -> 'Crater'; 'Satellite Feature' -> 'Lettered crater', the IAU's own definition of lunar satellite features); approved = IAU approval year, or full date when not 1 January. origin is null on 6999 lettered craters whose text repeats their parent crater's word for word (the parent entry keeps it), to keep the file under 2 MB."
+    },
+    "MOON-PLACE-02": {
+      "id": "MOON-PLACE-02",
+      "name": "LROC global mare boundaries (65°S-65°N)",
+      "provider": "LROC Science Operations Center, Arizona State University (NASA Lunar Reconnaissance Orbiter), via NASA PDS",
+      "licence": "U.S. public domain (NASA PDS); credit requested",
+      "attribution": "NASA/GSFC/Arizona State University. Nelson, D. M. et al. (2014) Mapping lunar maria extents and lobate scarps using LROC image products. LPSC 45, abstract 2861",
+      "evidenceType": "reference_geometry",
+      "url": "https://pds.lroc.im-ldi.com/data/LRO-L-LROC-5-RDR-V1.0/LROLRC_2001/EXTRAS/SHAPEFILE/LROC_GLOBAL_MARE/LROC_GLOBAL_MARE_180.ZIP",
+      "retrievedAt": "2026-11-08T02:31:27Z",
+      "limitations": [
+        "Covers 65°S-65°N only: no mare outlines near the poles.",
+        "Digitised at 1:200,000-1:500,000 from WAC and Clementine mosaics, then simplified here (Douglas-Peucker 0.015° ≈ 455 m, coordinates snapped to 0.001°): use for context and cell lookup, not for boundaries.",
+        "Some names are LROC unit names rather than IAU features (e.g. 'Oceanus Procellarum - south', 'Cognitum East')."
+      ],
+      "commercialUse": true,
+      "notes": "644 polygons merged into 97 features by MARE_NAME; 7 self-intersecting polygons repaired (shapely make_valid); simplification tolerance 0.015°; areaKm2 = sum of the upstream AREA_KM values; diacritics lost in the DBF and two typos restored to IAU spelling."
+    },
+    "MOON-SITE-02": {
+      "id": "MOON-SITE-02",
+      "name": "Planned missions and Artemis candidate regions, 2027-2030 (curated)",
+      "provider": "New Worlds project curation (CLAUDE-Moon-Data-Sources.md §9) from NASA, CNSA, ISRO, JAXA and company announcements",
+      "licence": "Project compilation of public announcements (facts; no upstream licence)",
+      "attribution": "Curated by the New Worlds project; Artemis regions: NASA (Oct 2024)",
+      "evidenceType": "planned",
+      "url": "https://www.nasa.gov/news-release/nasa-provides-update-on-artemis-iii-moon-landing-regions/",
+      "retrievedAt": "2026-11-08",
+      "limitations": [
+        "Announced plans as of 2026-11-08; dates slip often and targets change.",
+        "NASA published no polygons for the Artemis regions: each box is ~15 × 15 km centred on the anchor feature, while the real region sits on that feature's rim or flank.",
+        "Mission points are approximate (catalogue coordinates or gazetteer feature centres); missions without a published site have no geometry."
+      ],
+      "commercialUse": true,
+      "notes": "url is NASA's Oct 2024 Artemis landing-regions update; mission rows follow the catalogue's §9 table."
+    },
+    "MOON-SITE-06": {
+      "id": "MOON-SITE-06",
+      "name": "NASA's Recommendations to Space-Faring Entities: How to Protect and Preserve the Historic and Scientific Value of U.S. Government Lunar Artifacts (Rev A)",
+      "provider": "NASA",
+      "licence": "U.S. public domain (NASA)",
+      "attribution": "NASA (2011), Recommendations to Space-Faring Entities, Rev A, 28 Oct 2011",
+      "evidenceType": "rule",
+      "url": "https://www.nasa.gov/wp-content/uploads/2017/10/617743main_nasa-usg_lunar_historic_sites_reva-508.pdf",
+      "retrievedAt": "2026-11-08",
+      "limitations": [
+        "Recommendations, not law: the document states it does not represent mandatory U.S. government or international requirements.",
+        "Written for U.S. government artifacts; this app applies the same radii to every nation's landing and impact sites as a modelling choice.",
+        "2.0 km around heritage landing and roving hardware and 0.5 km around heritage impact sites bound the descent/landing path; the Apollo 11 (75 m) and Apollo 17 (225 m) walking limits are not drawn.",
+        "Rings are centred on each site's recorded coordinate; experiments and retroreflectors get no ring of their own because they lie inside their lunar module's 2.0 km ring."
+      ],
+      "commercialUse": true,
+      "parameters": {
+        "heritage_landing": {
+          "radiusM": 2000
+        },
+        "heritage_impact": {
+          "radiusM": 500
+        }
+      },
+      "notes": "Applied to sites whose heritage property is 'landing' or 'impact' in sites/anthropogenic_objects.geojson."
+    }
+  },
+  "layers": [
+    {
+      "id": "moon_sites",
+      "file": "sites/anthropogenic_objects.geojson",
+      "source": "MOON-SITE-01",
+      "count": 73
+    },
+    {
+      "id": "moon_places",
+      "file": "places/gazetteer.json",
+      "source": "MOON-PLACE-01",
+      "count": 9087
+    },
+    {
+      "id": "moon_mare",
+      "file": "regions/mare.geojson",
+      "source": "MOON-PLACE-02",
+      "count": 97,
+      "simplification": {
+        "method": "Douglas-Peucker (shapely, preserve_topology)",
+        "toleranceDeg": 0.015,
+        "toleranceM": 455,
+        "gridDeg": 0.001
+      }
+    },
+    {
+      "id": "moon_missions",
+      "file": "missions/planned.geojson",
+      "source": "MOON-SITE-02",
+      "count": 23
+    }
+  ]
+}

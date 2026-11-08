@@ -13,6 +13,9 @@ import { PRESET_DRAG_TYPE, STATE_COLOUR, STATE_LABEL, type CellState } from "../
 import { facilityMetric, facilityTitle, formatKv, formatKw, LAYER_META, type Facility } from "../lib/infrastructure";
 import { applyBasemapTheme } from "../lib/mapTheme";
 import type { Theme } from "../lib/theme";
+import type { Body } from "../bodies";
+import { metresPerPixel, scaleBar } from "../lib/bodyGeometry";
+import { isBackgroundLayer } from "../lib/mapPicking";
 
 type RGB = [number, number, number];
 
@@ -21,9 +24,9 @@ type RGB = [number, number, number];
 const STEM_HEIGHT_M = 1500;
 const STEM_MAX_PX = 70;
 
-function stemHeightM(map: maplibregl.Map, tilted: boolean): number {
+function stemHeightM(map: maplibregl.Map, tilted: boolean, radiusKm: number): number {
   if (!tilted) return 0;
-  const metresPerPx = (40075016.686 * Math.cos((map.getCenter().lat * Math.PI) / 180)) / (512 * 2 ** map.getZoom());
+  const metresPerPx = metresPerPixel(map.getCenter().lat, map.getZoom(), radiusKm);
   return Math.min(STEM_HEIGHT_M, STEM_MAX_PX * metresPerPx);
 }
 // Hexagon borders are drawn only near the cursor: this many rings around the hovered cell,
@@ -80,8 +83,47 @@ function pickLabels(map: maplibregl.Map, facilities: Facility[], selectedId: str
     .map((x) => x.f);
 }
 
-// OpenFreeMap basemap (OSM data).
-const STYLE_URL = "https://tiles.openfreemap.org/styles/liberty";
+/**
+ * Metric scale bar for bodies other than Earth. MapLibre's ScaleControl measures with Earth's radius
+ * (3.67× too long on the Moon), so this one uses the body's. Same element and class as
+ * ScaleControl, so it shares its styling. Bodies without tilt stay at pitch 0, where the centre
+ * latitude's Web Mercator scale is exact.
+ */
+class BodyScaleControl implements maplibregl.IControl {
+  private readonly radiusKm: number;
+  private readonly maxWidthPx: number;
+  private map: maplibregl.Map | undefined;
+  private container: HTMLDivElement | undefined;
+
+  constructor(radiusKm: number, maxWidthPx = 100) {
+    this.radiusKm = radiusKm;
+    this.maxWidthPx = maxWidthPx;
+  }
+
+  private readonly update = () => {
+    const { map, container } = this;
+    if (!map || !container) return;
+    const { widthPx, label } = scaleBar(metresPerPixel(map.getCenter().lat, map.getZoom(), this.radiusKm), this.maxWidthPx);
+    container.style.width = `${widthPx}px`;
+    if (container.textContent !== label) container.textContent = label;
+  };
+
+  onAdd(map: maplibregl.Map) {
+    this.map = map;
+    this.container = document.createElement("div");
+    this.container.className = "maplibregl-ctrl maplibregl-ctrl-scale body-scale";
+    map.on("move", this.update);
+    this.update();
+    return this.container;
+  }
+
+  onRemove() {
+    this.map?.off("move", this.update);
+    this.container?.remove();
+    this.map = undefined;
+    this.container = undefined;
+  }
+}
 
 export type MapFocus = {
   latitude: number;
@@ -110,10 +152,24 @@ export type RasterImagery = {
 
 const IMAGERY_SOURCE = "context-imagery";
 const SCENE_SOURCE = "scene-image";
+/** Source and layer id prefix for `rasterOverlays` (`overlay-<key>`). */
+const OVERLAY_PREFIX = "overlay-";
+
+/** The basemap's first label or 3D building layer: rasters go beneath it. */
+function labelAnchor(map: maplibregl.Map): string | undefined {
+  return map.getStyle().layers.find((l) => l.type === "symbol" || l.type === "fill-extrusion")?.id;
+}
+
+/** Imagery and scenes go beneath any raster overlays (and so beneath the labels too). */
+function imageryAnchor(map: maplibregl.Map): string | undefined {
+  return map.getLayersOrder().find((id) => id.startsWith(OVERLAY_PREFIX)) ?? labelAnchor(map);
+}
 
 export type SceneImage = { id: string; url: string; bounds: [number, number, number, number] };
 
 type Props = {
+  /** The body being mapped: basemap, starting view, zoom limit, theming, tilt and scale bar. Fixed for the map's lifetime. */
+  body: Body;
   theme: Theme;
   /** Hexagon borders everywhere, only near the cursor, or off; fills, markers and picking are unaffected. */
   hexOutlines: HexOutlines;
@@ -128,9 +184,19 @@ type Props = {
   tilted: boolean;
   /** Context deck.gl layers (boundaries, cables, hazards, power), drawn above the grid. */
   contextLayers: Layer[];
+  /**
+   * Further layer ids that only shade the ground, like the grid: a click on one picks a record within
+   * a few pixels instead, and reports nothing picked when there is none.
+   */
+  backgroundLayerIds?: string[];
   timeline?: TimelineOverlay | null;
   contextTooltip: (layerId: string, object: unknown) => string | null;
   imagery: RasterImagery | null;
+  /**
+   * Extra raster layers (e.g. WMS overlays), above the basemap and `imagery`, below the labels; later
+   * entries draw on top. Keyed by `key`: an opacity change updates the layer in place.
+   */
+  rasterOverlays?: RasterImagery[];
   onViewChange: (view: MapView) => void;
   onMapClick: (latitude: number, longitude: number, picked: Picked | null) => void;
   onGridChange: (grid: { resolution: number; count: number; overview: boolean; cells: string[] }) => void;
@@ -170,6 +236,10 @@ export default function WorldMap(props: Props) {
   const [stemM, setStemM] = useState(0);
   const [dropping, setDropping] = useState(false);
   const [hoverCell, setHoverCell] = useState<string | null>(null);
+  /** True once the style has loaded and sources/layers can be added. */
+  const [styleReady, setStyleReady] = useState(false);
+  /** Tile spec of each applied raster overlay, to re-create its source only when the tiles change. */
+  const overlaySpecs = useRef(new Map<string, string>());
   const gridResolution = useRef(0);
   const cursor = useRef<{ lat: number; lng: number } | null>(null);
   gridResolution.current = grid.resolution;
@@ -179,18 +249,25 @@ export default function WorldMap(props: Props) {
   propsRef.current = props;
 
   useEffect(() => {
+    const { body } = propsRef.current;
     const map = new maplibregl.Map({
       container: containerRef.current!,
-      style: STYLE_URL,
-      center: [10, 30],
-      zoom: 1.6,
+      style: body.style,
+      center: body.initialView.center,
+      zoom: body.initialView.zoom,
+      maxZoom: body.maxZoom,
+      // Without tilt the map stays flat (no touch-pitch either), which the body scale bar relies on.
+      ...(body.tilt ? {} : { maxPitch: 0 }),
       attributionControl: false,
       dragRotate: false,
       pitchWithRotate: false,
     });
     map.touchZoomRotate.disableRotation();
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
-    map.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-left");
+    map.addControl(
+      body.id === "earth" ? new maplibregl.ScaleControl({ unit: "metric" }) : new BodyScaleControl(body.radiusKm),
+      "bottom-left",
+    );
 
     const overlay = new MapboxOverlay({ interleaved: false, layers: [] });
     map.addControl(overlay);
@@ -211,7 +288,7 @@ export default function WorldMap(props: Props) {
         });
         setGrid(next);
         const cur = propsRef.current;
-        const stem = stemHeightM(map, cur.tilted);
+        const stem = stemHeightM(map, cur.tilted, cur.body.radiusKm);
         setStemM(stem);
         setLabelled(pickLabels(map, cur.facilities, cur.selectedFacilityId, stem));
         propsRef.current.onGridChange({
@@ -231,7 +308,8 @@ export default function WorldMap(props: Props) {
     map.on("load", refreshGrid);
     map.on("load", () => {
       basemapRef.current = structuredClone(map.getStyle().layers);
-      applyBasemapTheme(map, basemapRef.current, propsRef.current.theme);
+      if (body.themedBasemap) applyBasemapTheme(map, basemapRef.current, propsRef.current.theme);
+      setStyleReady(true);
     });
     map.on("moveend", refreshGrid);
     // Track the display cell under the cursor; state only changes when it moves to another cell.
@@ -261,7 +339,10 @@ export default function WorldMap(props: Props) {
       mapRef.current = null;
       overlayRef.current = null;
       basemapRef.current = [];
+      overlaySpecs.current.clear();
+      setStyleReady(false);
     };
+    // The body is fixed for a mounted map (the app shell remounts per body).
   }, []);
 
   // Buildings live above the GPU data overlays. Pollutant changes never replace their markers.
@@ -295,8 +376,8 @@ export default function WorldMap(props: Props) {
 
   useEffect(() => {
     const map = mapRef.current;
-    if (map && basemapRef.current.length) applyBasemapTheme(map, basemapRef.current, props.theme);
-  }, [props.theme]);
+    if (map && props.body.themedBasemap && basemapRef.current.length) applyBasemapTheme(map, basemapRef.current, props.theme);
+  }, [props.theme, props.body.themedBasemap]);
 
   useEffect(() => {
     const canvas = mapRef.current?.getCanvas();
@@ -307,7 +388,7 @@ export default function WorldMap(props: Props) {
 // zoom >= 14) supplies building volumes; it is always on and only reads as 3D once tilted.
   useEffect(() => {
     const map = mapRef.current;
-    if (!map) return;
+    if (!map || !props.body.tilt) return;
     if (props.tilted) {
       map.dragRotate.enable();
       map.touchZoomRotate.enableRotation();
@@ -317,16 +398,16 @@ export default function WorldMap(props: Props) {
       map.touchZoomRotate.disableRotation();
       map.easeTo({ pitch: 0, bearing: 0, duration: 800 });
     }
-  }, [props.tilted]);
+  }, [props.tilted, props.body.tilt]);
 
   // Re-pick labels when the facility set or selection changes (camera moves are handled on moveend).
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    const stem = stemHeightM(map, props.tilted);
+    const stem = stemHeightM(map, props.tilted, props.body.radiusKm);
     setStemM(stem);
     setLabelled(pickLabels(map, props.facilities, props.selectedFacilityId, stem));
-  }, [props.facilities, props.selectedFacilityId, props.tilted]);
+  }, [props.facilities, props.selectedFacilityId, props.tilted, props.body.radiusKm]);
 
   useEffect(() => {
     const f = props.focus;
@@ -365,10 +446,9 @@ export default function WorldMap(props: Props) {
         maxzoom: img.maxzoom,
         attribution: img.attribution,
       });
-      const firstSymbol = map.getStyle().layers.find((l) => l.type === "symbol" || l.type === "fill-extrusion")?.id;
       map.addLayer(
         { id: IMAGERY_SOURCE, type: "raster", source: IMAGERY_SOURCE, paint: { "raster-opacity": img.opacity } },
-        firstSymbol,
+        imageryAnchor(map),
       );
     };
     if (map.isStyleLoaded()) apply();
@@ -399,8 +479,7 @@ export default function WorldMap(props: Props) {
           [w, s],
         ],
       });
-      const firstSymbol = map.getStyle().layers.find((l) => l.type === "symbol" || l.type === "fill-extrusion")?.id;
-      map.addLayer({ id: SCENE_SOURCE, type: "raster", source: SCENE_SOURCE, paint: { "raster-opacity": 1 } }, firstSymbol);
+      map.addLayer({ id: SCENE_SOURCE, type: "raster", source: SCENE_SOURCE, paint: { "raster-opacity": 1 } }, imageryAnchor(map));
     };
     if (map.isStyleLoaded()) apply();
     else map.once("load", apply);
@@ -416,6 +495,42 @@ export default function WorldMap(props: Props) {
       map.setPaintProperty(IMAGERY_SOURCE, "raster-opacity", props.imagery.opacity);
     }
   }, [props.imagery?.opacity, props.imagery]);
+
+  // Raster overlays: add/remove by key, opacity in place, sources re-created only when their tiles change.
+  // Applied once the style has loaded (MapLibre rejects sources before that).
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !styleReady) return;
+    const wanted = props.rasterOverlays ?? [];
+    const specs = overlaySpecs.current;
+    if (!wanted.length && !specs.size) return;
+    const ids = wanted.map((o) => OVERLAY_PREFIX + o.key);
+    const keep = new Set(ids);
+    const drop = (id: string) => {
+      if (map.getLayer(id)) map.removeLayer(id);
+      if (map.getSource(id)) map.removeSource(id);
+      specs.delete(id);
+    };
+    for (const id of [...specs.keys()]) if (!keep.has(id)) drop(id);
+    const anchor = labelAnchor(map);
+    wanted.forEach((o, i) => {
+      const id = ids[i];
+      const spec = JSON.stringify([o.tiles, o.maxzoom, o.attribution]);
+      if (specs.has(id) && specs.get(id) !== spec) drop(id);
+      if (!map.getSource(id)) {
+        map.addSource(id, { type: "raster", tiles: o.tiles, tileSize: 256, maxzoom: o.maxzoom, attribution: o.attribution });
+        specs.set(id, spec);
+      }
+      if (!map.getLayer(id)) {
+        map.addLayer({ id, type: "raster", source: id, paint: { "raster-opacity": o.opacity } }, anchor);
+      } else if (map.getPaintProperty(id, "raster-opacity") !== o.opacity) {
+        map.setPaintProperty(id, "raster-opacity", o.opacity);
+      }
+    });
+    // Keep the drawing order equal to the array order (each moved just beneath the labels, in turn).
+    const order = map.getLayersOrder().filter((id) => id.startsWith(OVERLAY_PREFIX));
+    if (order.join() !== ids.join()) for (const id of ids) map.moveLayer(id, anchor);
+  }, [props.rasterOverlays, styleReady]);
 
   useEffect(() => {
     const overlay = overlayRef.current;
@@ -630,7 +745,8 @@ export default function WorldMap(props: Props) {
         // The grid covers every pixel, so it always wins a radius pick. Re-pick without it so a
         // thin cable or power line a few pixels away still gets selected.
         // Assessment cells are a display overlay: clicks fall through to what lies beneath.
-        const background = (id: string | undefined) => id === "grid" || id === "assessment-cells" || id === "timeline-impact";
+        const extra = propsRef.current.backgroundLayerIds ?? [];
+        const background = (id: string | undefined) => isBackgroundLayer(id, extra);
         if (background(layerId) || !object) {
           const alt = overlay.pickObject({
             x: info.x,
@@ -757,7 +873,7 @@ export default function WorldMap(props: Props) {
 
   return (
     <>
-      <div ref={containerRef} className="map" {...dropHandlers} />
+      <div ref={containerRef} className={`map map-${props.body.id}`} {...dropHandlers} />
       {dropping && (
         <div className="map-drop" aria-hidden="true">
           <span>Drop to preview here</span>

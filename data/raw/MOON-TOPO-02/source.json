@@ -1,0 +1,201 @@
+{
+  "id": "MOON-TOPO-02-ldem16-global-20261108",
+  "catalogueSourceId": "MOON-TOPO-02",
+  "body": "moon",
+  "provider": "NASA PDS Geosciences Node; LRO Lunar Orbiter Laser Altimeter (LOLA) team, NASA GSFC",
+  "product": "LOLA Gridded Data Record LDEM_16_FLOAT: global lunar DEM, 16 pixels/degree, float32 heights in km",
+  "dataSetId": "LRO-L-LOLA-4-GDR-V1.0",
+  "productId": "LDEM_16_FLOAT",
+  "version": "V3.1",
+  "productCreationTime": "2019-03-15",
+  "observationPeriod": [
+    "2009-07-13T17:33:17",
+    "2016-11-29T05:48:19"
+  ],
+  "documentationUrl": "https://pds-geosciences.wustl.edu/missions/lro/lola.htm",
+  "accessUrl": "https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/data/lola_gdr/cylindrical/float_img/ldem_16_float.img",
+  "labelUrl": "https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/data/lola_gdr/cylindrical/float_img/ldem_16_float.lbl",
+  "accessMethod": "download (HTTPS, PDS Geosciences Node)",
+  "evidenceType": "orbital_retrieval",
+  "licence": {
+    "name": "U.S. public domain (NASA PDS)",
+    "attribution": "LOLA team, NASA/GSFC; Smith et al. 2010/2017",
+    "notes": "US-government work, no copyright; credit requested. Cite the LOLA product papers.",
+    "reviewedAt": "2026-11-08"
+  },
+  "citation": "Smith, D. E., et al. (2010), Initial observations from the Lunar Orbiter Laser Altimeter (LOLA), Geophys. Res. Lett. 37, L18204, doi:10.1029/2010GL043751. Smith, D. E., et al. (2017), Summary of the results from the Lunar Orbiter Laser Altimeter after seven years in lunar orbit, Icarus 283, 70-91, doi:10.1016/j.icarus.2016.06.006.",
+  "region": "global",
+  "frame": "IAU_2015:30100 Moon Mean-Earth, planetocentric, east-positive (label: MEAN EARTH/POLAR AXIS OF DE421), reference sphere 1737.4 km",
+  "label": {
+    "productId": "LDEM_16_FLOAT",
+    "productVersionId": "V3.1",
+    "dataSetId": "LRO-L-LOLA-4-GDR-V1.0",
+    "productCreationTime": "2019-03-15",
+    "startTime": "2009-07-13T17:33:17",
+    "stopTime": "2016-11-29T05:48:19",
+    "lines": 2880,
+    "lineSamples": 5760,
+    "sampleType": "PC_REAL",
+    "sampleBits": 32,
+    "numpyDtype": "<f4",
+    "unit": "KILOMETER",
+    "scalingFactor": 1.0,
+    "offset": 1737.4,
+    "labelMinimum": -9.075,
+    "labelMaximum": 10.79,
+    "missingConstant": null,
+    "imageOffsetBytes": 0,
+    "mapProjectionType": "SIMPLE CYLINDRICAL",
+    "mapResolutionPixPerDeg": 16.0,
+    "mapScaleKmPerPix": 1.89521,
+    "aAxisRadiusKm": 1737.4,
+    "maximumLatitude": 90.0,
+    "minimumLatitude": -90.0,
+    "westernmostLongitude": 0.0,
+    "easternmostLongitude": 360.0,
+    "centerLatitude": 0.0,
+    "centerLongitude": 180.0,
+    "lineProjectionOffset": 1439.5,
+    "sampleProjectionOffset": 2879.5,
+    "positiveLongitudeDirection": "EAST",
+    "coordinateSystemName": "MEAN EARTH/POLAR AXIS OF DE421"
+  },
+  "processing": "scripts/moon/prepare_moon_elevation.py: height_m = (DN*SCALING_FACTOR + OFFSET - 1737.4 km) * 1000; pixel centres from the label (pixel-registered simple cylindrical grid), longitudes normalised to [-180, 180); each pixel centre assigned to its H3 res-5 cell (h3-py latlng_to_cell); cell value = cos(latitude)-weighted mean of its pixels; res 4..0 = area-weighted means of all pixels below them. Missing pixels skipped, never zero.",
+  "outputs": [
+    "data/prepared/moon/h3/elevation.parquet",
+    "data/prepared/moon/h3/layers.json"
+  ],
+  "stats": {
+    "pixels": 16588800,
+    "missingPixels": 0,
+    "pixelMinM": -8981.7,
+    "pixelMaxM": 10685.7,
+    "res5Cells": 2016842,
+    "res5CellsTotal": 2016842,
+    "res5CellsWithoutPixel": 0,
+    "res5MinM": -8534.1,
+    "res5MaxM": 10475.6,
+    "res5P01M": -5238.3,
+    "res5P99M": 6097.6,
+    "res5MeanPixelsPerCell": 8.23,
+    "res5MinPixelsPerCell": 2,
+    "globalAreaWeightedMeanM": -248.4,
+    "rows": 2352972,
+    "rowsPerResolution": {
+      "0": 122,
+      "1": 842,
+      "2": 5882,
+      "3": 41162,
+      "4": 288122,
+      "5": 2016842
+    }
+  },
+  "spotChecks": [
+    {
+      "name": "Tycho centre (floor)",
+      "lat": -43.31,
+      "lon": -11.36,
+      "h3": "85c0d53bfffffff",
+      "res5MeanM": -1759.0,
+      "pixels": 6,
+      "pixelM": -2016.1
+    },
+    {
+      "name": "Tycho north rim (~1.4° N of centre)",
+      "lat": -41.9,
+      "lon": -11.36,
+      "h3": "85c0f3abfffffff",
+      "res5MeanM": 314.9,
+      "pixels": 10,
+      "pixelM": 613.7
+    },
+    {
+      "name": "Tycho south rim (~1.4° S of centre)",
+      "lat": -44.72,
+      "lon": -11.36,
+      "h3": "85c0d163fffffff",
+      "res5MeanM": 680.6,
+      "pixels": 9,
+      "pixelM": 734.9
+    },
+    {
+      "name": "Mare Imbrium",
+      "lat": 33.0,
+      "lon": -16.0,
+      "h3": "8534643bfffffff",
+      "res5MeanM": -3153.1,
+      "pixels": 6,
+      "pixelM": -3465.2
+    },
+    {
+      "name": "Mare Serenitatis",
+      "lat": 28.0,
+      "lon": 17.5,
+      "h3": "853f8d47fffffff",
+      "res5MeanM": -2566.0,
+      "pixels": 7,
+      "pixelM": -2567.7
+    },
+    {
+      "name": "Mare Tranquillitatis",
+      "lat": 8.5,
+      "lon": 31.4,
+      "h3": "856a7087fffffff",
+      "res5MeanM": -929.3,
+      "pixels": 6,
+      "pixelM": -905.5
+    },
+    {
+      "name": "Engelhardt area (highest terrain)",
+      "lat": 5.7,
+      "lon": -159.0,
+      "h3": "855c9163fffffff",
+      "res5MeanM": 9152.8,
+      "pixels": 7,
+      "pixelM": 8592.5
+    },
+    {
+      "name": "Antoniadi crater floor (South Pole–Aitken, lowest terrain)",
+      "lat": -70.4,
+      "lon": -172.0,
+      "h3": "85eae847fffffff",
+      "res5MeanM": -7389.9,
+      "pixels": 13,
+      "pixelM": -7078.1
+    },
+    {
+      "name": "South Pole–Aitken basin interior",
+      "lat": -53.0,
+      "lon": -169.0,
+      "h3": "85d5465bfffffff",
+      "res5MeanM": -6987.0,
+      "pixels": 10,
+      "pixelM": -7068.9
+    },
+    {
+      "name": "Near the south pole (Shackleton)",
+      "lat": -89.9,
+      "lon": 0.0,
+      "h3": "85f2938ffffffff",
+      "res5MeanM": 290.7,
+      "pixels": 2428,
+      "pixelM": 625.7
+    }
+  ],
+  "retrievedAt": "2026-11-08T02:21:37Z",
+  "preparedAt": "2026-11-08T02:23:42Z",
+  "files": [
+    {
+      "path": "ldem_16_float.img",
+      "url": "https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/data/lola_gdr/cylindrical/float_img/ldem_16_float.img",
+      "bytes": 66355200,
+      "sha256": "c6b790f14409f0a74d6640b69ddb0c48b8cd3e330117366162669f85f567a432"
+    },
+    {
+      "path": "ldem_16_float.lbl",
+      "url": "https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/data/lola_gdr/cylindrical/float_img/ldem_16_float.lbl",
+      "bytes": 5139,
+      "sha256": "b39b1e1ec3d7dbd0ec451f1d4df0304ab383f6ebbc52601b8bf819e0a8d5111a"
+    }
+  ]
+}
