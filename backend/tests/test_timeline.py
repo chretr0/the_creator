@@ -40,6 +40,13 @@ def test_daily_rates_use_declared_hours_and_ignore_legacy_stress(context):
     assert context.assumptions.stress.operating_demand == 5
 
 
+def test_each_project_carries_its_local_wind_or_none(context, monkeypatch):
+    monkeypatch.setattr(timeline, "local_wind", lambda lat, lon: {"u": 2.0, "v": 1.0, "at": [lat, lon]})
+    assert timeline.timeline_inputs(context)["projects"][0]["wind"] == {"u": 2.0, "v": 1.0, "at": [33.45, -112.07]}
+    monkeypatch.setattr(timeline, "local_wind", lambda lat, lon: None)
+    assert timeline.timeline_inputs(context)["projects"][0]["wind"] is None
+
+
 def test_unknown_and_zero_emissions_remain_distinct(context):
     context.buildings = [building({"emissions": [{"id": "co2", "pollutant": "CO2", "rateKgPerHour": 10}]}),
                          building({"operatingHoursPerDay": 0, "emissions": [{"id": "co2", "pollutant": "CO2", "rateKgPerHour": 10}]})]

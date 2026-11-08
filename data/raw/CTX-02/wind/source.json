@@ -1,0 +1,35 @@
+{
+  "id": "CTX-02-power-wind10m-annual",
+  "catalogueSourceId": "CTX-02",
+  "provider": "NASA Langley Research Center (LaRC) POWER Project",
+  "product": "NASA POWER MERRA-2 climatology (LST), annual mean: U10M, V10M, WS10M",
+  "accessUrl": "https://nasa-power.s3.amazonaws.com/",
+  "documentationUrl": "https://power.larc.nasa.gov/docs/services/aws/",
+  "accessMethod": "download (anonymous S3 / Zarr subset by variable)",
+  "evidenceType": "modelled",
+  "retrievedAt": "2026-11-08",
+  "files": [
+    [
+      "power_merra2_wind10m_climatology_lst.nc",
+      "9b8536c3e6cc3fdd554640a054108ed8b976194461b8e98124a32fa19eac0fa4"
+    ]
+  ],
+  "prepared": [
+    [
+      "data/prepared/power_wind10m_annual_grid.npz",
+      "5274901318face5a1a25687eb8668c21e89bfe2661b7f7bab82b0e360b207314"
+    ]
+  ],
+  "query": "s3://nasa-power/merra2/spatial/power_merra2_climatology_spatial_lst.zarr vars=U10M,V10M,WS10M time=1..13, full global lat/lon",
+  "processing": {
+    "script": "scripts/fetch_power_wind.py",
+    "kept": "annual slot only, native grid",
+    "use": "Timeline air transport: each building's air releases drift with the wind at its own grid cell."
+  },
+  "interpretation": "(U10M, V10M) is the vector-mean wind: the net long-term drift. It is not a forecast, not local terrain-resolved wind and not the prevailing (most frequent) direction.",
+  "licence": {
+    "name": "NASA POWER open data (acknowledgement required)",
+    "url": "https://power.larc.nasa.gov/docs/referencing/",
+    "attribution": "These data were obtained from the NASA Langley Research Center (LaRC) POWER Project funded through the NASA Earth Science/Applied Science Program. Underlying meteorology: NASA GMAO MERRA-2."
+  }
+}

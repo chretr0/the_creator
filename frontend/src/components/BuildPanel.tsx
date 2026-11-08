@@ -93,6 +93,8 @@ type Props = {
   onSaved?: (p: Project) => void;
   /** A placed building was deleted while being edited. */
   onDeleted?: (p: Project) => void;
+  /** The viewer finished with a placed building (Done, or deleted it while editing). */
+  onDoneEditing?: () => void;
 };
 
 /** Everything the form holds, so a new-building draft can be put aside while a placed building is edited. */
@@ -453,6 +455,7 @@ export default function BuildPanel(props: Props) {
   function stopEditing() {
     if (editChanged && !confirm(`Discard your unsaved changes to “${editName}”?`)) return;
     endEditing();
+    props.onDoneEditing?.();
   }
 
   /** Undo every unsaved change: the form and the location go back to the placed building. */
@@ -508,6 +511,7 @@ export default function BuildPanel(props: Props) {
       await api.deleteProject(p.id);
       endEditing();
       props.onDeleted?.(p);
+      props.onDoneEditing?.();
     } catch (e) {
       setBuildError(message(e));
     }
@@ -805,7 +809,7 @@ export default function BuildPanel(props: Props) {
               <button type="button" className="ghost danger" onClick={deleteEditing}>
                 Delete
               </button>
-              <button type="button" onClick={stopEditing} title={stash ? "Stop editing and go back to your new building" : "Stop editing"}>
+              <button type="button" onClick={stopEditing} title="Stop editing and go back to the building list">
                 Done
               </button>
             </div>
