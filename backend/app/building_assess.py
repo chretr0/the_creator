@@ -877,6 +877,18 @@ def _sum_quantities(items: list[tuple[str, Quantity]], unit: str, label: str) ->
     return q(sum(vals), unit, basis, missing), unknown + [n for n, _ in partial]
 
 
+def _balance(output: Quantity, demand: Quantity, what: str) -> Quantity:
+    """The world's balance: everything generated minus everything used. Unknown when either side is,
+    and partial (its missing inputs kept) when either side is only partly known."""
+    basis = f"total {what} generated − total {what} used, across all buildings"
+    missing = output.missing + demand.missing
+    if output.value is None or demand.value is None:
+        return q(None, demand.unit, basis, missing or [f"{what} generated or used"])
+    if missing:
+        basis += "; partial"
+    return q(output.value - demand.value, demand.unit, basis, missing)
+
+
 def _totals(ctx: ScenarioContext, results: dict[UUID, BuildingResult]) -> ScenarioTotals:
     named = [(b.name or b.type, results[b.id]) for b in ctx.buildings]
     unknown_by: dict[str, list[str]] = {}
@@ -929,17 +941,29 @@ def _totals(ctx: ScenarioContext, results: dict[UUID, BuildingResult]) -> Scenar
         EmissionTotal(pollutant=v[0][2], medium=medium, quantity=_sum_quantities([(n, x) for n, x, _ in v], v[0][1].unit, key)[0])
         for (medium, key), v in sorted(ems.items())
     ]
+    electricity_demand = total("electricityDemand", lambda r: r.electricity_demand, "kWh", "electricity demand")
+    electricity_output = total("electricityOutput", lambda r: r.electricity_output, "kWh", "electricity output")
+    water_demand = total("waterDemand", lambda r: r.water_demand, "m³", "water demand")
+    water_output = total("waterOutput", lambda r: r.water_output, "m³", "water output")
+    peak = total("peakDemand", lambda r: r.peak_demand, "kW", "peak demand")
+    if peak.value is not None:
+        peak = peak.model_copy(update={"basis": f"{peak.basis}; peaks added as if they coincide, so an upper bound"})
     return ScenarioTotals(
-        electricity_demand=total("electricityDemand", lambda r: r.electricity_demand, "kWh", "electricity demand"),
-        electricity_output=total("electricityOutput", lambda r: r.electricity_output, "kWh", "electricity output"),
-        water_demand=total("waterDemand", lambda r: r.water_demand, "m³", "water demand"),
-        water_output=total("waterOutput", lambda r: r.water_output, "m³", "water output"),
+        electricity_demand=electricity_demand,
+        electricity_output=electricity_output,
+        electricity_net=_balance(electricity_output, electricity_demand, "electricity"),
+        peak_demand=peak,
+        water_demand=water_demand,
+        water_output=water_output,
+        water_net=_balance(water_output, water_demand, "water"),
         construction_cost=by_currency("constructionCost", lambda r: r.costs.construction, "construction cost"),
         operating_cost=by_currency("operatingCost", lambda r: r.costs.operating_known_total, "operating cost"),
         materials=materials,
         emissions=emissions,
         light=total("light", lambda r: r.light, "lm", "upward lumens"),
         worker_capacity=total("workerCapacity", lambda r: r.worker_capacity, "people", "worker capacity"),
+        staffing_required=total("staffingRequired", lambda r: r.staffing_required, "people", "staffing requirement"),
+        footprint=total("footprint", lambda r: r.footprint, "m²", "footprint"),
         unknown_buildings=unknown_by,
     )
 

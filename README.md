@@ -200,6 +200,13 @@ for product intent, [CLAUDE-World-Mapping.md](./CLAUDE-World-Mapping.md) for the
     contributions. Building markers use independent MapLibre DOM markers above the pollution overlays, so every
     placed building remains selectable when pollutants, time, theme or map pitch change.
 
+- **World totals** (the tab next to the **Active world** menu) adds up everything the active Earth world's buildings
+  declare, per day, month or year (`POST /api/scenarios/{id}/evaluate` with `periodDays`; nothing is saved):
+  construction and operating cost (one total per currency, never converted), electricity and water generated, used
+  and net (generated − used), summed peak demand (an upper bound), land used, staff, worker capacity, upward light,
+  emissions by pollutant and receiving environment, materials, and each building's share. A total that some buildings
+  don't declare is marked *partial* or *unknown* (never 0); hover it for the buildings and inputs that are missing.
+
 Not built yet: connections between buildings and the cross-scenario comparison view. Manual-download sources
 ([data/MANUAL-DOWNLOADS.md](./data/MANUAL-DOWNLOADS.md)) appear once they are prepared: add a `LayerDef` in
 `backend/app/layers.py` for an H3 layer, or a manifest entry in `data/prepared/features/manifest.json` for records.
@@ -318,7 +325,7 @@ building types.
   - Ice mines need polar latitudes.
   - Oxygen plants and landing pads prefer mare ground (from the mare outlines).
   - LOLA elevation is shown. Slopes are not checked, because the prepared grid is too coarse.
-- **Base summary** adds up the world:
+- **World totals** (the tab next to the **Active world** menu, as on Earth) adds up the base:
   - Crew housed, and per-person oxygen, water and food (NASA BVAD), less what the habitat recycles, against what
     the oxygen plant, ice mine and greenhouse make.
   - Power by day, and through the night (~14.8 days away from the poles, 120 h for an all-polar ridge base, or a
@@ -326,6 +333,7 @@ building types.
   - Landed mass and the cost to deliver it, and the yearly resupply from Earth, at four transport prices from
     $600/kg to $146,700/kg.
   - A headline that says whether the base keeps its crew alive, and whether it needs deliveries from Earth to do so.
+  - Each building's share: daytime power it adds or draws, landed mass and delivery cost, with the base's totals.
 - Not modelled: day-to-day operations, maintenance, radiation shielding, spare parts and hardware costs. The Moon
   timeline comes next.
 

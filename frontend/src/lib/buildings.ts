@@ -577,14 +577,21 @@ export type BuildingEvaluation = {
 export type ScenarioTotals = {
   electricityDemand: Quantity;
   electricityOutput: Quantity;
+  /** Everything generated minus everything used, across the world. */
+  electricityNet: Quantity;
+  /** Summed peaks: an upper bound (assumes they coincide). */
+  peakDemand: Quantity;
   waterDemand: Quantity;
   waterOutput: Quantity;
+  waterNet: Quantity;
   constructionCost: Quantity[];
   operatingCost: Quantity[];
   materials: MaterialTotal[];
   emissions: EmissionTotal[];
   light: Quantity;
   workerCapacity: Quantity;
+  staffingRequired: Quantity;
+  footprint: Quantity;
   unknownBuildings: Record<string, string[]>;
 };
 

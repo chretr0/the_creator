@@ -24,6 +24,7 @@ import { ScenarioSelect } from "../components/ScenarioPanel";
 import BuildingList from "../components/BuildingList";
 import BuildPanel, { type BuildTarget, type EditRequest, type PresetRequest, type BuildStage } from "../components/BuildPanel";
 import TimelinePanel from "../components/TimelinePanel";
+import WorldTotals from "../components/WorldTotals";
 import { type TimelineOverlay, timeLabel, timelineViewLabel } from "../lib/timeline";
 import SuitabilityLegend from "../components/SuitabilityLegend";
 import BuildLayerChips from "../components/BuildLayerChips";
@@ -72,7 +73,7 @@ const EXPLORE_SECTIONS = [
   { value: "sources", label: "Sources & licences", icon: "info", detail: "Provenance & data limitations" },
 ] as const;
 
-type Tab = "layers" | "search" | "build" | "timeline";
+type Tab = "layers" | "search" | "build" | "timeline" | "totals";
 
 const LAST_SCENARIO_KEY = "newworlds:lastScenario";
 const HEX_OUTLINES_KEY = "newworlds:hexOutlines";
@@ -724,7 +725,7 @@ export default function EarthApp({ onBody }: { onBody: (id: BodyId) => void }) {
     setExploreSection("sources");
   };
 
-  const workspace = sideTab === "build" ? "build" : sideTab === "timeline" ? "timeline" : "explore";
+  const workspace = sideTab === "build" ? "build" : sideTab === "timeline" ? "timeline" : sideTab === "totals" ? "totals" : "explore";
   const activeTimeline = sideTab === "timeline" ? timelineOverlay : null;
   const dock =
     inspectorOpen && hasDetail
@@ -746,6 +747,10 @@ export default function EarthApp({ onBody }: { onBody: (id: BodyId) => void }) {
           <button aria-current={workspace === "timeline" ? "page" : undefined} onClick={() => navigate("timeline")}><Icon name="timeline" />Timeline</button>
         </nav>
         <div className="scenario-switcher"><span className="eyebrow">ACTIVE WORLD</span><ScenarioSelect scenarios={scenarios} scenario={scenario} {...scenarioActions} /></div>
+        <button className="world-totals-tab" aria-label="World totals" aria-current={workspace === "totals" ? "page" : undefined} disabled={!scenario} onClick={() => navigate("totals")}
+          title={scenario ? `Everything the buildings in ${scenario.name} use, make, cost and release, added up` : "Choose a world first"}>
+          <Icon name="chart" size={17} /><span>World totals</span>
+        </button>
         <div className="header-actions">
           <button className="sources-button" onClick={showCredits}><Icon name="info" size={18} /><span>Data & sources</span></button>
           <button className="theme-toggle" onClick={toggleTheme} aria-label={theme === "dark" ? "Switch to day mode" : "Switch to night mode"} title={theme === "dark" ? "Switch to day mode" : "Switch to night mode"}>
@@ -814,7 +819,7 @@ export default function EarthApp({ onBody }: { onBody: (id: BodyId) => void }) {
             </div>
           </div>
 
-          <div className="map-context"><span className="context-dot" />{workspace === "explore" ? "Explore mode" : workspace === "build" ? "Building workspace" : "Timeline workspace"}<span className="map-context-divider" />{projects.length} {projects.length === 1 ? "building" : "buildings"}</div>
+          <div className="map-context"><span className="context-dot" />{workspace === "explore" ? "Explore mode" : workspace === "build" ? "Building workspace" : workspace === "totals" ? "World totals" : "Timeline workspace"}<span className="map-context-divider" />{projects.length} {projects.length === 1 ? "building" : "buildings"}</div>
           {workspace === "build" && (
             // One left-hand column for the build overlays, sized to the map, so they never cover each other.
             <div className="build-map-stack" ref={setBuildStack}>
@@ -859,9 +864,9 @@ export default function EarthApp({ onBody }: { onBody: (id: BodyId) => void }) {
 
         <aside className="sidebar">
           <div className="workspace-heading">
-            <div className="eyebrow">{sideTab === "build" ? "PLAN & PLACE" : sideTab === "timeline" ? "CHANGE OVER TIME" : "THE WORLD, IN CONTEXT"}</div>
-            <h1>{sideTab === "build" ? (buildSection === "list" ? "Your buildings" : { building: editingProjectId ? "Edit building" : "Choose a building", resources: "Resources", impact: "Impact & costs" }[buildStage]) : sideTab === "timeline" ? "Your timeline" : "Explore the world"}</h1>
-            {sideTab !== "build" && <p>{sideTab === "timeline" ? "See what your projects leave behind." : "Discover the data behind a place."}</p>}
+            <div className="eyebrow">{sideTab === "build" ? "PLAN & PLACE" : sideTab === "timeline" ? "CHANGE OVER TIME" : sideTab === "totals" ? "ADDED UP" : "THE WORLD, IN CONTEXT"}</div>
+            <h1>{sideTab === "build" ? (buildSection === "list" ? "Your buildings" : { building: editingProjectId ? "Edit building" : "Choose a building", resources: "Resources", impact: "Impact & costs" }[buildStage]) : sideTab === "timeline" ? "Your timeline" : sideTab === "totals" ? "World totals" : "Explore the world"}</h1>
+            {sideTab !== "build" && <p>{sideTab === "timeline" ? "See what your projects leave behind." : sideTab === "totals" ? "Everything your buildings use, make, cost and release." : "Discover the data behind a place."}</p>}
           </div>
           {sideTab === "build" && <PanelTabs label="Build sections" value={buildSection} onChange={setBuildSection} options={[
             { value: "form", label: editingProjectId ? "Edit building" : "New building" },
@@ -994,6 +999,12 @@ export default function EarthApp({ onBody }: { onBody: (id: BodyId) => void }) {
                 onEdit={(p) => { editInBuild(p); focusOn(p.latitude, p.longitude); }}
                 onDelete={deleteFromList} />
             )}
+
+            {/* Kept mounted so the chosen period and the last result survive tab switches. */}
+            <div hidden={sideTab !== "totals"}>
+              <WorldTotals scenario={scenario} active={sideTab === "totals"} onShow={(p) => { selectProject(p); focusOn(p.latitude, p.longitude); }}
+                onBuild={() => { setBuildSection("form"); navigate("build"); }} />
+            </div>
 
             <div hidden={sideTab !== "timeline"}>
               <TimelinePanel scenario={scenario} active={sideTab === "timeline"}

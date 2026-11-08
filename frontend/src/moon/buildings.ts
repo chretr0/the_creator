@@ -591,6 +591,24 @@ export function baseBalance(buildings: PlacedMoonBuilding[], settings: BaseSetti
   };
 }
 
+/**
+ * One building's share of the base, counted the way `baseBalance` counts it: the daytime power it adds
+ * (fission, solar) minus what it draws (null when its demand is unknown), its landed mass, and what
+ * landing it costs at the chosen transport price (null when its mass is unknown).
+ */
+export function buildingShare(b: PlacedMoonBuilding, transport: TransportCase): { powerKw: number | null; massT: number | null; deliveryUsd: number | null } {
+  const v = (k: string) => value(b.values, k);
+  const role = MOON_BUILDING_BY_TYPE[b.type].role;
+  const supplyKw = role === "fission" ? (v("outputKw") ?? 0) : role === "solar" ? (v("ratedKw") ?? 0) : 0;
+  const load = powerDemandKw(b.type, b.values);
+  const massT = v("landedMassT");
+  return {
+    powerKw: load === null ? null : supplyKw - load,
+    massT,
+    deliveryUsd: massT === null ? null : massT * 1000 * transport.usdPerKg,
+  };
+}
+
 /** US dollars in short form: $14k, $3.2M, $1.4B. */
 export function formatUsd(usd: number): string {
   const abs = Math.abs(usd);
